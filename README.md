@@ -1,85 +1,184 @@
-# SymC in Chemistry  
-## Critical Damping as the Governing Principle of Catalysis and Reactivity
+# Approach-Region Dynamics and Rate Turnover in Thermally Activated Barrier Crossing
 
-Chemical reactivity across electron transfer (ET), proton-coupled electron transfer (PCET),  
-and heterogeneous catalysis can be organized by a single stability ratio
+This repository supports the manuscript:
 
-\[
-\chi = \frac{\Gamma}{2\Omega}
-\]
+**Approach-Region Dynamics and Rate Turnover in Thermally Activated Barrier Crossing**  
+Nate Christensen
 
-where \(\Gamma\) is the dissipation rate and \(\Omega\) is the characteristic frequency  
-of the reactive mode.
+The project develops a reaction-dynamical descriptor for thermally activated barrier crossing across electron transfer, proton-coupled electron transfer, and heterogeneous catalysis.
 
----
+The central quantity is the dimensionless approach-region damping ratio
 
-## Core Insight
+```math
+\chi_0 = \frac{\Gamma_{\mathrm{eff}}}{2\Omega_0}
+```
 
-Reactivity is maximized when the system approaches the near-critical regime
+where \(\Gamma_{\mathrm{eff}}\) is the total projected dissipation rate and \(\Omega_0\) is the stable precursor-well approach frequency.
 
-\[
-\chi \approx 1
-\]
-
-This point marks optimal dynamical stability, maximal information throughput,  
-and minimal distortion—consistent with the Symmetrical Convergence (SymC) framework  
-across physics, biology, and complex systems.
+The framework distinguishes approach-region dynamics from saddle-point transition-state dynamics. The exceptional-point condition \(\chi_0 = 1\) belongs to the stable precursor-well generator, not to the inverted saddle itself.
 
 ---
 
-## 1. Electron Transfer (ET)
+## Core idea
 
-- **Adiabatic ET:** \(\chi > 1\)  
-  Overdamped, environment-dominated dynamics.
+Thermodynamic rate theory describes barriers, driving forces, and reaction energetics. This work adds a complementary dynamical coordinate describing whether a reactive trajectory commits productively, recrosses, or becomes overdamped and sluggish.
 
-- **Nonadiabatic ET:** \(\chi < 1\)  
-  Underdamped, structure-dominated dynamics.
+The three operational regimes are:
 
-This unifies Marcus regimes under a single dynamical parameter.
+| \(\chi_0\) range | Regime | Dynamical behavior | Chemical consequence |
+|---|---|---|---|
+| \(\chi_0 < 0.8\) | Underdamped | Oscillatory approach, recrossing likely | Back-transfer, weak activation, poor commitment |
+| \(0.8 \leq \chi_0 \leq 1.3\) | Near-critical | Fast monotonic commitment | Efficient ET, concerted PCET, high catalytic turnover |
+| \(\chi_0 > 1.3\) | Overdamped | Monotonic but sluggish | Solvent-controlled ET, inhibited PCET, over-promoted or poisoned catalysis |
 
----
-
-## 2. Proton-Coupled Electron Transfer (PCET)
-
-Mechanism selection follows from the motion of \(\chi\):
-
-- **Concerted PCET:** \(\chi\) remains within the adaptive window.  
-- **Stepwise PCET:** \(\chi\) oscillates through underdamped / overdamped regions.
-
-The framework replaces mechanism lookup tables with a stability criterion.
+The window \(0.8 \leq \chi_0 \leq 1.3\) is treated as an operational near-critical band rather than an exact universal optimum.
 
 ---
 
-## 3. Heterogeneous Catalysis
+## Scope
 
-Catalyst surfaces tune substrate \(\chi\). Examples:
+The framework applies to classical, thermally activated barrier crossing in systems where:
 
-- **TEMPO self-exchange:** \(k_{et} \propto 1/\tau_L\) across solvents.  
-- **N\(_2\)** dissociation on Fe: barrier drop from 1.1 eV (Fe(110)) to 0.3 eV (Fe(111))  
-  tracks the shift of \(\chi \rightarrow 1\).
+- a dominant reactive coordinate can be identified,
+- the approach region is locally approximated by a stable damped generator,
+- friction is near-Markovian or weakly non-Markovian,
+- tunneling is not the dominant pathway,
+- thermodynamic parameters are independently acceptable.
 
-The Sabatier principle becomes a case of critical-damping optimization.
-
----
-
-## Why This Matters
-
-The SymC approach:
-
-- connects ET, PCET, and catalysis under a single mathematical rule,  
-- provides falsifiable predictions for solvent effects, isotope shifts, and spectra,  
-- reframes reactivity as a stability-controlled process,  
-- removes artificial boundaries between mechanistic frameworks.
-
-The result is a coherent, dynamical theory of chemical kinetics.
+The framework is not intended to replace transition-state theory, Marcus theory, PCET theory, d-band theory, BEP scaling, adsorption-energy descriptors, or electronic-structure calculations. Instead, it provides a complementary reaction-dynamical coordinate for comparing commitment versus recrossing under otherwise comparable thermodynamic conditions.
 
 ---
 
-## Repository Contents
+## Estimator routes
 
-- **Main Manuscript:** Critical Chemical Equivalence (CCE)  
-- **Supplementary Materials:** extended derivations and comparisons  
-- **Figures & Analysis Tools:** \(\chi\)-maps, rate predictions, and stability visualizations
+The manuscript develops three calibrated routes from standard observables or computational quantities to \(\chi_0\).
+
+### Route A: Spectroscopic linewidths
+
+For operando IR or Raman measurements:
+
+```math
+\chi_{\mathrm{spec}} = \frac{\Delta\tilde{\nu}_L}{2\tilde{\nu}}
+```
+
+where \(\Delta\tilde{\nu}_L\) is the Lorentzian linewidth component and \(\tilde{\nu}\) is the vibrational frequency.
+
+This route is valid only when homogeneous broadening dominates. Voigt or Fano fitting may be required.
 
 ---
 
+### Route B: Solvent relaxation
+
+For electron-transfer and PCET systems:
+
+```math
+\Gamma_{\mathrm{eff}} = \Omega_s^2 \tau_L
+```
+
+so that slower solvent relaxation generally increases \(\chi_0\). Relative comparisons are preferred:
+
+```math
+\frac{\chi_{\mathrm{ET}}^{(A)}}{\chi_{\mathrm{ET}}^{(B)}} \approx
+\frac{\tau_L^{(A)}}{\tau_L^{(B)}}
+```
+
+with equality only when solvent bath frequencies are comparable.
+
+Route B does not replace established solvent-dynamical descriptors such as longitudinal relaxation times or dielectric friction coefficients. It maps them onto a dimensionless coordinate by comparing solvent dissipation against intrinsic precursor-well stiffness.
+
+---
+
+### Route C: DFT electronic friction
+
+For surface catalysis with electronic friction or Newns-Anderson hybridization data:
+
+```math
+\chi_{\mathrm{DFT}} =
+\frac{\Gamma_{\mathrm{int}}+\Gamma_{\mathrm{cat}}}{2hc\tilde{\nu}}
+```
+
+Here \(\Gamma_{\mathrm{cat}}\) is an energy broadening in eV, not a time-domain friction coefficient. Ground-state Route C estimates are interpreted as lower-bound proxies when the reactive bond softens along the approach coordinate.
+
+---
+
+## Worked examples
+
+The repository supports calculations and figures for:
+
+### Electron transfer
+
+A solvent-dependent ET example illustrating how longitudinal relaxation time and solvent bath frequency affect relative \(\chi_{\mathrm{ET}}\), with emphasis on the limits of cross-class solvent comparisons.
+
+### Proton-coupled electron transfer
+
+A PCET mechanism-selection example showing how isotope substitution can raise \(\chi_{\mathrm{eff}}\) in the proton-dominated limit:
+
+```math
+\chi_{\mathrm{eff}}^D \approx \sqrt{2}\,\chi_{\mathrm{eff}}^H
+```
+
+The predicted signature is a non-monotonic KIE feature as environmental friction moves the system across the near-critical window.
+
+### Heterogeneous catalysis
+
+A Route C analysis of N\(_2\) activation on Fe surfaces, including unpromoted Fe, Fe(110), and K-promoted Fe(111). The framework does not replace d-band theory, BEP scaling, or adsorption-energy descriptors. It provides a reaction-dynamical coordinate that may account for residual activity variation among systems with comparable thermodynamic descriptors.
+
+---
+
+## Repository contents
+
+Typical contents include:
+
+- main manuscript source files,
+- supplementary derivations,
+- reproducibility guide,
+- Python scripts used to generate figures,
+- figure source data,
+- generated manuscript figures.
+
+Key outputs include:
+
+- dynamical efficiency schematic,
+- Fe/BEP dynamical outlier figure,
+- standard-state lattice \(\chi\)-map,
+- estimator-route tables,
+- falsification and robustness calculations.
+
+---
+
+## Reproducibility
+
+The code in this repository is intended to reproduce the numerical values, tables, and figures reported in the manuscript and supplementary information.
+
+Users should treat the repository code and deposited data files as the canonical computational source rather than copying code from PDF-rendered listings, which may introduce formatting artifacts.
+
+---
+
+## Data availability
+
+Supporting data and code archived in this repository.
+
+```
+
+Repository:
+
+```text
+https://github.com/SymCUniverse/Chemistry
+```
+
+---
+
+## Citation
+
+If using this repository, please cite the associated manuscript:
+
+Christensen, N.  
+**Approach-Region Dynamics and Rate Turnover in Thermally Activated Barrier Crossing.**
+
+A complete archival release, including manuscript, supplementary materials, data, and code, is available through Zenodo.
+
+---
+
+## License
+
+Please see the repository license file for terms of use.
