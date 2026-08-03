@@ -1,0 +1,87 @@
+{
+  "schema": "na-cu001-downstream-protocol-v0.1",
+  "status": "frozen_before_adsorption_or_barrier_results",
+  "system": "Na diffusion on Cu(001)",
+  "method_inheritance": "Every stage inherits the exact QE version, PBE functional, Cu/Na UPF hashes, cutoffs, smearing, slab dimensions, vacuum, k mesh, and electrostatic convention from PASS handoffs.",
+  "stage_3_clean_relaxation": {
+    "geometry": "selected symmetric clean slab",
+    "calculation": "relax",
+    "symmetry": "paired layers constrained to move symmetrically about the slab center",
+    "central_layer": "fixed when present",
+    "force_threshold_ev_per_angstrom": 0.02,
+    "energy_threshold_ev": 0.0001,
+    "pass_checks": [
+      "ionic convergence reported by QE",
+      "maximum unconstrained force <= 0.02 eV/A",
+      "top two interlayer relaxations recorded",
+      "final SCF reproduces relaxed energy"
+    ]
+  },
+  "stage_4_na_pseudopotential": {
+    "archive": "same pinned SSSP v2 PBE-efficiency archive used for Cu",
+    "selection": "unique UPF whose parsed element attribute is Na; ambiguity gives HOLD",
+    "mixed_cutoffs": "componentwise maximum of independently registered Cu and Na recommendations",
+    "required_provenance": ["archive SHA-256", "Na UPF SHA-256", "metadata object", "selected cutoffs"]
+  },
+  "stage_5_adsorption_screening": {
+    "coverage_model": "one Na adatom in a 4x4 primitive Cu(001) surface supercell, approximately 0.0625 ML",
+    "electrostatics": "single-sided adsorption with the same explicitly registered slab correction for every site, or symmetric two-sided adsorption if selected before launch",
+    "initial_sites": ["fourfold hollow", "bridge", "top"],
+    "relaxation": "Na and registered upper Cu layers relaxed; lower/central constraint inherited from clean slab",
+    "force_threshold_ev_per_angstrom": 0.02,
+    "site_pass_rule": "all starts converge; endpoint identities and energy ordering are reported without discarding site collapse"
+  },
+  "stage_6_endpoint_verification": {
+    "endpoint_pair": "nearest-neighbor symmetry-equivalent stable hollow minima",
+    "checks": [
+      "final SCF energy reproduction <= 0.001 eV",
+      "maximum force <= 0.02 eV/A",
+      "coordinate and input hashes recorded",
+      "endpoints related by a primitive surface translation"
+    ]
+  },
+  "stage_7_path_convergence": {
+    "initial_path": "hollow-to-hollow translation through the intervening bridge region",
+    "ordinary_neb_image_counts": [5, 7, 9],
+    "path_force_threshold_ev_per_angstrom": 0.05,
+    "barrier_tolerance_ev": 0.005,
+    "pass_rule": "smallest image count whose forward barrier differs by <= 0.005 eV from every larger registered image count and whose endpoints do not drift"
+  },
+  "stage_8_ci_neb": {
+    "prerequisite": "ordinary NEB PASS",
+    "climbing_image": "auto",
+    "path_force_threshold_ev_per_angstrom": 0.03,
+    "pass_checks": [
+      "maximum-energy image is internal",
+      "path convergence achieved",
+      "endpoint energies reproduce verified endpoints within 0.001 eV",
+      "all image coordinates and outputs hashed"
+    ]
+  },
+  "stage_9_saddle_verification": {
+    "method": "finite-displacement curvature along the converged reaction coordinate plus downhill connectivity checks",
+    "displacements_angstrom": [-0.04, -0.02, 0.02, 0.04],
+    "requirements": [
+      "negative curvature along the path direction",
+      "positive restoring behavior for sampled transverse displacements",
+      "downhill relaxation reaches the two registered endpoint basins",
+      "residual saddle force <= 0.03 eV/A"
+    ]
+  },
+  "stage_10_barrier_coordinate": {
+    "primary": "electronic forward and reverse barriers from verified endpoints and saddle",
+    "secondary": ["reaction-coordinate curvature", "harmonic attempt-frequency estimate when supported", "image-count uncertainty", "electronic-convergence uncertainty"],
+    "separation_rule": "electronic, zero-point, thermal, friction, and experimental quantities remain separate fields",
+    "null_rule": "friction, linewidth, or damping fields remain null unless independently computed or publicly reported for the same state point"
+  },
+  "stage_11_atlas_admission": {
+    "required_identity": ["adsorbate", "surface face", "coverage", "temperature", "mechanism"],
+    "required_numeric_fields": ["barrier or activation energy", "rate or attempt-frequency model"],
+    "verification_tiers": ["FULL", "SNIPPET", "BLOCKED"],
+    "rule": "computed and experimental values occupy distinct columns and are never blended into one coordinate"
+  },
+  "stage_12_integration": {
+    "required_outputs": ["closure ledger", "all PASS/HOLD artifacts", "manifest", "experimental-gap register"],
+    "rule": "integration may proceed with explicit HOLD fields, but no HOLD may be described as closed"
+  }
+}
