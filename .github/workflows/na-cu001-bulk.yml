@@ -88,7 +88,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopenblas0 liblapack3 libfftw3-3 libopenmpi3 openmpi-bin
+          sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
       - uses: actions/download-artifact@v4
         with:
           name: qe-7.6-pw-sssp-cu
