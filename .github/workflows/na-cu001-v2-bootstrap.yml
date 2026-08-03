@@ -104,3 +104,5 @@ jobs:
           new_sha=$(git rev-parse HEAD)
           git push origin HEAD:agent/na-cu001-integration
           echo "Verified V2 source commit: ${new_sha}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+# Trusted same-repository source-only publication trigger.
