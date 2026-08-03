@@ -6,6 +6,11 @@ on:
       - agent/na-cu001-integration
     paths:
       - '.github/workflows/na-cu001-report-source-bundle.yml'
+  pull_request:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/na-cu001-report-source-bundle.yml'
   workflow_dispatch:
 
 permissions:
@@ -54,3 +59,5 @@ jobs:
             SOURCE_MANIFEST.sha256
           retention-days: 90
           if-no-files-found: error
+
+# report-bundle trigger commit only; no scientific settings changed
