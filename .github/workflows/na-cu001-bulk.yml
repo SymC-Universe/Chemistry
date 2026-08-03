@@ -1,0 +1,160 @@
+name: Na Cu001 preregistered bulk convergence
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-run
+    paths:
+      - 'na_cu001_ci/**'
+      - '.github/workflows/na-cu001-bulk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: na-cu001-bulk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-qe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran make m4 perl wget curl ca-certificates \
+            libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - name: Download and build exact Quantum ESPRESSO 7.6 PWscf
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$RUNNER_TEMP/qe-src" "$GITHUB_WORKSPACE/qe_bundle/bin" "$GITHUB_WORKSPACE/qe_bundle/meta"
+          curl -L --retry 5 --retry-delay 5 \
+            https://gitlab.com/QEF/q-e/-/archive/qe-7.6/q-e-qe-7.6.tar.gz \
+            -o "$RUNNER_TEMP/qe-7.6.tar.gz"
+          sha256sum "$RUNNER_TEMP/qe-7.6.tar.gz" | tee "$GITHUB_WORKSPACE/qe_bundle/meta/qe_source.sha256"
+          tar -xzf "$RUNNER_TEMP/qe-7.6.tar.gz" -C "$RUNNER_TEMP/qe-src" --strip-components=1
+          cd "$RUNNER_TEMP/qe-src"
+          ./configure MPIF90=mpif90 F90=gfortran CC=mpicc
+          make -j2 pw
+          cp bin/pw.x "$GITHUB_WORKSPACE/qe_bundle/bin/pw.x"
+          ./bin/pw.x -h > "$GITHUB_WORKSPACE/qe_bundle/meta/pw_help.txt" 2>&1 || true
+          grep -R "version_number = '7.6'" include/qe_version.h | tee "$GITHUB_WORKSPACE/qe_bundle/meta/qe_version_source.txt"
+          ldd bin/pw.x > "$GITHUB_WORKSPACE/qe_bundle/meta/pw_ldd.txt"
+          sha256sum bin/pw.x | tee "$GITHUB_WORKSPACE/qe_bundle/meta/pw_x.sha256"
+      - name: Download pinned SSSP v2 PBE-efficiency Cu pseudopotential
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p qe_bundle/pseudos qe_bundle/meta/sssp_archive
+          curl -L --retry 5 --retry-delay 5 \
+            https://raw.githubusercontent.com/unkcpz/sssp-verify-scripts/refs/heads/main/2-experiments/finalized_scripts/010-extract-eff-lib/SSSP-lib-pbe-eff-v2.tar.gz \
+            -o qe_bundle/meta/SSSP-lib-pbe-eff-v2.tar.gz
+          sha256sum qe_bundle/meta/SSSP-lib-pbe-eff-v2.tar.gz | tee qe_bundle/meta/sssp_archive.sha256
+          tar -xzf qe_bundle/meta/SSSP-lib-pbe-eff-v2.tar.gz -C qe_bundle/meta/sssp_archive
+          find qe_bundle/meta/sssp_archive -type f -name 'Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' -print -quit > qe_bundle/meta/cu_pseudo_path.txt
+          test -s qe_bundle/meta/cu_pseudo_path.txt
+          cp "$(cat qe_bundle/meta/cu_pseudo_path.txt)" qe_bundle/pseudos/
+          sha256sum qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf | tee qe_bundle/meta/cu_pseudo.sha256
+      - name: Upload pinned engine bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: qe-7.6-pw-sssp-cu
+          path: qe_bundle
+          retention-days: 30
+          if-no-files-found: error
+
+  bulk-matrix:
+    needs: build-qe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        ecut: [50, 55, 60, 65, 70]
+        kmesh: [8, 10, 12, 14]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas0 liblapack3 libfftw3-3 libopenmpi3 openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: qe-7.6-pw-sssp-cu
+          path: qe_bundle
+      - name: Verify engine and pseudopotential
+        shell: bash
+        run: |
+          set -euxo pipefail
+          chmod +x qe_bundle/bin/pw.x
+          sha256sum -c qe_bundle/meta/pw_x.sha256
+          sha256sum -c qe_bundle/meta/cu_pseudo.sha256
+          test -x qe_bundle/bin/pw.x
+          test -s qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf
+      - name: Run six-point Cu lattice scan
+        shell: bash
+        env:
+          OMP_NUM_THREADS: '1'
+        run: |
+          set -euxo pipefail
+          python3 na_cu001_ci/bulk_runner.py run \
+            --ecut ${{ matrix.ecut }} \
+            --kmesh ${{ matrix.kmesh }} \
+            --pw "$GITHUB_WORKSPACE/qe_bundle/bin/pw.x" \
+            --pseudo-dir "$GITHUB_WORKSPACE/qe_bundle/pseudos" \
+            --out "$GITHUB_WORKSPACE/bulk_outputs/e${{ matrix.ecut }}_k${{ matrix.kmesh }}" \
+            --np 2
+      - name: Hash matrix outputs
+        shell: bash
+        run: |
+          cd bulk_outputs
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > MANIFEST_e${{ matrix.ecut }}_k${{ matrix.kmesh }}.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bulk-e${{ matrix.ecut }}-k${{ matrix.kmesh }}
+          path: bulk_outputs
+          retention-days: 30
+          if-no-files-found: error
+
+  analyze-bulk:
+    needs: bulk-matrix
+    if: ${{ always() && needs.bulk-matrix.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bulk-*
+          path: collected
+          merge-multiple: true
+      - name: Apply preregistered convergence rule
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p final_results
+          python3 na_cu001_ci/bulk_runner.py analyze \
+            --summaries collected \
+            --out final_results/BULK_CONVERGENCE_RESULT.json | tee final_results/BULK_CONVERGENCE_STDOUT.txt
+          cp -r collected final_results/raw_matrix_outputs
+          find final_results -type f -print0 | sort -z | xargs -0 sha256sum > final_results/MANIFEST.sha256
+          python3 - <<'PY'
+          import json
+          p='final_results/BULK_CONVERGENCE_RESULT.json'
+          d=json.load(open(p))
+          print('GATE:',d['gate'])
+          print('SELECTED:',json.dumps(d['recommended_smallest'],indent=2))
+          if d['gate'] != 'PASS':
+              raise SystemExit(2)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-bulk-convergence-final
+          path: final_results
+          retention-days: 90
+          if-no-files-found: error
