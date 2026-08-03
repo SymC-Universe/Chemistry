@@ -7,12 +7,18 @@ EOS_PAIRS = [(e,k) for e in (80,90,100,110,120,130) for k in (14,16,18,20)] + [(
 DECISION = 'na-cu001-bulk-extension-decision-v0.4'
 SUMMARIES = 'na-cu001-bulk-extension-all-summaries-v0.4'
 RAW_COMPLETE = 'na-cu001-bulk-extension-raw-complete-v0.4'
+REQUIRED_GATE_STEPS = {
+    3: 'Initialize fail-closed decision evidence',
+    4: 'Run actions/download-artifact@v4',
+    5: 'Run actions/download-artifact@v4',
+    6: 'Audit reference and select only a joint-pass candidate',
+    8: 'Run actions/upload-artifact@v4',
+    9: 'Run actions/upload-artifact@v4',
+}
+AGGREGATE_UPLOAD_STEP = 10
 
 def fail(msg: str) -> None:
     raise SystemExit(f'HOLD: {msg}')
-
-def step_map(job: dict) -> dict[str, str | None]:
-    return {str(s.get('name')): s.get('conclusion') for s in (job.get('steps') or [])}
 
 def audit(jobs_payload: dict, artifacts_payload: dict, run_id: int) -> dict:
     jobs = jobs_payload.get('jobs', [])
@@ -29,16 +35,14 @@ def audit(jobs_payload: dict, artifacts_payload: dict, run_id: int) -> dict:
     gate = by_name.get('extension-gate')
     if not gate or gate.get('status') != 'completed' or gate.get('conclusion') not in {'success','cancelled','failure'}:
         fail('extension-gate has no admissible terminal record')
-    steps = step_map(gate)
-    required_success = [
-        'Audit matrix completeness, reference validity, and source hashes',
-        'Audit reference, select candidate, and build compact decision',
-        'Upload compact decision and PASS-only handoff',
-        'Upload all EOS summaries used by the decision',
-    ]
-    missing_success = [name for name in required_success if steps.get(name) != 'success']
-    if missing_success:
-        fail(f'gate scientific/evidence steps not successful: {missing_success}')
+    by_number = {int(s.get('number')): s for s in (gate.get('steps') or []) if s.get('number') is not None}
+    bad_required = []
+    for number, expected_name in REQUIRED_GATE_STEPS.items():
+        step = by_number.get(number)
+        if not step or step.get('name') != expected_name or step.get('conclusion') != 'success':
+            bad_required.append({'number':number,'expected_name':expected_name,'actual':step})
+    if bad_required:
+        fail(f'gate scientific/evidence step sequence failed: {bad_required}')
     artifacts = artifacts_payload.get('artifacts', [])
     by_art = {a.get('name'): a for a in artifacts}
     required = {DECISION, SUMMARIES}
@@ -54,12 +58,13 @@ def audit(jobs_payload: dict, artifacts_payload: dict, run_id: int) -> dict:
     if invalid:
         fail(f'invalid or unhashed artifacts: {invalid}')
     aggregate_present = RAW_COMPLETE in by_art
-    aggregate_step = steps.get('Upload complete retained raw extension evidence')
+    aggregate_step = by_number.get(AGGREGATE_UPLOAD_STEP)
+    aggregate_conclusion = aggregate_step.get('conclusion') if aggregate_step else None
     if not aggregate_present:
         if gate.get('conclusion') == 'success':
             fail('gate says success but redundant aggregate raw artifact is absent')
-        if aggregate_step not in {'failure','cancelled'}:
-            fail(f'aggregate raw artifact absent without isolated upload failure, step={aggregate_step!r}')
+        if not aggregate_step or aggregate_step.get('name') != 'Run actions/upload-artifact@v4' or aggregate_conclusion not in {'failure','cancelled'}:
+            fail(f'aggregate raw artifact absent without isolated step-10 upload failure: {aggregate_step!r}')
     other_bad = []
     for j in jobs:
         name = str(j.get('name',''))
@@ -78,11 +83,15 @@ def audit(jobs_payload: dict, artifacts_payload: dict, run_id: int) -> dict:
         'eos_jobs_verified': 26,
         'scf_records_expected': 276,
         'gate_conclusion': gate.get('conclusion'),
-        'gate_required_steps': {k: steps.get(k) for k in required_success},
+        'gate_required_steps': [
+            {'number':n,'name':by_number[n].get('name'),'conclusion':by_number[n].get('conclusion')}
+            for n in sorted(REQUIRED_GATE_STEPS)
+        ],
         'aggregate_raw_artifact': {
             'required_for_scientific_closure': False,
             'present': aggregate_present,
-            'upload_step_conclusion': aggregate_step,
+            'upload_step_number': AGGREGATE_UPLOAD_STEP,
+            'upload_step_conclusion': aggregate_conclusion,
             'classification': 'REDUNDANT_AGGREGATE_PACKAGING_FAILURE' if not aggregate_present else 'PRESENT',
         },
         'canonical_artifacts': [
