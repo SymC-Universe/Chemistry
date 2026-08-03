@@ -50,7 +50,7 @@ jobs:
           ./bin/pw.x -h > "$GITHUB_WORKSPACE/qe_bundle/meta/pw_help.txt" 2>&1 || true
           grep -R "version_number = '7.6'" include/qe_version.h | tee "$GITHUB_WORKSPACE/qe_bundle/meta/qe_version_source.txt"
           ldd bin/pw.x > "$GITHUB_WORKSPACE/qe_bundle/meta/pw_ldd.txt"
-          sha256sum bin/pw.x | tee "$GITHUB_WORKSPACE/qe_bundle/meta/pw_x.sha256"
+          (cd "$GITHUB_WORKSPACE/qe_bundle" && sha256sum bin/pw.x > meta/pw_x.sha256)
       - name: Download pinned SSSP v2 PBE-efficiency Cu pseudopotential
         shell: bash
         run: |
@@ -64,7 +64,7 @@ jobs:
           find qe_bundle/meta/sssp_archive -type f -name 'Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' -print -quit > qe_bundle/meta/cu_pseudo_path.txt
           test -s qe_bundle/meta/cu_pseudo_path.txt
           cp "$(cat qe_bundle/meta/cu_pseudo_path.txt)" qe_bundle/pseudos/
-          sha256sum qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf | tee qe_bundle/meta/cu_pseudo.sha256
+          (cd qe_bundle && sha256sum pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf > meta/cu_pseudo.sha256)
       - name: Verify engine and pseudopotential
         shell: bash
         run: |
