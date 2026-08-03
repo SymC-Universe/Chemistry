@@ -1,0 +1,147 @@
+name: Na Cu001 C7 definitive slab audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/slab_runner_v4.py'
+      - 'na_cu001_ci/test_slab_runner_v4.py'
+      - '.github/workflows/na-cu001-c7-definitive-audit.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c7-definitive-audit
+  cancel-in-progress: false
+
+env:
+  SOURCE_C7_RUN_ID: '30863061143'
+
+jobs:
+  wait-and-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify floor-enforcement implementation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            na_cu001_ci/slab_runner_v2.py \
+            na_cu001_ci/slab_runner_v4.py \
+            na_cu001_ci/test_slab_runner_v4.py
+          cd na_cu001_ci
+          python3 test_slab_runner_v4.py
+
+      - name: Wait for the registered raw slab matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p definitive_audit
+          for attempt in $(seq 1 330); do
+            gh api --paginate \
+              "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_C7_RUN_ID}/jobs?filter=latest&per_page=100" \
+              > definitive_audit/source_jobs.json
+            python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          data=json.loads(Path('definitive_audit/source_jobs.json').read_text())
+          jobs=data.get('jobs',[])
+          prep=[j for j in jobs if j.get('name')=='prepare']
+          slabs=[j for j in jobs if str(j.get('name','')).startswith('slab-cases')]
+          if prep and prep[0].get('status')=='completed' and prep[0].get('conclusion')!='success':
+              print('PREPARE_FAILED')
+              sys.exit(20)
+          failed=[j.get('name') for j in slabs if j.get('status')=='completed' and j.get('conclusion')!='success']
+          if failed:
+              print('SLAB_CASE_FAILED', failed)
+              sys.exit(21)
+          if len(slabs)==16 and all(j.get('status')=='completed' and j.get('conclusion')=='success' for j in slabs):
+              print('RAW_MATRIX_READY')
+              sys.exit(0)
+          print(f'WAIT prepare={prep[0].get("status") if prep else "missing"} slab_jobs={len(slabs)} completed={sum(j.get("status")=="completed" for j in slabs)}')
+          sys.exit(10)
+          PY
+            code=$?
+            if [[ $code -eq 0 ]]; then break; fi
+            if [[ $code -eq 20 || $code -eq 21 ]]; then exit "$code"; fi
+            sleep 60
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          jobs=json.loads(Path('definitive_audit/source_jobs.json').read_text()).get('jobs',[])
+          slabs=[j for j in jobs if str(j.get('name','')).startswith('slab-cases')]
+          if len(slabs)!=16 or not all(j.get('status')=='completed' and j.get('conclusion')=='success' for j in slabs):
+              raise SystemExit('HOLD: registered 16-job/64-SCF slab matrix did not complete within the audit window')
+          PY
+
+      - name: Download immutable raw slab records and audited bulk base
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download "$SOURCE_C7_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'na-cu001-c7-raw-slab-*' --dir slab_raw
+          gh run download "$SOURCE_C7_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name na-cu001-c7-base --dir base
+          test "$(find slab_raw -type f -name run_record.json | wc -l)" -eq 64
+
+      - name: Recompute definitive clean-slab decision with frozen layer floor
+        run: |
+          set -euo pipefail
+          mkdir -p definitive_stage2
+          python3 na_cu001_ci/slab_runner_v4.py \
+            --records slab_raw \
+            --out definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json
+          python3 na_cu001_ci/closure_engine_v3.py slab-handoff \
+            --slab-result definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json \
+            --bulk-handoff base/BULK_HANDOFF.json \
+            --out definitive_stage2/SLAB_HANDOFF.json
+          find slab_raw -type f -name run_record.json -print0 \
+            | sort -z | xargs -0 sha256sum \
+            > definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          result=json.loads(Path('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json').read_text())
+          if result.get('gate')!='PASS': raise SystemExit('HOLD: definitive slab gate is not PASS')
+          audit=result.get('layer_floor_audit') or {}
+          if audit.get('status')!='PASS' or int(result['recommended_smallest']['layers'])<7:
+              raise SystemExit('HOLD: frozen downstream layer floor not satisfied')
+          record={
+            'schema':'na-cu001-c7-definitive-audit-v0.1',
+            'status':'PASS',
+            'source_c7_run_id':int(os.environ['SOURCE_C7_RUN_ID']),
+            'raw_slab_record_count':64,
+            'clean_slab_result_sha256':sha('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json'),
+            'slab_handoff_sha256':sha('definitive_stage2/SLAB_HANDOFF.json'),
+            'raw_manifest_sha256':sha('definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256'),
+            'selected_slab':result['recommended_smallest'],
+            'layer_floor_audit':audit,
+            'energy_tolerance_mev_per_surface_atom':result['energy_tolerance_mev_per_surface_atom'],
+          }
+          Path('definitive_stage2/C7_DEFINITIVE_AUDIT.json').write_text(json.dumps(record,indent=2)+'\n')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-definitive-stage2
+          path: definitive_stage2
+          retention-days: 90
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-c7-definitive-audit-log
+          path: definitive_audit
+          retention-days: 30
+          if-no-files-found: warn
