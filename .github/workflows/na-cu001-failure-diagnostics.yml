@@ -1,0 +1,38 @@
+name: Na Cu001 prepare failure diagnostics
+
+on:
+  pull_request:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-failure-diagnostics.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  diagnose-prepare-failure:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Extract failed prepare log
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILED_RUN_ID: '30840469734'
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run view "$FAILED_RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed > failed.log
+          {
+            echo '=== HIGH-SIGNAL FAILURE LINES ==='
+            grep -Ein -C 4 'error|failed|failure|fatal|traceback|exception|sha256|checksum|no such file|not found|process completed|holdout|pseudo|metadata|quantum espresso|qe-' failed.log || true
+            echo
+            echo '=== FINAL 350 LOG LINES ==='
+            tail -n 350 failed.log
+          } | tee diagnostics.txt
+          test -s diagnostics.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-v2-prepare-failure-diagnostics
+          path: diagnostics.txt
+          retention-days: 7
+          if-no-files-found: error
