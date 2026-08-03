@@ -89,39 +89,18 @@ jobs:
             na_cu001_ci/downstream_protocol_v0.2.json \
             na_cu001_ci/validation_selection_protocol_v0.1.json
 
-      - name: Commit corrected source atomically and remove bootstrap
+      - name: Commit verified non-workflow source atomically
         shell: bash
         run: |
           set -euo pipefail
-          rm .github/workflows/na-cu001-v2-bootstrap.yml
+          rm -f .github/workflows/na-cu001-computational-route-v2.yml
+          rm -f .github/workflows/na-cu001-na-pseudo-probe-v2.yml
+          find na_cu001_ci -type d -name __pycache__ -prune -exec rm -rf {} +
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add na_cu001_ci
           git diff --cached --stat
-          git commit -m 'feat(na-cu001): install corrected fail-closed v2 route'
+          git commit -m 'feat(na-cu001): install verified fail-closed v2 source'
           new_sha=$(git rev-parse HEAD)
-          echo "NEW_ROUTE_SHA=${new_sha}" >> "$GITHUB_ENV"
           git push origin HEAD:agent/na-cu001-integration
-
-      - name: Confirm corrected computation launched from final commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          run_id=''
-          for attempt in {1..24}; do
-            run_id=$(gh run list \
-              --repo "$GITHUB_REPOSITORY" \
-              --workflow 'Na Cu001 corrected computational closure route' \
-              --branch agent/na-cu001-integration \
-              --event push \
-              --limit 20 \
-              --json databaseId,headSha,status \
-              --jq ".[] | select(.headSha == \"${NEW_ROUTE_SHA}\") | .databaseId" \
-              | head -n 1)
-            [[ -n "$run_id" ]] && break
-            sleep 10
-          done
-          [[ -n "$run_id" ]]
-          echo "Corrected V2 computation run ID: ${run_id}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Verified V2 source commit: ${new_sha}" | tee -a "$GITHUB_STEP_SUMMARY"
