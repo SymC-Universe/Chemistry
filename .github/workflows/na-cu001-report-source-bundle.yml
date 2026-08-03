@@ -1,0 +1,56 @@
+name: Na Cu001 report source bundle
+
+on:
+  pull_request:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/na-cu001-report-source-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Package exact computational source snapshot
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p report_source/.github/workflows report_source/na_cu001_ci report_source/meta
+          cp .github/workflows/na-cu001-bulk.yml report_source/.github/workflows/
+          cp .github/workflows/na-cu001-slab.yml report_source/.github/workflows/
+          cp .github/workflows/na-cu001-na-pseudo-probe.yml report_source/.github/workflows/
+          cp .github/workflows/na-cu001-computational-route.yml report_source/.github/workflows/
+          cp na_cu001_ci/bulk_runner.py report_source/na_cu001_ci/
+          cp na_cu001_ci/slab_runner.py report_source/na_cu001_ci/
+          cp na_cu001_ci/closure_engine.py report_source/na_cu001_ci/
+          cp na_cu001_ci/run_computational_stage.sh report_source/na_cu001_ci/
+          cp na_cu001_ci/test_closure_engine.py report_source/na_cu001_ci/
+          cp na_cu001_ci/validate_integration_chain.py report_source/na_cu001_ci/
+          cp na_cu001_ci/na_pseudo_probe.py report_source/na_cu001_ci/
+          cp na_cu001_ci/downstream_protocol.json report_source/na_cu001_ci/
+          cp na_cu001_ci/integration_closure_plan.json report_source/na_cu001_ci/
+          cp na_cu001_ci/public_evidence_candidates.json report_source/na_cu001_ci/
+          cp na_cu001_ci/slab_protocol.json report_source/na_cu001_ci/
+          cp na_cu001_ci/SLAB_GATE.md report_source/na_cu001_ci/
+          git rev-parse HEAD > report_source/meta/REPORT_SOURCE_COMMIT.txt
+          git log --reverse --format='%H%x09%aI%x09%s' -- .github/workflows/na-cu001-bulk.yml na_cu001_ci .github/workflows/na-cu001-slab.yml .github/workflows/na-cu001-computational-route.yml > report_source/meta/COMMIT_TIMELINE.tsv
+          find report_source -type f -print0 | sort -z | xargs -0 sha256sum > report_source/meta/SOURCE_MANIFEST.sha256
+          cp report_source/meta/SOURCE_MANIFEST.sha256 SOURCE_MANIFEST.sha256
+          zip -r na-cu001-exact-source-snapshot.zip report_source
+          sha256sum na-cu001-exact-source-snapshot.zip > na-cu001-exact-source-snapshot.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-exact-source-snapshot
+          path: |
+            na-cu001-exact-source-snapshot.zip
+            na-cu001-exact-source-snapshot.zip.sha256
+            SOURCE_MANIFEST.sha256
+          retention-days: 90
+          if-no-files-found: error
