@@ -112,6 +112,105 @@ jobs:
           if d['gate'] != 'PASS':
               raise SystemExit(2)
           PY
+      - name: Build compact bulk-to-slab handoff
+        if: always()
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path('final_results/BULK_CONVERGENCE_RESULT.json')
+          if not result_path.is_file():
+              print('Bulk convergence result is absent; no handoff can be built.')
+              raise SystemExit(0)
+
+          result_bytes = result_path.read_bytes()
+          result = json.loads(result_bytes)
+          selected = result.get('recommended_smallest')
+          if result.get('gate') != 'PASS' or not selected:
+              raise SystemExit('Refusing to publish a slab handoff from a non-PASS bulk result')
+
+          fit = selected['fit']
+          handoff = {
+              'schema': 'na-cu001-bulk-to-slab-handoff-v0.1',
+              'scientific_status': 'bulk_convergence_passed_slab_not_yet_run',
+              'source_result': {
+                  'path': str(result_path),
+                  'sha256': hashlib.sha256(result_bytes).hexdigest(),
+                  'selection_rule': result['selection_rule'],
+              },
+              'selected_bulk_settings': {
+                  'ecutwfc_ry': selected['ecutwfc_ry'],
+                  'ecutrho_ry': selected['ecutrho_ry'],
+                  'kmesh_cubic': [selected['kmesh']] * 3,
+                  'equilibrium_lattice_constant_angstrom': fit['a0_angstrom'],
+                  'equilibrium_energy_ev_per_atom': fit['e0_ev_per_atom'],
+                  'quadratic_fit_rms_residual_mev_per_atom': fit['rms_residual_mev_per_atom'],
+              },
+              'frozen_method': {
+                  'code': 'Quantum ESPRESSO PWscf',
+                  'code_version': '7.6',
+                  'exchange_correlation': 'PBE',
+                  'pseudopotential': 'Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf',
+                  'ecutrho_multiplier': 3,
+                  'occupations': 'smearing',
+                  'smearing': 'mv',
+                  'degauss_ry': 0.02,
+                  'bulk_lattice_grid_angstrom': [3.55, 3.58, 3.61, 3.64, 3.67, 3.70],
+                  'bulk_cutoff_grid_ry': [50, 55, 60, 65, 70],
+                  'bulk_kmesh_grid': [8, 10, 12, 14],
+              },
+              'run_provenance': {
+                  'repository': os.environ.get('GITHUB_REPOSITORY'),
+                  'workflow': os.environ.get('GITHUB_WORKFLOW'),
+                  'run_id': os.environ.get('GITHUB_RUN_ID'),
+                  'run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT'),
+                  'commit_sha': os.environ.get('GITHUB_SHA'),
+                  'ref': os.environ.get('GITHUB_REF'),
+              },
+              'next_gate': 'explicit_preregistered_cu001_slab_convergence',
+          }
+          out = Path('final_results/BULK_HANDOFF.json')
+          out.write_text(json.dumps(handoff, indent=2) + '\n')
+          Path('final_results/BULK_HANDOFF.sha256').write_text(
+              hashlib.sha256(out.read_bytes()).hexdigest() + '  BULK_HANDOFF.json\n'
+          )
+          print(json.dumps(handoff, indent=2))
+          PY
+      - name: Publish bulk decision to job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## NA-CU001 bulk convergence decision'
+            echo
+            if [[ -f final_results/BULK_HANDOFF.json ]]; then
+              echo '```json'
+              cat final_results/BULK_HANDOFF.json
+              echo '```'
+            else
+              echo '_No PASS-qualified bulk handoff was generated._'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload compact bulk decision handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-bulk-decision-handoff
+          path: |
+            final_results/BULK_CONVERGENCE_RESULT.json
+            final_results/BULK_CONVERGENCE_STDOUT.txt
+            final_results/BULK_HANDOFF.json
+            final_results/BULK_HANDOFF.sha256
+            final_results/MANIFEST.sha256
+            final_results/qe_and_pseudo_identity
+            bulk_outputs/**/summary_e*_k*.json
+          retention-days: 90
+          if-no-files-found: warn
       - name: Upload complete raw and analyzed result
         uses: actions/upload-artifact@v4
         with:
