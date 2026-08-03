@@ -36,3 +36,5 @@ jobs:
           path: diagnostics.txt
           retention-days: 7
           if-no-files-found: error
+
+# Trusted same-repository diagnostics trigger only.
