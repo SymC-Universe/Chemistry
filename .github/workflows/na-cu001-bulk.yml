@@ -20,15 +20,15 @@ permissions:
 
 concurrency:
   group: na-cu001-bulk-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  build-qe:
+  bulk-convergence:
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-      - name: Install build dependencies
+      - name: Install build and runtime dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gfortran make m4 perl wget curl ca-certificates \
@@ -65,89 +65,43 @@ jobs:
           test -s qe_bundle/meta/cu_pseudo_path.txt
           cp "$(cat qe_bundle/meta/cu_pseudo_path.txt)" qe_bundle/pseudos/
           sha256sum qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf | tee qe_bundle/meta/cu_pseudo.sha256
-      - name: Upload pinned engine bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: qe-7.6-pw-sssp-cu
-          path: qe_bundle
-          retention-days: 30
-          if-no-files-found: error
-
-  bulk-matrix:
-    needs: build-qe
-    runs-on: ubuntu-24.04
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      max-parallel: 8
-      matrix:
-        ecut: [50, 55, 60, 65, 70]
-        kmesh: [8, 10, 12, 14]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install runtime dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
-      - uses: actions/download-artifact@v4
-        with:
-          name: qe-7.6-pw-sssp-cu
-          path: qe_bundle
       - name: Verify engine and pseudopotential
         shell: bash
         run: |
           set -euxo pipefail
           chmod +x qe_bundle/bin/pw.x
-          sha256sum -c qe_bundle/meta/pw_x.sha256
-          sha256sum -c qe_bundle/meta/cu_pseudo.sha256
+          (cd qe_bundle && sha256sum -c meta/pw_x.sha256)
+          (cd qe_bundle && sha256sum -c meta/cu_pseudo.sha256)
           test -x qe_bundle/bin/pw.x
           test -s qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf
-      - name: Run six-point Cu lattice scan
+      - name: Run complete preregistered 120-SCF matrix
         shell: bash
         env:
           OMP_NUM_THREADS: '1'
         run: |
           set -euxo pipefail
-          python3 na_cu001_ci/bulk_runner.py run \
-            --ecut ${{ matrix.ecut }} \
-            --kmesh ${{ matrix.kmesh }} \
-            --pw "$GITHUB_WORKSPACE/qe_bundle/bin/pw.x" \
-            --pseudo-dir "$GITHUB_WORKSPACE/qe_bundle/pseudos" \
-            --out "$GITHUB_WORKSPACE/bulk_outputs/e${{ matrix.ecut }}_k${{ matrix.kmesh }}" \
-            --np 2
-      - name: Hash matrix outputs
-        shell: bash
-        run: |
-          cd bulk_outputs
-          find . -type f -print0 | sort -z | xargs -0 sha256sum > MANIFEST_e${{ matrix.ecut }}_k${{ matrix.kmesh }}.sha256
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bulk-e${{ matrix.ecut }}-k${{ matrix.kmesh }}
-          path: bulk_outputs
-          retention-days: 30
-          if-no-files-found: error
-
-  analyze-bulk:
-    needs: bulk-matrix
-    if: ${{ always() && needs.bulk-matrix.result == 'success' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: bulk-*
-          path: collected
-          merge-multiple: true
+          mkdir -p bulk_outputs
+          for ecut in 50 55 60 65 70; do
+            for kmesh in 8 10 12 14; do
+              python3 na_cu001_ci/bulk_runner.py run \
+                --ecut "$ecut" \
+                --kmesh "$kmesh" \
+                --pw "$GITHUB_WORKSPACE/qe_bundle/bin/pw.x" \
+                --pseudo-dir "$GITHUB_WORKSPACE/qe_bundle/pseudos" \
+                --out "$GITHUB_WORKSPACE/bulk_outputs/e${ecut}_k${kmesh}" \
+                --np 2
+            done
+          done
       - name: Apply preregistered convergence rule
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p final_results
           python3 na_cu001_ci/bulk_runner.py analyze \
-            --summaries collected \
+            --summaries bulk_outputs \
             --out final_results/BULK_CONVERGENCE_RESULT.json | tee final_results/BULK_CONVERGENCE_STDOUT.txt
-          cp -r collected final_results/raw_matrix_outputs
+          cp -r bulk_outputs final_results/raw_matrix_outputs
+          cp -r qe_bundle/meta final_results/qe_and_pseudo_identity
           find final_results -type f -print0 | sort -z | xargs -0 sha256sum > final_results/MANIFEST.sha256
           python3 - <<'PY'
           import json
@@ -158,7 +112,8 @@ jobs:
           if d['gate'] != 'PASS':
               raise SystemExit(2)
           PY
-      - uses: actions/upload-artifact@v4
+      - name: Upload complete raw and analyzed result
+        uses: actions/upload-artifact@v4
         with:
           name: na-cu001-bulk-convergence-final
           path: final_results
