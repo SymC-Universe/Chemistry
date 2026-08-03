@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+cleanup_restart_scratch() {
+  find . -type d -name tmp -prune -exec rm -rf {} + 2>/dev/null || true
+}
+trap cleanup_restart_scratch EXIT
+
 runtime() {
   sudo apt-get update
   sudo apt-get install -y openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
@@ -42,8 +47,12 @@ case "${1:?stage required}" in
     python3 -m py_compile na_cu001_ci/closure_engine.py na_cu001_ci/slab_runner.py na_cu001_ci/na_pseudo_probe.py na_cu001_ci/validate_integration_chain.py
     python3 na_cu001_ci/test_closure_engine.py
     ;;
-  slab)
-    runtime; chmod +x qe_bundle/bin/pw.x; mkdir -p slab_outputs stage2
+  slab-case)
+    runtime; chmod +x qe_bundle/bin/pw.x
+    layers="$2"; vacuum="$3"; tag="$4"
+    case "$layers" in 5|7|9|11) ;; *) echo "unregistered layer count" >&2; exit 2;; esac
+    case "$vacuum" in 12|16|20|24) ;; *) echo "unregistered vacuum" >&2; exit 2;; esac
+    mkdir -p "slab_outputs/$tag"
     meshes=$(python3 - <<'PY'
 import sys
 from pathlib import Path
@@ -53,9 +62,12 @@ b=load_bulk(Path('base/BULK_HANDOFF.json'),Path('base/BULK_CONVERGENCE_RESULT.js
 print(' '.join(map(str,registered_kmeshes(b['bulk_kmesh']))))
 PY
 )
-    for l in 5 7 9 11; do for v in 12 16 20 24; do for k in $meshes; do
-      python3 na_cu001_ci/slab_runner.py run --layers "$l" --vacuum "$v" --kmesh "$k" --handoff base/BULK_HANDOFF.json --bulk-result base/BULK_CONVERGENCE_RESULT.json --pw qe_bundle/bin/pw.x --pseudo-dir qe_bundle/pseudos --out slab_outputs --np 2
-    done; done; done
+    for kmesh in $meshes; do
+      python3 na_cu001_ci/slab_runner.py run --layers "$layers" --vacuum "$vacuum" --kmesh "$kmesh" --handoff base/BULK_HANDOFF.json --bulk-result base/BULK_CONVERGENCE_RESULT.json --pw qe_bundle/bin/pw.x --pseudo-dir qe_bundle/pseudos --out "slab_outputs/$tag" --np 2
+    done
+    ;;
+  slab-analyze)
+    mkdir -p stage2
     python3 na_cu001_ci/slab_runner.py analyze --records slab_outputs --out stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json
     python3 na_cu001_ci/closure_engine.py slab-handoff --slab-result stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json --bulk-handoff base/BULK_HANDOFF.json --out stage2/SLAB_HANDOFF.json
     ;;
@@ -98,8 +110,9 @@ PY
     cp na_cu001_ci/public_evidence_candidates.json closure/
     python3 na_cu001_ci/closure_engine.py barrier --path-handoff closure/PATH_CONVERGENCE_HANDOFF.json --ci-handoff closure/CI_NEB_HANDOFF.json --saddle-handoff closure/SADDLE_HANDOFF.json --out closure/BARRIER_COORDINATE.json
     python3 na_cu001_ci/closure_engine.py atlas --barrier-coordinate closure/BARRIER_COORDINATE.json --public-evidence closure/public_evidence_candidates.json --out closure/ATLAS_ADMISSION_RECORD.json
-    python3 na_cu001_ci/validate_integration_chain.py --plan na_cu001_ci/integration_closure_plan.json --artifacts closure --out closure/INTEGRATION_READINESS.json
-    python3 na_cu001_ci/validate_integration_chain.py --plan na_cu001_ci/integration_closure_plan.json --artifacts closure --out closure/INTEGRATION_READINESS.json
+    test -d raw
+    python3 na_cu001_ci/closure_engine.py manifest --root raw --out closure/RAW_ARTIFACT_INDEX.json
+    python3 na_cu001_ci/validate_integration_chain.py --plan na_cu001_ci/integration_closure_plan.json --artifacts closure --raw-root raw --out closure/INTEGRATION_READINESS.json
     python3 na_cu001_ci/closure_engine.py manifest --root closure --out closure/COMPUTATIONAL_MANIFEST.json
     ;;
   *) echo "unknown stage: $1" >&2; exit 64;;
