@@ -1,0 +1,113 @@
+name: Na Cu001 install corrected V2 route
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-v2-bootstrap.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: na-cu001-v2-bootstrap-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  STAGING_REF: agent/na-cu001-v2-staging
+  EXPECTED_ARCHIVE_SHA256: 1ef8d2df573aa1470fc2d508dd0dfacf09952d1c08b44edaa674db051dfda4ba
+  BULK_RUN_ID: '30803996866'
+
+jobs:
+  install-verify-dispatch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify exact V2 source bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=/tmp/na-cu001-v2
+          mkdir -p "$work/chunks"
+          cat > "$work/chunks.sha256" <<'EOF'
+          acb18e6fb56cabdbc936446273ddd72f05bb80ce1647af45e708e16c60a7ea0f  part-00.b64
+          7098ad4e3b4113dbbf8942575f7c54dc3a288462c919aa4e6dd4bfac624a963e  part-01.b64
+          27d372520b2c14fa2a114dca9e2ef327bdf56e4d828540f990e999eec91013c2  part-02.b64
+          d400b4cd44bb81be77443780c8b7c1403227531f5d8f1d921f25462dddf59584  part-03.b64
+          1eaab87bbc61d152d7aa3874ac9c1a98f52f75f14b87837d89d771fec4dc5d71  part-04.b64
+          dbcf73ae50d148a088ffcbee5337722611653a4ad6edb6fdfca597c47194810d  part-05.b64
+          1ae507d0deefe2ea4551bbdbe9b086d6771a7bb7e1b2da4b5ce8e9c8e3e83ec2  part-06.b64
+          8722e267642e35719d05cf8a32954f3d4750ebe3e6b722ae95d665debc2e58c5  part-07.b64
+          221e1e5aa539ed523cdd1d21df2ce2956e2208b679c6a3a4da172d7f00c0d222  part-08.b64
+          EOF
+          for n in {0..8}; do
+            printf -v tag '%02d' "$n"
+            remote="na_cu001_v2_transport/part-${tag}.b64"
+            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/${remote}" \
+              -f ref="$STAGING_REF" --jq .content \
+              | tr -d '\n' | base64 -d > "$work/chunks/part-${tag}.b64"
+          done
+          (cd "$work/chunks" && sha256sum -c "$work/chunks.sha256")
+          cat "$work"/chunks/part-*.b64 | tr -d '\n' | base64 -d > "$work/route.tar.xz"
+          echo "${EXPECTED_ARCHIVE_SHA256}  $work/route.tar.xz" | sha256sum -c -
+          tar -tJf "$work/route.tar.xz"
+          tar -xJf "$work/route.tar.xz" -C "$GITHUB_WORKSPACE"
+          chmod +x na_cu001_ci/run_computational_stage_v2.sh
+
+      - name: Run complete local and adversarial gate suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet numpy pyyaml
+          python3 -m py_compile na_cu001_ci/*_v2.py
+          bash -n na_cu001_ci/run_computational_stage_v2.sh
+          python3 na_cu001_ci/test_closure_engine.py
+          python3 na_cu001_ci/test_closure_engine_v2.py
+          python3 na_cu001_ci/test_negative_gates_v2.py
+          python3 na_cu001_ci/workflow_contract_linter_v2.py \
+            .github/workflows/na-cu001-computational-route-v2.yml
+          python3 na_cu001_ci/artifact_contract_linter_v2.py \
+            --plan na_cu001_ci/integration_closure_plan_v0.2.json \
+            --stage-script na_cu001_ci/run_computational_stage_v2.sh
+          python3 na_cu001_ci/tier_linter_v2.py \
+            na_cu001_ci/downstream_protocol_v0.2.json \
+            na_cu001_ci/validation_selection_protocol_v0.1.json
+
+      - name: Commit corrected source atomically and remove bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/na-cu001-v2-bootstrap.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --stat
+          git commit -m 'feat(na-cu001): install corrected fail-closed v2 route'
+          git push origin HEAD:agent/na-cu001-integration
+
+      - name: Explicitly dispatch corrected computation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="repos/${GITHUB_REPOSITORY}/actions/workflows/na-cu001-computational-route-v2.yml/dispatches"
+          dispatched=0
+          for attempt in {1..18}; do
+            if gh api --method POST "$endpoint" \
+              -f ref=agent/na-cu001-integration \
+              -f "inputs[bulk_run_id]=${BULK_RUN_ID}"; then
+              dispatched=1
+              break
+            fi
+            sleep 10
+          done
+          test "$dispatched" -eq 1
+          echo 'Corrected V2 computation explicitly dispatched.' >> "$GITHUB_STEP_SUMMARY"
