@@ -5,6 +5,10 @@ on:
     branches: [agent/na-cu001-integration]
     paths:
       - '.github/workflows/na-cu001-v2-bootstrap.yml'
+  pull_request:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-v2-bootstrap.yml'
 
 permissions:
   contents: write
