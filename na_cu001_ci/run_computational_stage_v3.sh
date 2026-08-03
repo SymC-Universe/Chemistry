@@ -122,9 +122,11 @@ PYART
     runtime; chmod +x qe_bundle/bin/pw.x
     layers="$2"; vacuum="$3"; tag="$4"; mkdir -p "slab_outputs/$tag"
     meshes=$(python3 - <<'PY'
+import sys
 from pathlib import Path
-from na_cu001_ci.slab_runner_v2 import registered_kmeshes
-from na_cu001_ci.slab_runner_v3 import load_bulk_v04
+sys.path.insert(0, 'na_cu001_ci')
+from slab_runner_v2 import registered_kmeshes
+from slab_runner_v3 import load_bulk_v04
 b=load_bulk_v04(Path('base/BULK_HANDOFF.json'),Path('base/BULK_CONVERGENCE_RESULT.json'))
 print(' '.join(map(str,registered_kmeshes(b['bulk_kmesh']))))
 PY
