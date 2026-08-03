@@ -1,0 +1,215 @@
+\section*{Corrected Na/Cu(001) Computational Route, Version 1.1}
+
+\noindent\textbf{Status.}
+This section supersedes the earlier Na/Cu(001) computational insert wherever
+there is a conflict.  It is frozen before corrected downstream surface results.
+The completed 120-SCF Cu bulk matrix is retained, but its original automatic
+handoff is invalid because the selector omitted the registered energy criterion.
+No adsorption, NEB, saddle, prefactor, or model-rate result is considered
+executed until its hashed PASS artifact exists.
+
+\subsection*{Distinct mathematical objects}
+
+The ARC efficiency maximum, a reaction-path saddle, and a kinetic turnover are
+not interchangeable.  The present route computes the electronic maximum along
+a converged minimum-energy path.  It does not reconstruct the ARC efficiency
+maximum.  A turnover analysis opens only if independently varied friction or
+damping and independent rate evidence become available.
+
+\subsection*{Authoritative files}
+
+\begin{verbatim}
+na_cu001_ci/method_protocol_v0.2.json
+na_cu001_ci/validation_selection_protocol_v0.1.json
+na_cu001_ci/bulk_runner_v2.py
+na_cu001_ci/slab_runner_v2.py
+na_cu001_ci/na_pseudo_probe_v2.py
+na_cu001_ci/closure_engine_v2.py
+na_cu001_ci/validate_integration_chain_v2.py
+na_cu001_ci/tier_linter_v2.py
+na_cu001_ci/workflow_contract_linter_v2.py
+na_cu001_ci/run_computational_stage_v2.sh
+.github/workflows/na-cu001-computational-route-v2.yml
+\end{verbatim}
+
+The workflow records the exact Git commit and a SHA-256 source manifest.  The
+manifest is verified before integration readiness is generated.
+
+\subsection*{Immutable inputs}
+
+The method protocol records expected SHA-256 values for Quantum ESPRESSO 7.6,
+the SSSP PBE Efficiency v2 archive, and the selected Cu and Na UPFs.  The Na
+probe must locate exactly one Na UPF and read the authoritative Na cutoff values
+from the registered \texttt{cutoffs.json} JSON pointer.  Frozen values are used
+as assertions.  They are not substituted for missing or contradictory metadata.
+
+\subsection*{Bulk holdout and joint gate}
+
+Reuse the retained 20 cutoff/mesh EOS summaries from the completed 120-SCF
+matrix.  Execute an additional six-point EOS at 80 Ry, 240 Ry charge-density
+cutoff, and a $16\times16\times16$ k mesh over the same lattice grid.  For every
+candidate compute
+\[
+ \Delta a_0=|a_{0,i}-a_{0,\mathrm{holdout}}|,
+ \qquad
+ \Delta E_0=|E_{0,i}-E_{0,\mathrm{holdout}}|.
+\]
+A candidate passes only if
+\[
+ \Delta a_0\leq0.005~\mathrm{\AA}
+ \quad\text{and}\quad
+ \Delta E_0\leq0.001~\mathrm{eV/atom}.
+\]
+Select the lexicographically smallest registered passing pair.  If none passes,
+stop.  The handoff must hash-link the full bulk result.
+
+\subsection*{Clean Cu(001) slab convergence}
+
+Use primitive surface vectors
+\[
+ \mathbf A_1=(a_0/2,a_0/2,0),\qquad
+ \mathbf A_2=(-a_0/2,a_0/2,0),
+\]
+with area $a_0^2/2$, one atom per layer, and alternating fcc stacking.  Run the
+registered $4\times4\times4=64$ layer--vacuum--k cases using
+\begin{verbatim}
+assume_isolated = 'esm'
+esm_bc = 'bc1'
+\end{verbatim}
+for every case.  Raw total energies of unequal atom counts are never compared.
+For each vacuum and k mesh fit
+\[
+ E_{\mathrm{slab}}(L)=\mu_{\mathrm{slab}}L+2\epsilon_{\mathrm{surface}}.
+\]
+Use the frozen 1 meV per surface atom domination gate.  Retain at least seven
+layers downstream even if five layers pass, so that the expanded one-sided
+mobility model preserves a fixed lower surface.
+
+\subsection*{Electrostatic consistency audit}
+
+At the downstream layer count, repeat the selected ESM slab, repeat it at the
+next larger vacuum, and run one periodic diagnostic at the selected vacuum.
+PASS requires the ESM next-vacuum difference to remain within 1 meV per surface
+atom.  The periodic-vs-ESM difference is reported but cannot select or retune
+the route because ESM bc1 is already the common slab and downstream convention.
+
+\subsection*{Clean relaxation and Na reference}
+
+Relax the symmetric clean slab under the registered clean-surface z-only masks.
+Freeze the final coordinates and run a separate SCF.  Require force convergence,
+mirror-pair agreement, SCF convergence, and energy reproduction within 0.001 eV.
+
+Resolve the Na UPF and its cutoffs from the pinned SSSP metadata.  Use the
+componentwise maximum of the corrected Cu and metadata-derived Na cutoffs.  Run
+a spin-polarized isolated Na reference in a 20 \AA\ cell.  Any archive, UPF,
+metadata, unit, or hash disagreement gives HOLD.
+
+\subsection*{Adsorption and substrate mobility}
+
+Use one Na in a $4\times4$ primitive surface cell, nominally 0.0625 ML.  Run
+hollow, bridge, and top starts at 2.0, 2.5, and 3.0 \AA\ under both models:
+
+\begin{description}
+\item[Primary:] top three Cu layers full $xyz$, one z-only buffer layer, all
+remaining Cu fixed, Na full $xyz$.
+\item[Expanded:] top four Cu layers full $xyz$, one z-only buffer layer, all
+remaining Cu fixed, Na full $xyz$.
+\end{description}
+
+If either model has a non-hollow global minimum, write
+\texttt{MECHANISM\_REVISION\_REQUIRED}, retain the landscape, and stop before
+constructing the registered endpoints.
+
+\subsection*{Endpoints and paths}
+
+For both mobility models, verify symmetry-related hollow endpoints by relaxation,
+independent SCFs, force convergence, energy agreement within 0.001 eV, site
+classification, and primitive translation geometry.
+
+Run ordinary NEB at 5, 7, and 9 images.  Select the smallest image count within
+0.005 eV of every larger registered count.  Initialize CI-NEB from the hashed
+selected ordinary path frames, not a fresh endpoint interpolation.  Require an
+internal maximum and maximum path error no larger than 0.03 eV/\AA.
+
+Compare the primary and expanded full-path CI barriers.  PASS requires a
+difference no larger than 0.005 eV.  Otherwise preregister a larger mobile region
+and do not admit a barrier.
+
+\subsection*{Mass-weighted active-region Hessians}
+
+At the selected endpoint and CI saddle, calculate central finite-difference
+Hessians at 0.02 and 0.04 \AA\ for Na only, Na plus four nearest top-layer Cu
+atoms, and Na plus those four atoms and four nearest second-layer Cu atoms.
+Mass-weight the dynamical matrix before diagonalization.  Require a minimum with
+no negative modes, a saddle with exactly one negative mode, finite-displacement
+prefactor convergence within 20 percent, Na+4Cu to Na+8Cu convergence within
+20 percent at both displacements, unstable-mode alignment, and maximum active
+saddle force no larger than 0.03 eV/\AA.
+
+Retain the Na-only and active-region prefactors and report their relative change.
+Do not assume cancellation of omitted substrate modes.
+
+\subsection*{Three-dimensional downhill connectivity}
+
+Displace the active region in both signs of the unstable mode and relax.  A basin
+match requires all of the following: periodic three-dimensional Na distance,
+adsorption-height agreement, active-region RMSD including Cu, endpoint energy
+agreement, site identity, and force convergence.  The two signs must reach
+distinct endpoint basins.  An atom with endpoint-like $x,y$ coordinates but a
+desorbed $z$ coordinate cannot pass.
+
+\subsection*{Barrier sensitivity and rate tiers}
+
+Do not sum image range, CI shift, and endpoint asymmetry into a statistical
+uncertainty.  Retain them as diagnostics.  Define the nonprobabilistic numerical
+sensitivity envelope as the maximum absolute change from the primary fixed-
+geometry barrier among higher cutoff, higher density cutoff, denser k mesh,
+larger vacuum, and the expanded full-path mobility result.  Set probability
+coverage to null.
+
+The final output must carry separate barrier, saddle, prefactor, rate, and
+experimental tiers.  The label \texttt{COMPUTATIONAL\_FULL} is forbidden.  Five
+temperature points form one nested rate curve with one independence unit; they
+are not five independent observations.
+
+\subsection*{Artifact validation and non-circular integration}
+
+Stages 1--18 must exist as schema-correct PASS artifacts.  Each stage must
+hash-link every direct dependency named in the artifact plan.  Every retained
+raw file must match the raw path, size, and SHA-256 manifest.  Frozen protocol
+files and the source manifest must be present.  Only after these checks pass is
+Stage 19, \texttt{INTEGRATION\_READINESS.json}, generated.  The generated file
+is not an input to its own validation.
+
+\subsection*{Pre-launch verification commands}
+
+\begin{verbatim}
+python3 -m py_compile na_cu001_ci/*.py
+bash -n na_cu001_ci/run_computational_stage_v2.sh
+python3 na_cu001_ci/workflow_contract_linter_v2.py \
+  .github/workflows/na-cu001-computational-route-v2.yml
+python3 na_cu001_ci/artifact_contract_linter_v2.py \
+  --plan na_cu001_ci/integration_closure_plan_v0.2.json \
+  --stage-script na_cu001_ci/run_computational_stage_v2.sh
+python3 na_cu001_ci/test_closure_engine.py
+python3 na_cu001_ci/test_closure_engine_v2.py
+python3 na_cu001_ci/test_negative_gates_v2.py
+\end{verbatim}
+
+The corrected local suite contains 23 tests, including synthetic full-chain PASS,
+raw and dependency corruption, missing frozen protocols, unlinked dependencies,
+desorption, unexpected minima, Cu mobility, mass weighting, tier rejection, and
+workflow artifact-path and DAG checks.
+
+\subsection*{Validation cohort and turnover boundary}
+
+Na/Cu(001) is a development pilot and is excluded from the independent
+validation cohort.  Before selecting System 2, freeze the eligible candidate
+universe, exclusions, candidate-list hash, random seed, and random or stratified
+sampling procedure.  Draw the system before inspecting whether its literature
+appears favorable.  Retain failures and contradictions.  Any engine change after
+sampling creates a new engine version and requires rerunning affected systems.
+
+No turnover claim is permitted without an independently varied friction or
+damping coordinate and independent rates.  Absence of such evidence is an
+acceptable terminal result.
