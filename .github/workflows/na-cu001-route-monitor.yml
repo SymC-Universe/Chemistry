@@ -44,3 +44,5 @@ jobs:
           path: launch-run.json
           retention-days: 7
           if-no-files-found: error
+
+# Trigger the trusted read-only monitor. No scientific files changed.
