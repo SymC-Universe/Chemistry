@@ -1,168 +1,167 @@
 {
   "schema": "na-cu001-integration-closure-v0.1",
-  "status": "preregistered_before_downstream_results",
-  "principle": "Each stage consumes a hashed PASS artifact from the preceding stage; no stage may infer missing scientific values or bypass a HOLD.",
+  "status": "executable_route_frozen_before_downstream_numerical_results",
+  "principle": "Each stage consumes hashed PASS artifacts; no stage may infer a missing value, bypass a HOLD, or substitute experimental evidence for a computational quantity.",
+  "execution": {
+    "workflow": ".github/workflows/na-cu001-computational-route.yml",
+    "engine": "na_cu001_ci/closure_engine.py",
+    "tests": "na_cu001_ci/test_closure_engine.py",
+    "bulk_source": "compact PASS artifact from the exact registered bulk workflow run",
+    "mode": "automatic sequential and matrix GitHub Actions route"
+  },
   "stages": [
     {
       "id": 1,
       "name": "bulk_convergence",
-      "input": "120-SCF preregistered Cu bulk matrix",
       "pass_artifact": "BULK_HANDOFF.json",
       "required_checks": [
+        "all 120 registered SCFs complete",
         "abs(delta_a0_angstrom) <= 0.005",
         "abs(delta_e0_ev_per_atom) <= 0.001",
-        "quadratic fit convex",
-        "all 120 SCFs complete"
+        "quadratic fit convex"
       ],
-      "state": "RUNNING"
+      "route_state": "EXTERNAL_ACTIVE_COMPUTATION"
     },
     {
       "id": 2,
       "name": "clean_slab_convergence",
-      "input": "hashed bulk handoff and full bulk result",
       "pass_artifact": "SLAB_HANDOFF.json",
       "required_checks": [
-        "primitive Cu(001) cell area a0^2/2",
-        "64 registered slab SCFs complete",
+        "all 64 registered clean-slab SCFs complete",
         "surface excess domination tolerance <= 1.0 meV per surface atom",
-        "fit residual and slab-slope diagnostics reported"
+        "selected layer, vacuum, and k-mesh dimensions recorded",
+        "bulk provenance revalidated"
       ],
-      "state": "BLOCKED_BY_STAGE_1"
+      "route_state": "IMPLEMENTED_WAITING_FOR_STAGE_1"
     },
     {
       "id": 3,
       "name": "clean_surface_relaxation",
-      "input": "PASS slab handoff",
       "pass_artifact": "RELAXED_CLEAN_SURFACE_HANDOFF.json",
       "required_checks": [
-        "symmetric relaxation",
-        "force threshold frozen before run",
-        "central-layer constraint documented",
-        "top-layer spacing convergence documented"
+        "symmetric constrained relaxation",
+        "maximum unconstrained force <= 0.02 eV/A",
+        "mirror-pair z deviation <= 0.01 A",
+        "final SCF energy reproduction"
       ],
-      "state": "BLOCKED_BY_STAGE_2"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 4,
       "name": "na_pseudopotential_validation",
-      "input": "SSSP v2 PBE-efficiency archive and Cu method handoff",
       "pass_artifact": "NA_PSEUDO_HANDOFF.json",
       "required_checks": [
-        "exact archive path and SHA-256 recorded",
-        "Na UPF identity and SHA-256 recorded",
-        "mixed-system cutoffs equal componentwise maximum registered recommendations",
-        "isolated-atom reference protocol frozen"
+        "unique Na UPF from pinned SSSP archive",
+        "archive and UPF SHA-256 recorded",
+        "mixed cutoffs are the componentwise Cu-Na maximum",
+        "spin-polarized isolated Na reference converges"
       ],
-      "state": "READY_FOR_CONSTRUCTION"
+      "route_state": "IMPLEMENTED_INDEPENDENT"
     },
     {
       "id": 5,
       "name": "adsorption_site_screening",
-      "input": "PASS clean-surface and Na-pseudo handoffs",
       "pass_artifact": "ADSORPTION_SITE_HANDOFF.json",
       "required_checks": [
-        "coverage and supercell frozen before energies",
-        "hollow bridge and top starts included",
-        "same electrostatic convention for all sites",
-        "geometry optimization convergence checked"
+        "nine registered relaxations complete",
+        "same 4x4 cell, 0.0625 ML coverage, cutoffs, and electrostatics used",
+        "site collapse retained",
+        "global minimum classifies as fourfold hollow"
       ],
-      "state": "BLOCKED_BY_STAGES_3_4"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 6,
       "name": "endpoint_geometry_verification",
-      "input": "PASS adsorption-site handoff",
       "pass_artifact": "ENDPOINTS_HANDOFF.json",
       "required_checks": [
-        "minimum endpoints distinct and symmetry-consistent",
-        "forces below frozen threshold",
-        "energies reproduced by final SCF",
-        "coordinate hashes recorded"
+        "nearest-neighbor hollow endpoints are distinct and symmetry-equivalent",
+        "endpoint energies reproduce within 0.001 eV",
+        "forces <= 0.02 eV/A",
+        "coordinate and output hashes recorded"
       ],
-      "state": "BLOCKED_BY_STAGE_5"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 7,
       "name": "path_and_image_convergence",
-      "input": "PASS endpoint handoff",
       "pass_artifact": "PATH_CONVERGENCE_HANDOFF.json",
       "required_checks": [
-        "candidate diffusion path frozen",
-        "image counts registered before comparison",
-        "barrier stable within frozen tolerance",
-        "no endpoint drift"
+        "ordinary NEB runs use 5, 7, and 9 images",
+        "barrier spread meets the 0.005 eV rule",
+        "smallest dominating converged image count selected",
+        "endpoints remain verified"
       ],
-      "state": "BLOCKED_BY_STAGE_6"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 8,
       "name": "climbing_image_neb",
-      "input": "PASS path-convergence handoff",
       "pass_artifact": "CI_NEB_HANDOFF.json",
       "required_checks": [
-        "climbing image enabled only after ordinary NEB convergence",
-        "path convergence achieved",
-        "maximum-energy image internal",
-        "all images and outputs hashed"
+        "CI enabled only after stage 7 PASS",
+        "maximum-energy image is internal",
+        "maximum path error <= 0.03 eV/A",
+        "endpoint energies reproduce within 0.001 eV"
       ],
-      "state": "BLOCKED_BY_STAGE_7"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 9,
       "name": "saddle_verification",
-      "input": "PASS CI-NEB handoff",
       "pass_artifact": "SADDLE_HANDOFF.json",
       "required_checks": [
-        "saddle force residual below threshold",
-        "single unstable path direction supported",
-        "forward and reverse downhill connectivity verified",
-        "barrier uncertainty reported"
+        "minimum Na partial Hessian is positive",
+        "saddle Na partial Hessian has exactly one negative mode",
+        "unstable mode aligns with the registered path by >= 0.70",
+        "0.02 and 0.04 A finite-difference results agree within 20 percent",
+        "plus and minus downhill relaxations reach distinct endpoint basins",
+        "saddle Na force <= 0.03 eV/A"
       ],
-      "state": "BLOCKED_BY_STAGE_8"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 10,
       "name": "barrier_coordinate_extraction",
-      "input": "PASS saddle handoff",
       "pass_artifact": "BARRIER_COORDINATE.json",
       "required_checks": [
-        "electronic barrier reported",
-        "attempt-frequency information labeled by method",
-        "zero-point or thermal corrections separated from electronic barrier",
-        "unsupported friction or linewidth quantities left null"
+        "electronic forward and reverse barriers reported",
+        "conservative numerical uncertainty reported",
+        "Na-only partial-Hessian Vineyard prefactor labeled",
+        "computed rates reported at 100, 150, 200, 250, and 300 K",
+        "unsupported ZPE, thermal, friction, and linewidth fields remain null"
       ],
-      "state": "BLOCKED_BY_STAGE_9"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 11,
-      "name": "atlas_admission",
-      "input": "PASS barrier coordinate and verified public kinetic evidence where available",
+      "name": "computational_atlas_admission",
       "pass_artifact": "ATLAS_ADMISSION_RECORD.json",
       "required_checks": [
-        "same system phase and temperature enforced",
-        "numeric barrier and rate provenance recorded",
-        "verification tier assigned",
-        "computed and experimental columns kept distinct"
+        "computed rows contain system, phase, coverage, temperature, barrier, uncertainty, rate, and method",
+        "verification tier is COMPUTATIONAL_FULL",
+        "experimental columns remain distinct and null",
+        "public experimental candidate remains HOLD until exact state-point qualification"
       ],
-      "state": "BLOCKED_BY_STAGE_10"
+      "route_state": "IMPLEMENTED"
     },
     {
       "id": 12,
       "name": "integration_readiness",
-      "input": "all available PASS and HOLD artifacts",
       "pass_artifact": "INTEGRATION_READINESS.json",
       "required_checks": [
-        "all closable computational stages resolved",
-        "experimental-only gaps explicitly listed",
-        "no HOLD converted to PASS by narrative judgment",
-        "manifest hashes verify"
+        "stages 1 through 11 pass schema, state, dependency, and hash validation",
+        "validator is rerun after its own stage-12 artifact is written",
+        "manifest hashes every retained file",
+        "experimental-only gaps remain explicit"
       ],
-      "state": "BLOCKED_BY_STAGES_1_11"
+      "route_state": "IMPLEMENTED"
     }
   ],
   "experimental_only_gaps": [
-    "direct experimental diffusion rate if no qualified public numeric source exists",
-    "system-specific friction or linewidth not derivable from the registered calculations",
+    "direct experimental diffusion-rate table at the exact registered coverage and temperatures if no qualified public numeric table exists",
+    "system-specific friction or linewidth not computed by this route",
+    "full substrate vibrational determinant beyond the registered Na-only partial Hessian",
     "independent physical replication outside the computational workflow"
   ]
 }
