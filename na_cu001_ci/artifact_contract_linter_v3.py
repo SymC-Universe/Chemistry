@@ -89,8 +89,12 @@ def main() -> None:
             fail("terminal integration artifact cannot be a required input")
 
     required_v04_nonresults = {
-        "BULK_HANDOFF.json", "BULK_CONVERGENCE_RESULT.json", "bulk_extension_protocol_v0.1.json",
-        "COMPUTATIONAL_CHECKPOINT_LEDGER.md", "REPRODUCIBILITY_GUIDE_CHECKPOINT_INSERT_v1.2.tex",
+        "BULK_HANDOFF.json",
+        "BULK_CONVERGENCE_RESULT.json",
+        "bulk_extension_protocol_v0.1.json",
+        "UPSTREAM_BULK_ARTIFACTS.json",
+        "COMPUTATIONAL_CHECKPOINT_LEDGER.md",
+        "REPRODUCIBILITY_GUIDE_CHECKPOINT_INSERT_v1.2.tex",
     }
     actual_nonresults = {item.get("path") if isinstance(item, dict) else item for item in plan.get("required_nonresult_files") or []}
     if not required_v04_nonresults.issubset(actual_nonresults):
@@ -103,6 +107,8 @@ def main() -> None:
         fail("integration verdict must precede the optional closure manifest")
     if "BULK_V04_DOWNSTREAM_BRIDGE.json" not in script:
         fail("stage script does not package the audited v0.4 bridge")
+    if "UPSTREAM_BULK_ARTIFACTS.json" not in script:
+        fail("stage script does not package upstream bulk artifact digests")
 
     print(f"PASS: v0.3 artifact contract verified ({len(stages)} stages, no self-reference)")
 
