@@ -1,0 +1,36 @@
+name: Na Cu001 v0.4 downstream bridge tests
+
+on:
+  pull_request:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/bulk_v04_downstream_bridge_v1.py'
+      - 'na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py'
+      - '.github/workflows/na-cu001-bulk-v04-bridge-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  bridge-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run prospective v0.4 bridge tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            na_cu001_ci/bulk_v04_downstream_bridge_v1.py \
+            na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py
+          python3 na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py
+          sha256sum \
+            na_cu001_ci/bulk_v04_downstream_bridge_v1.py \
+            na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py \
+            | tee BULK_V04_BRIDGE_SOURCE.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-v04-bridge-test-record
+          path: BULK_V04_BRIDGE_SOURCE.sha256
+          retention-days: 90
+          if-no-files-found: error
