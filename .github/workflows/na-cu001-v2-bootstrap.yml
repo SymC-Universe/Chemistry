@@ -125,3 +125,5 @@ jobs:
           done
           [[ -n "$run_id" ]]
           echo "Corrected V2 computation run ID: ${run_id}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+# Trusted same-repository launch trigger from synchronized base.
