@@ -115,3 +115,5 @@ jobs:
           done
           test "$dispatched" -eq 1
           echo 'Corrected V2 computation explicitly dispatched.' >> "$GITHUB_STEP_SUMMARY"
+
+# Trusted same-repository PR trigger. No scientific content changes.
