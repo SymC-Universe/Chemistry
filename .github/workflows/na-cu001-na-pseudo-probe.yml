@@ -1,0 +1,67 @@
+name: Na Cu001 pinned Na pseudopotential audit
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - 'na_cu001_ci/na_pseudo_probe.py'
+      - '.github/workflows/na-cu001-na-pseudo-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: na-cu001-na-pseudo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe-na-pseudopotential:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned SSSP v2 PBE-efficiency archive
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p pseudo_probe/archive pseudo_probe/result
+          curl -L --retry 5 --retry-delay 5 \
+            https://raw.githubusercontent.com/unkcpz/sssp-verify-scripts/refs/heads/main/2-experiments/finalized_scripts/010-extract-eff-lib/SSSP-lib-pbe-eff-v2.tar.gz \
+            -o pseudo_probe/SSSP-lib-pbe-eff-v2.tar.gz
+          sha256sum pseudo_probe/SSSP-lib-pbe-eff-v2.tar.gz | tee pseudo_probe/result/ARCHIVE.sha256
+          tar -xzf pseudo_probe/SSSP-lib-pbe-eff-v2.tar.gz -C pseudo_probe/archive
+      - name: Discover and audit Na pseudopotential
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 na_cu001_ci/na_pseudo_probe.py \
+            --archive-root pseudo_probe/archive \
+            --archive pseudo_probe/SSSP-lib-pbe-eff-v2.tar.gz \
+            --out pseudo_probe/result/NA_PSEUDO_HANDOFF.json \
+            | tee pseudo_probe/result/NA_PSEUDO_STDOUT.txt
+          find pseudo_probe/result -type f -print0 | sort -z | xargs -0 sha256sum > pseudo_probe/result/MANIFEST.sha256
+      - name: Publish decision summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Na pseudopotential audit'
+            echo
+            if [[ -f pseudo_probe/result/NA_PSEUDO_HANDOFF.json ]]; then
+              echo '```json'
+              cat pseudo_probe/result/NA_PSEUDO_HANDOFF.json
+              echo '```'
+            else
+              echo '_No audit result was generated._'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload compact Na pseudopotential handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-na-pseudopotential-audit
+          path: pseudo_probe/result
+          retention-days: 90
+          if-no-files-found: error
