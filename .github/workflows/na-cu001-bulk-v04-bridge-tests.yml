@@ -9,6 +9,12 @@ on:
       - 'na_cu001_ci/slab_runner_v3.py'
       - 'na_cu001_ci/closure_engine_v3.py'
       - 'na_cu001_ci/test_v04_surface_entrypoints_v1.py'
+      - 'na_cu001_ci/build_v3_workflow.py'
+      - 'na_cu001_ci/run_computational_stage_v3.sh'
+      - 'na_cu001_ci/integration_closure_plan_v0.3.json'
+      - 'na_cu001_ci/validate_integration_chain_v3.py'
+      - 'na_cu001_ci/workflow_contract_linter_v3.py'
+      - 'na_cu001_ci/artifact_contract_linter_v3.py'
       - '.github/workflows/na-cu001-bulk-v04-bridge-tests.yml'
 
 permissions:
@@ -19,12 +25,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install test dependency
+      - name: Install test dependencies
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y python3-numpy
+          sudo apt-get install -y python3-numpy python3-yaml
       - name: Compile and run prospective v0.4 bridge and surface-entrypoint tests
         shell: bash
         run: |
@@ -34,19 +40,42 @@ jobs:
             na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py \
             na_cu001_ci/slab_runner_v3.py \
             na_cu001_ci/closure_engine_v3.py \
-            na_cu001_ci/test_v04_surface_entrypoints_v1.py
+            na_cu001_ci/test_v04_surface_entrypoints_v1.py \
+            na_cu001_ci/build_v3_workflow.py \
+            na_cu001_ci/validate_integration_chain_v3.py \
+            na_cu001_ci/workflow_contract_linter_v3.py \
+            na_cu001_ci/artifact_contract_linter_v3.py
           python3 na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py
           python3 na_cu001_ci/test_v04_surface_entrypoints_v1.py
+      - name: Generate and verify the non-executable V3 workflow fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n na_cu001_ci/run_computational_stage_v3.sh
+          mkdir -p prospective_workflow
+          python3 na_cu001_ci/build_v3_workflow.py --out prospective_workflow/na-cu001-computational-route-v3.yml
+          python3 -m json.tool prospective_workflow/na-cu001-computational-route-v3.yml >/dev/null
+          python3 na_cu001_ci/workflow_contract_linter_v3.py prospective_workflow/na-cu001-computational-route-v3.yml
+          python3 na_cu001_ci/artifact_contract_linter_v3.py \
+            --plan na_cu001_ci/integration_closure_plan_v0.3.json \
+            --stage-script na_cu001_ci/run_computational_stage_v3.sh
           sha256sum \
+            prospective_workflow/na-cu001-computational-route-v3.yml \
             na_cu001_ci/bulk_v04_downstream_bridge_v1.py \
             na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py \
             na_cu001_ci/slab_runner_v3.py \
             na_cu001_ci/closure_engine_v3.py \
             na_cu001_ci/test_v04_surface_entrypoints_v1.py \
-            | tee BULK_V04_BRIDGE_SOURCE.sha256
+            na_cu001_ci/build_v3_workflow.py \
+            na_cu001_ci/run_computational_stage_v3.sh \
+            na_cu001_ci/integration_closure_plan_v0.3.json \
+            na_cu001_ci/validate_integration_chain_v3.py \
+            na_cu001_ci/workflow_contract_linter_v3.py \
+            na_cu001_ci/artifact_contract_linter_v3.py \
+            | tee prospective_workflow/V3_PREFLIGHT_SOURCE.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: na-cu001-v04-bridge-test-record
-          path: BULK_V04_BRIDGE_SOURCE.sha256
+          name: na-cu001-v04-bridge-and-v3-preflight
+          path: prospective_workflow
           retention-days: 90
           if-no-files-found: error
