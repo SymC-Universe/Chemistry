@@ -7,6 +7,12 @@ on:
     paths:
       - 'na_cu001_ci/**'
       - '.github/workflows/na-cu001-bulk.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'na_cu001_ci/**'
+      - '.github/workflows/na-cu001-bulk.yml'
   workflow_dispatch:
 
 permissions:
