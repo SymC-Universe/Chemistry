@@ -44,12 +44,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p definitive_audit
+          ready=0
           for attempt in $(seq 1 330); do
             gh api --paginate \
               "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_C7_RUN_ID}/jobs?filter=latest&per_page=100" \
               > definitive_audit/source_jobs.json
+            set +e
             python3 - <<'PY'
-          import json, os, sys
+          import json, sys
           from pathlib import Path
           data=json.loads(Path('definitive_audit/source_jobs.json').read_text())
           jobs=data.get('jobs',[])
@@ -69,18 +71,13 @@ jobs:
           sys.exit(10)
           PY
             code=$?
-            if [[ $code -eq 0 ]]; then break; fi
+            set -e
+            if [[ $code -eq 0 ]]; then ready=1; break; fi
             if [[ $code -eq 20 || $code -eq 21 ]]; then exit "$code"; fi
+            if [[ $code -ne 10 ]]; then exit "$code"; fi
             sleep 60
           done
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          jobs=json.loads(Path('definitive_audit/source_jobs.json').read_text()).get('jobs',[])
-          slabs=[j for j in jobs if str(j.get('name','')).startswith('slab-cases')]
-          if len(slabs)!=16 or not all(j.get('status')=='completed' and j.get('conclusion')=='success' for j in slabs):
-              raise SystemExit('HOLD: registered 16-job/64-SCF slab matrix did not complete within the audit window')
-          PY
+          [[ $ready -eq 1 ]]
 
       - name: Download immutable raw slab records and audited bulk base
         env:
