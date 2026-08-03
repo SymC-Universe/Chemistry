@@ -27,6 +27,7 @@
     {"path": "BULK_HANDOFF.json", "schema": "na-cu001-bulk-to-slab-handoff-v0.4", "states": ["bulk_convergence_passed_slab_not_yet_run"]},
     {"path": "BULK_CONVERGENCE_RESULT.json", "schema": "na-cu001-bulk-selection-v0.4", "states": ["PASS"]},
     {"path": "bulk_extension_protocol_v0.1.json", "schema": "na-cu001-bulk-extension-protocol-v0.1", "states": ["FROZEN_AFTER_V0.3_HOLD_BEFORE_EXTENSION_RESULTS"]},
+    {"path": "UPSTREAM_BULK_ARTIFACTS.json", "schema": "na-cu001-upstream-bulk-artifacts-v0.1", "states": ["PASS"]},
     {"path": "method_protocol_v0.2.json", "schema": "na-cu001-method-protocol-v0.2", "states": ["FROZEN_BEFORE_DOWNSTREAM_RESULTS"]},
     {"path": "validation_selection_protocol_v0.1.json", "schema": "barrier-atlas-validation-selection-v0.1", "states": ["FROZEN_BEFORE_SYSTEM_2_SELECTION"]},
     {"path": "RAW_ARTIFACT_INDEX.json", "schema": "na-cu001-computational-manifest-v0.2", "states": ["PASS"]},
