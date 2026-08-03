@@ -37,3 +37,5 @@ jobs:
           path: extension-run.json
           retention-days: 7
           if-no-files-found: error
+
+# Trusted same-repository monitor trigger only.
