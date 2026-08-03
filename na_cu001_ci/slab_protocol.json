@@ -1,0 +1,54 @@
+{
+  "schema": "na-cu001-clean-slab-preregistration-v0.2",
+  "status": "frozen_before_slab_results",
+  "surface": "symmetric unreconstructed primitive Cu(001) 1x1 clean slab",
+  "purpose": "converge the clean substrate before introducing Na",
+  "bulk_handoff_required": "na-cu001-bulk-to-slab-handoff-v0.2 with scientific_status PASS",
+  "surface_cell": {
+    "vectors": [
+      ["a0/2", "a0/2", 0],
+      ["-a0/2", "a0/2", 0],
+      [0, 0, "cell_z"]
+    ],
+    "area": "a0^2/2",
+    "atoms_per_layer": 1,
+    "stacking": "alternating (0,0) and (1/2,1/2)",
+    "symmetry": "odd-layer slab centered in vacuum"
+  },
+  "layers": [5, 7, 9, 11],
+  "vacuum_angstrom": [12.0, 16.0, 20.0, 24.0],
+  "kmesh_formula": {
+    "equivalent": "smallest even integer >= sqrt(2)*bulk_kmesh",
+    "grid_offsets": [-4, -2, 0, 2],
+    "minimum": 4
+  },
+  "analysis": {
+    "surface_reference": "for each vacuum/kmesh pair, fit E_slab(L)=mu*L+2*epsilon_surface across all four odd layer counts",
+    "vacuum_kmesh_rule": "smallest vacuum/kmesh whose fitted surface excess differs by no more than 1.0 meV per surface atom from every dominating grid point",
+    "layer_rule": "smallest layer count whose slab-consistent surface excess differs by no more than 1.0 meV per surface atom from every thicker registered slab",
+    "reported_diagnostics": [
+      "slab-fit surface excess",
+      "bulk-referenced surface excess",
+      "fit RMS residual",
+      "slab-fit slope difference from independently fitted bulk e0"
+    ]
+  },
+  "fixed_from_bulk": [
+    "a0_angstrom",
+    "e0_ev_per_atom",
+    "ecutwfc_ry",
+    "ecutrho_ry",
+    "pseudopotential",
+    "exchange_correlation",
+    "smearing"
+  ],
+  "electrostatics": "symmetric neutral clean slab under 3D periodic boundary conditions; no dipole correction",
+  "forbidden_until_pass": [
+    "Na placement",
+    "adsorption-site ranking",
+    "coverage selection",
+    "diffusion barrier",
+    "NEB",
+    "rate extraction"
+  ]
+}
