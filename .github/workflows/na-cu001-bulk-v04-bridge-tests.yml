@@ -1,5 +1,6 @@
 name: Na Cu001 v0.4 downstream bridge tests
 
+# Trigger-only comment for the unmerged verification PR.
 on:
   pull_request:
     branches: [agent/na-cu001-integration]
