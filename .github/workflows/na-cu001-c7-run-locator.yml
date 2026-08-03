@@ -14,7 +14,7 @@ jobs:
       - name: Record C7 launch run
         env:
           GH_TOKEN: ${{ github.token }}
-          LAUNCH_SHA: ace9fb7aa62aa5fd0ac9ec9a0caecccbdd5f636e
+          LAUNCH_SHA: 4c9697c264bc3bb190c3239a10c9f934d9ced575
         shell: bash
         run: |
           set -euo pipefail
@@ -29,5 +29,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add na_cu001_ci/checkpoints/C7_ACTIVE_RUN.json
-          git commit -m 'chore(na-cu001): record C7 active run'
+          git commit -m 'chore(na-cu001): record corrected C7 run'
           git push
