@@ -1,0 +1,15 @@
+{
+  "schema": "na-cu001-clean-slab-preregistration-v0.1",
+  "status": "frozen_before_results",
+  "surface": "symmetric unreconstructed Cu(001) 1x1 clean slab",
+  "purpose": "converge the clean substrate before introducing Na",
+  "bulk_handoff_required": "na-cu001-bulk-to-slab-handoff-v0.1 with scientific_status PASS",
+  "layers": [5, 7, 9, 11],
+  "vacuum_angstrom": [12.0, 16.0, 20.0, 24.0],
+  "kmesh_inplane": [8, 10, 12, 14],
+  "reference": {"layers": 11, "vacuum_angstrom": 24.0, "kmesh_inplane": 14},
+  "selection_rule": "smallest lexicographic (layers, vacuum, kmesh) with absolute total-energy difference from reference divided by two surfaces <= 1.0 meV per surface atom",
+  "fixed_from_bulk": ["a0_angstrom", "ecutwfc_ry", "ecutrho_ry", "pseudopotential", "xc", "smearing"],
+  "electrostatics": "symmetric clean slab; no dipole correction enabled",
+  "forbidden_until_pass": ["Na placement", "adsorption-site ranking", "coverage selection", "diffusion barrier", "NEB", "rate extraction"]
+}
