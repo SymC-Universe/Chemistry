@@ -1,0 +1,25 @@
+name: Na Cu001 slab floor analyzer tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/slab_runner_v4.py'
+      - 'na_cu001_ci/test_slab_runner_v4.py'
+      - '.github/workflows/na-cu001-slab-floor-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run adversarial slab-floor tests
+        run: |
+          set -euo pipefail
+          python3 -m py_compile na_cu001_ci/slab_runner_v2.py na_cu001_ci/slab_runner_v4.py na_cu001_ci/test_slab_runner_v4.py
+          cd na_cu001_ci
+          python3 test_slab_runner_v4.py
