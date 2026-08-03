@@ -6,6 +6,9 @@ on:
     paths:
       - 'na_cu001_ci/bulk_v04_downstream_bridge_v1.py'
       - 'na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py'
+      - 'na_cu001_ci/slab_runner_v3.py'
+      - 'na_cu001_ci/closure_engine_v3.py'
+      - 'na_cu001_ci/test_v04_surface_entrypoints_v1.py'
       - '.github/workflows/na-cu001-bulk-v04-bridge-tests.yml'
 
 permissions:
@@ -16,17 +19,30 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Compile and run prospective v0.4 bridge tests
+      - name: Install test dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y python3-numpy
+      - name: Compile and run prospective v0.4 bridge and surface-entrypoint tests
         shell: bash
         run: |
           set -euo pipefail
           python3 -m py_compile \
             na_cu001_ci/bulk_v04_downstream_bridge_v1.py \
-            na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py
+            na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py \
+            na_cu001_ci/slab_runner_v3.py \
+            na_cu001_ci/closure_engine_v3.py \
+            na_cu001_ci/test_v04_surface_entrypoints_v1.py
           python3 na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py
+          python3 na_cu001_ci/test_v04_surface_entrypoints_v1.py
           sha256sum \
             na_cu001_ci/bulk_v04_downstream_bridge_v1.py \
             na_cu001_ci/test_bulk_v04_downstream_bridge_v1.py \
+            na_cu001_ci/slab_runner_v3.py \
+            na_cu001_ci/closure_engine_v3.py \
+            na_cu001_ci/test_v04_surface_entrypoints_v1.py \
             | tee BULK_V04_BRIDGE_SOURCE.sha256
       - uses: actions/upload-artifact@v4
         with:
