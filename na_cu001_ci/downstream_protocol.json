@@ -11,6 +11,7 @@
       "vacuum_angstrom": [12.0, 16.0, 20.0, 24.0],
       "inplane_kmeshes": "four meshes derived from the selected cubic bulk mesh"
     },
+    "execution": "sixteen matrix jobs, one registered layer-vacuum pair per job and four in-plane k meshes per job",
     "surface_excess_tolerance_mev_per_surface_atom": 1.0,
     "output": "SLAB_HANDOFF.json"
   },
@@ -137,12 +138,13 @@
   "stage_12_integration": {
     "required_outputs": [
       "all stage PASS artifacts",
-      "two-pass integration validator output",
-      "SHA-256 manifest",
+      "non-self-referential integration validator output",
+      "SHA-256 closure manifest",
+      "SHA-256 raw-output manifest verified against retained files",
       "experimental-gap register",
-      "raw calculation artifacts"
+      "compact raw calculation artifacts with restart scratch removed"
     ],
-    "computational_pass_rule": "stages 1 through 11 validate with exact schemas, PASS states, and resolvable input hashes",
+    "computational_pass_rule": "stages 1 through 11 validate with exact schemas, PASS states, resolvable handoff hashes, and a raw-output manifest that matches every retained raw file",
     "experimental_boundary": "experimental-only HOLD fields do not invalidate computational closure but remain explicitly unresolved"
   }
 }
