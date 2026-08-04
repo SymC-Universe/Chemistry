@@ -1,4 +1,4 @@
-name: Na Cu001 cancel miscentered C7 route
+name: Na Cu001 cancel pre-SCF C7 route
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       - name: Cancel pre-SCF source run
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: '30863061143'
+          SOURCE_RUN_ID: '30864367769'
         run: |
           set -euo pipefail
           state=$(gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json status,conclusion --jq '.status + " " + (.conclusion // "")')
