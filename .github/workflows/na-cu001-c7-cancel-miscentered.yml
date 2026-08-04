@@ -1,0 +1,27 @@
+name: Na Cu001 cancel miscentered C7 route
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c7-cancel-miscentered.yml'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  cancel:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Cancel pre-SCF source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: '30863061143'
+        run: |
+          set -euo pipefail
+          state=$(gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json status,conclusion --jq '.status + " " + (.conclusion // "")')
+          echo "source state before cancellation: $state"
+          if [[ "$state" == in_progress* || "$state" == queued* ]]; then
+            gh run cancel "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          fi
