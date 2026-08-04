@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SOURCE_C7_RUN_ID: '30865116448'
-  SOURCE_C7_COMMIT: 'f2dd5df52975c5eb26cb020995a82e237a085edc'
+  SOURCE_C7_RUN_ID: '30865655113'
+  SOURCE_C7_COMMIT: 'e63558ce1a2bace8f45fde6f46491df176d7d950'
 
 jobs:
   wait-and-audit:
@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify ESM geometry and floor-enforcement implementation
+      - name: Verify ESM geometry, strict holdouts, and layer floor
         run: |
           set -euo pipefail
           python3 -m py_compile \
@@ -96,10 +96,11 @@ jobs:
           gh run download "$SOURCE_C7_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name na-cu001-c7-base --dir base
           test "$(find slab_raw -type f -name run_record.json | wc -l)" -eq 64
+          test "$(find slab_raw -type f -name 'cu001_*.in' | wc -l)" -eq 64
           test "$(cat base/COMPUTATIONAL_SOURCE_COMMIT.txt)" = "$SOURCE_C7_COMMIT"
           sha256sum -c base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256
 
-      - name: Recompute definitive clean-slab decision with ESM and floor audits
+      - name: Recompute definitive clean-slab decision
         run: |
           set -euo pipefail
           mkdir -p definitive_stage2
@@ -110,9 +111,9 @@ jobs:
             --slab-result definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json \
             --bulk-handoff base/BULK_HANDOFF.json \
             --out definitive_stage2/SLAB_HANDOFF.json
-          find slab_raw -type f -name run_record.json -print0 \
+          find slab_raw -type f \( -name run_record.json -o -name 'cu001_*.in' \) -print0 \
             | sort -z | xargs -0 sha256sum \
-            > definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256
+            > definitive_stage2/RAW_SLAB_INPUT_RECORD_MANIFEST.sha256
           cp base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256 definitive_stage2/
           cp base/COMPUTATIONAL_SOURCE_COMMIT.txt definitive_stage2/
           python3 - <<'PY'
@@ -121,10 +122,28 @@ jobs:
           def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
           result=json.loads(Path('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json').read_text())
           if result.get('gate')!='PASS': raise SystemExit('HOLD: definitive slab gate is not PASS')
+          selected=result.get('recommended_smallest') or {}
           floor=result.get('layer_floor_audit') or {}
+          holdout=result.get('strict_holdout_audit') or {}
           geometry=result.get('esm_geometry_audit') or {}
-          if floor.get('status')!='PASS' or int(result['recommended_smallest']['layers'])<7:
+          if floor.get('status')!='PASS' or int(selected.get('layers',0))<7:
               raise SystemExit('HOLD: frozen downstream layer floor not satisfied')
+          if holdout.get('schema')!='na-cu001-clean-slab-strict-holdout-audit-v0.1' or holdout.get('status')!='PASS':
+              raise SystemExit('HOLD: strict terminal-holdout audit not satisfied')
+          terminal=holdout.get('terminal_holdouts') or {}
+          if bool(terminal.get('eligible_for_selection',True)):
+              raise SystemExit('HOLD: terminal holdouts were marked eligible for selection')
+          if not (
+              int(selected['layers']) < int(terminal['layers'])
+              and float(selected['vacuum_angstrom']) < float(terminal['vacuum_angstrom'])
+              and int(selected['kmesh_inplane']) < int(terminal['kmesh_inplane'])
+          ):
+              raise SystemExit('HOLD: a terminal grid point selected itself')
+          selected_pair=[float(selected['vacuum_angstrom']),int(selected['kmesh_inplane'])]
+          if selected_pair != holdout.get('selected_vacuum_k_pair'):
+              raise SystemExit('HOLD: selected vacuum/k pair disagrees with strict holdout audit')
+          if int(selected['layers']) != int(holdout.get('selected_layers',-1)):
+              raise SystemExit('HOLD: selected layer disagrees with strict holdout audit')
           if geometry.get('status')!='PASS':
               raise SystemExit('HOLD: ESM-centered raw geometry audit not satisfied')
           if int(geometry.get('verified_record_count',0))!=64 or int(geometry.get('verified_input_count',0))!=64:
@@ -138,7 +157,7 @@ jobs:
           if not geometry.get('all_input_hashes_match_run_records') or not geometry.get('all_inputs_set_esm_bc1'):
               raise SystemExit('HOLD: QE input hash or ESM boundary audit failed')
           record={
-            'schema':'na-cu001-c7-definitive-audit-v0.4',
+            'schema':'na-cu001-c7-definitive-audit-v0.5',
             'status':'PASS',
             'source_c7_run_id':int(os.environ['SOURCE_C7_RUN_ID']),
             'source_c7_commit':os.environ['SOURCE_C7_COMMIT'],
@@ -146,10 +165,11 @@ jobs:
             'qe_input_count':64,
             'clean_slab_result_sha256':sha('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json'),
             'slab_handoff_sha256':sha('definitive_stage2/SLAB_HANDOFF.json'),
-            'raw_manifest_sha256':sha('definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256'),
+            'raw_input_record_manifest_sha256':sha('definitive_stage2/RAW_SLAB_INPUT_RECORD_MANIFEST.sha256'),
             'source_manifest_sha256':sha('definitive_stage2/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256'),
-            'selected_slab':result['recommended_smallest'],
+            'selected_slab':selected,
             'layer_floor_audit':floor,
+            'strict_holdout_audit':holdout,
             'esm_geometry_audit':geometry,
             'energy_tolerance_mev_per_surface_atom':result['energy_tolerance_mev_per_surface_atom'],
           }
