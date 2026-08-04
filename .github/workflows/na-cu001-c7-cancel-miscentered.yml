@@ -17,7 +17,7 @@ jobs:
       - name: Cancel superseded source runs
         env:
           GH_TOKEN: ${{ github.token }}
-          FINAL_SOURCE_SHA: 'f051bab8ed7acda41844c63faf31c8c1a9a04141'
+          FINAL_SOURCE_SHA: 'b3dbaf2c78871d0e4d1f7076c6b1f4dcd255de33'
         run: |
           set -euo pipefail
           gh run list \
