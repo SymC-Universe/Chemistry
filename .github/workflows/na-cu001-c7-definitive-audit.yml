@@ -9,6 +9,8 @@ on:
       - 'na_cu001_ci/slab_runner_v5.py'
       - 'na_cu001_ci/test_slab_runner_v4.py'
       - 'na_cu001_ci/test_slab_runner_v5.py'
+      - 'na_cu001_ci/closure_engine_v4.py'
+      - 'na_cu001_ci/test_slab_handoff_v4.py'
       - '.github/workflows/na-cu001-c7-definitive-audit.yml'
 
 permissions:
@@ -20,8 +22,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SOURCE_C7_RUN_ID: '30865655113'
-  SOURCE_C7_COMMIT: 'e63558ce1a2bace8f45fde6f46491df176d7d950'
+  SOURCE_C7_RUN_ID: '30868933678'
+  SOURCE_C7_COMMIT: 'd1a3fe747c8f3975575999f47d346471bdf7e7cc'
 
 jobs:
   wait-and-audit:
@@ -30,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify ESM geometry, strict holdouts, and layer floor
+      - name: Verify ESM geometry, strict holdouts, layer floor, and proof handoff
         run: |
           set -euo pipefail
           python3 -m py_compile \
@@ -39,10 +41,13 @@ jobs:
             na_cu001_ci/slab_runner_v4.py \
             na_cu001_ci/slab_runner_v5.py \
             na_cu001_ci/test_slab_runner_v4.py \
-            na_cu001_ci/test_slab_runner_v5.py
+            na_cu001_ci/test_slab_runner_v5.py \
+            na_cu001_ci/closure_engine_v4.py \
+            na_cu001_ci/test_slab_handoff_v4.py
           cd na_cu001_ci
           python3 test_slab_runner_v4.py
           python3 test_slab_runner_v5.py
+          python3 test_slab_handoff_v4.py
 
       - name: Wait for the registered raw slab matrix
         env:
@@ -86,7 +91,7 @@ jobs:
           done
           [[ $ready -eq 1 ]]
 
-      - name: Download immutable raw slab records and audited bulk base
+      - name: Download and hash immutable raw slab records
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -95,10 +100,75 @@ jobs:
             --pattern 'na-cu001-c7-raw-slab-*' --dir slab_raw
           gh run download "$SOURCE_C7_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name na-cu001-c7-base --dir base
+          gh run download "$SOURCE_C7_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name na-cu001-c7-qe --dir qe_bundle
           test "$(find slab_raw -type f -name run_record.json | wc -l)" -eq 64
           test "$(find slab_raw -type f -name 'cu001_*.in' | wc -l)" -eq 64
+          test "$(find slab_raw -type f -name 'cu001_*.out' | wc -l)" -eq 64
           test "$(cat base/COMPUTATIONAL_SOURCE_COMMIT.txt)" = "$SOURCE_C7_COMMIT"
           sha256sum -c base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256
+          sha256sum -c qe_bundle/meta/engine_binaries.sha256
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          def sha(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          records=sorted(Path('slab_raw').rglob('run_record.json'))
+          if len(records)!=64:
+              raise SystemExit(f'HOLD: expected 64 raw records, found {len(records)}')
+          bulk_result=Path('base/BULK_CONVERGENCE_RESULT.json')
+          bulk_handoff=Path('base/BULK_HANDOFF.json')
+          cu_pseudos=list(Path('qe_bundle/pseudos').glob('Cu*.upf')) + list(Path('qe_bundle/pseudos').glob('Cu*.UPF'))
+          if len(cu_pseudos)!=1:
+              raise SystemExit(f'HOLD: expected exactly one Cu pseudopotential, found {len(cu_pseudos)}')
+          actual={
+              'bulk_result_sha256':sha(bulk_result),
+              'bulk_handoff_sha256':sha(bulk_handoff),
+              'cu_pseudo_sha256':sha(cu_pseudos[0]),
+          }
+          seen=set()
+          verified=[]
+          for record_path in records:
+              row=json.loads(record_path.read_text())
+              tag=str(row.get('tag') or '')
+              if not tag or tag in seen:
+                  raise SystemExit(f'HOLD: missing or duplicate slab tag {tag!r}')
+              seen.add(tag)
+              inp=record_path.parent/f'{tag}.in'
+              out=record_path.parent/f'{tag}.out'
+              if not inp.is_file() or not out.is_file():
+                  raise SystemExit(f'HOLD: missing QE input/output for {tag}')
+              checks={
+                  'input_sha256':sha(inp),
+                  'output_sha256':sha(out),
+                  'pseudo_sha256':actual['cu_pseudo_sha256'],
+                  'result_sha256':actual['bulk_result_sha256'],
+                  'handoff_sha256':actual['bulk_handoff_sha256'],
+              }
+              mismatches={key:{'record':row.get(key),'actual':value} for key,value in checks.items() if row.get(key)!=value}
+              if mismatches:
+                  raise SystemExit(f'HOLD: hash mismatch for {tag}: {json.dumps(mismatches,sort_keys=True)}')
+              if row.get('schema')!='na-cu001-clean-slab-case-v0.3':
+                  raise SystemExit(f'HOLD: unsupported raw record schema for {tag}')
+              if row.get('returncode')!=0 or not row.get('job_done') or not row.get('scf_converged'):
+                  raise SystemExit(f'HOLD: nonconverged raw record for {tag}')
+              electro=row.get('electrostatic_convention') or {}
+              if electro.get('assume_isolated')!='esm' or electro.get('esm_bc')!='bc1':
+                  raise SystemExit(f'HOLD: electrostatic convention mismatch for {tag}')
+              verified.append({'tag':tag,**checks})
+          audit={
+              'schema':'na-cu001-c7-raw-hash-audit-v0.1',
+              'status':'PASS',
+              'verified_record_count':len(records),
+              'verified_input_count':len(records),
+              'verified_output_count':len(records),
+              **actual,
+              'records':sorted(verified,key=lambda item:item['tag']),
+          }
+          Path('definitive_audit/RAW_HASH_AUDIT.json').write_text(json.dumps(audit,indent=2)+'\n')
+          PY
 
       - name: Recompute definitive clean-slab decision
         run: |
@@ -107,21 +177,32 @@ jobs:
           python3 na_cu001_ci/slab_runner_v5.py analyze \
             --records slab_raw \
             --out definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json
-          python3 na_cu001_ci/closure_engine_v3.py slab-handoff \
+          python3 na_cu001_ci/closure_engine_v4.py slab-handoff \
             --slab-result definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json \
             --bulk-handoff base/BULK_HANDOFF.json \
             --out definitive_stage2/SLAB_HANDOFF.json
-          find slab_raw -type f \( -name run_record.json -o -name 'cu001_*.in' \) -print0 \
+          find slab_raw -type f \( -name run_record.json -o -name 'cu001_*.in' -o -name 'cu001_*.out' \) -print0 \
             | sort -z | xargs -0 sha256sum \
-            > definitive_stage2/RAW_SLAB_INPUT_RECORD_MANIFEST.sha256
+            > definitive_stage2/RAW_SLAB_INPUT_OUTPUT_RECORD_MANIFEST.sha256
           cp base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256 definitive_stage2/
           cp base/COMPUTATIONAL_SOURCE_COMMIT.txt definitive_stage2/
+          cp definitive_audit/RAW_HASH_AUDIT.json definitive_stage2/
           python3 - <<'PY'
           import hashlib, json, os
           from pathlib import Path
           def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
           result=json.loads(Path('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json').read_text())
+          handoff=json.loads(Path('definitive_stage2/SLAB_HANDOFF.json').read_text())
+          raw_hash=json.loads(Path('definitive_stage2/RAW_HASH_AUDIT.json').read_text())
           if result.get('gate')!='PASS': raise SystemExit('HOLD: definitive slab gate is not PASS')
+          if handoff.get('schema')!='na-cu001-clean-slab-to-relaxation-handoff-v0.3' or handoff.get('status')!='PASS':
+              raise SystemExit('HOLD: proof-carrying v4 slab handoff is not PASS')
+          if handoff.get('next_gate')!='electrostatic_parity':
+              raise SystemExit('HOLD: proof-carrying handoff did not register electrostatic parity next')
+          if raw_hash.get('schema')!='na-cu001-c7-raw-hash-audit-v0.1' or raw_hash.get('status')!='PASS':
+              raise SystemExit('HOLD: raw input/output/pseudopotential hash audit is not PASS')
+          if any(int(raw_hash.get(key,0))!=64 for key in ('verified_record_count','verified_input_count','verified_output_count')):
+              raise SystemExit('HOLD: raw hash audit did not verify all 64 records, inputs, and outputs')
           selected=result.get('recommended_smallest') or {}
           floor=result.get('layer_floor_audit') or {}
           holdout=result.get('strict_holdout_audit') or {}
@@ -154,24 +235,36 @@ jobs:
               raise SystemExit('HOLD: wrong ESM geometry schema')
           if geometry.get('atomic_position_card')!='angstrom':
               raise SystemExit('HOLD: atomic positions were not explicitly emitted in angstrom')
+          if not geometry.get('all_slabs_symmetric_about_zero') or not geometry.get('vacuum_split_equally_between_open_boundaries'):
+              raise SystemExit('HOLD: centered slab or equal vacuum-half audit failed')
           if not geometry.get('all_input_hashes_match_run_records') or not geometry.get('all_inputs_set_esm_bc1'):
               raise SystemExit('HOLD: QE input hash or ESM boundary audit failed')
+          handoff_selected=handoff.get('selected_slab_settings') or {}
+          if int(handoff_selected.get('layers',-1))!=int(selected['layers']):
+              raise SystemExit('HOLD: handoff layer disagrees with independently reconstructed selection')
+          if float(handoff_selected.get('vacuum_angstrom',-1))!=float(selected['vacuum_angstrom']):
+              raise SystemExit('HOLD: handoff vacuum disagrees with independently reconstructed selection')
+          if int(handoff_selected.get('kmesh_inplane',-1))!=int(selected['kmesh_inplane']):
+              raise SystemExit('HOLD: handoff k mesh disagrees with independently reconstructed selection')
           record={
-            'schema':'na-cu001-c7-definitive-audit-v0.5',
+            'schema':'na-cu001-c7-definitive-audit-v0.6',
             'status':'PASS',
             'source_c7_run_id':int(os.environ['SOURCE_C7_RUN_ID']),
             'source_c7_commit':os.environ['SOURCE_C7_COMMIT'],
             'raw_slab_record_count':64,
             'qe_input_count':64,
+            'qe_output_count':64,
             'clean_slab_result_sha256':sha('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json'),
             'slab_handoff_sha256':sha('definitive_stage2/SLAB_HANDOFF.json'),
-            'raw_input_record_manifest_sha256':sha('definitive_stage2/RAW_SLAB_INPUT_RECORD_MANIFEST.sha256'),
+            'raw_input_output_record_manifest_sha256':sha('definitive_stage2/RAW_SLAB_INPUT_OUTPUT_RECORD_MANIFEST.sha256'),
+            'raw_hash_audit_sha256':sha('definitive_stage2/RAW_HASH_AUDIT.json'),
             'source_manifest_sha256':sha('definitive_stage2/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256'),
             'selected_slab':selected,
             'layer_floor_audit':floor,
             'strict_holdout_audit':holdout,
             'esm_geometry_audit':geometry,
             'energy_tolerance_mev_per_surface_atom':result['energy_tolerance_mev_per_surface_atom'],
+            'next_gate':handoff['next_gate'],
           }
           Path('definitive_stage2/C7_DEFINITIVE_AUDIT.json').write_text(json.dumps(record,indent=2)+'\n')
           PY
