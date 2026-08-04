@@ -14,10 +14,10 @@ jobs:
   cancel:
     runs-on: ubuntu-24.04
     steps:
-      - name: Cancel superseded source runs
+      - name: Cancel all pre-fix source runs
         env:
           GH_TOKEN: ${{ github.token }}
-          FINAL_SOURCE_SHA: 'f2dd5df52975c5eb26cb020995a82e237a085edc'
+          FINAL_SOURCE_SHA: 'PENDING_LAUNCHER_SCOPE_FIX'
         run: |
           set -euo pipefail
           gh run list \
@@ -34,5 +34,3 @@ jobs:
                 echo "cancelling superseded C7 run $run_id at $head_sha"
                 gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY"
               done
-          final=$(jq -c --arg sha "$FINAL_SOURCE_SHA" '.[] | select(.headSha==$sha) | .[0] // empty' runs.json 2>/dev/null || true)
-          echo "final source SHA retained: $FINAL_SOURCE_SHA"
