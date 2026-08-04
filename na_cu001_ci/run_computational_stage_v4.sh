@@ -27,6 +27,22 @@ PY
   chmod +x "$out"
 }
 
+delegate_v3_with_esm_centered_slab() {
+  local tmp
+  tmp=$(mktemp)
+  python3 - "$V3" "$tmp" <<'PY'
+from pathlib import Path
+import sys
+src=Path(sys.argv[1]).read_text()
+old='na_cu001_ci/slab_runner_v3.py'
+new='na_cu001_ci/slab_runner_v5.py'
+if old not in src: raise SystemExit('mechanical patch anchor missing: slab entrypoint')
+Path(sys.argv[2]).write_text(src.replace(old,new))
+PY
+  chmod +x "$tmp"
+  bash "$tmp" "$@"
+}
+
 case "${1:?stage required}" in
   prepare)
     sudo apt-get update
@@ -37,6 +53,8 @@ case "${1:?stage required}" in
     gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" > bulk_run_audit/artifacts.json
     python3 na_cu001_ci/bulk_v04_run_audit_v1.py --jobs bulk_run_audit/jobs.json --artifacts bulk_run_audit/artifacts.json --run-id "$run_id" --out bulk_run_audit/UPSTREAM_BULK_RUN_AUDIT.json
     python3 na_cu001_ci/test_bulk_v04_run_audit_v1.py
+    python3 -m py_compile na_cu001_ci/slab_runner_v4.py na_cu001_ci/slab_runner_v5.py na_cu001_ci/test_slab_runner_v4.py na_cu001_ci/test_slab_runner_v5.py
+    (cd na_cu001_ci && python3 test_slab_runner_v4.py && python3 test_slab_runner_v5.py)
     tmp=$(mktemp)
     patch_v3_for_verified_packaging_exception "$tmp"
     GH_TOKEN="${GH_TOKEN:?GH_TOKEN required}" bash "$tmp" prepare
@@ -44,7 +62,7 @@ case "${1:?stage required}" in
     sha256sum bulk_run_audit/jobs.json bulk_run_audit/artifacts.json base/UPSTREAM_BULK_RUN_AUDIT.json > base/UPSTREAM_BULK_RUN_AUDIT.sha256
     ;;
   slab-case|slab-analyze)
-    bash "$V3" "$@"
+    delegate_v3_with_esm_centered_slab "$@"
     ;;
   *)
     echo "unsupported C6-C7 stage: $1" >&2; exit 2
