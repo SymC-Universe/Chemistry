@@ -14,7 +14,7 @@ jobs:
       - name: Record C7 launch run
         env:
           GH_TOKEN: ${{ github.token }}
-          LAUNCH_SHA: e63558ce1a2bace8f45fde6f46491df176d7d950
+          LAUNCH_SHA: f051bab8ed7acda41844c63faf31c8c1a9a04141
         shell: bash
         run: |
           set -euo pipefail
@@ -29,5 +29,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add na_cu001_ci/checkpoints/C7_ACTIVE_RUN.json
-          git commit -m 'chore(na-cu001): record strict-holdout C7 run'
+          git commit -m 'chore(na-cu001): record proof-carrying C7 run'
           git push
