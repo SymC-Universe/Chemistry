@@ -14,7 +14,7 @@ jobs:
       - name: Record C7 launch run
         env:
           GH_TOKEN: ${{ github.token }}
-          LAUNCH_SHA: b3dbaf2c78871d0e4d1f7076c6b1f4dcd255de33
+          LAUNCH_SHA: d1a3fe747c8f3975575999f47d346471bdf7e7cc
         shell: bash
         run: |
           set -euo pipefail
@@ -29,5 +29,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add na_cu001_ci/checkpoints/C7_ACTIVE_RUN.json
-          git commit -m 'chore(na-cu001): record NumPy-complete C7 run'
+          git commit -m 'chore(na-cu001): record structurally patched C7 run'
           git push
