@@ -27,19 +27,33 @@ PY
   chmod +x "$out"
 }
 
-delegate_v3_with_esm_centered_slab() {
-  local tmp
-  tmp=$(mktemp)
-  python3 - "$V3" "$tmp" <<'PY'
+patch_v3_for_esm_centered_slab() {
+  local out="$1"
+  python3 - "$V3" "$out" <<'PY'
 from pathlib import Path
 import sys
 src=Path(sys.argv[1]).read_text()
-old='na_cu001_ci/slab_runner_v3.py'
-new='na_cu001_ci/slab_runner_v5.py'
-if old not in src: raise SystemExit('mechanical patch anchor missing: slab entrypoint')
-Path(sys.argv[2]).write_text(src.replace(old,new))
+old='python3 na_cu001_ci/slab_runner_v3.py'
+new='python3 na_cu001_ci/slab_runner_v5.py'
+count=src.count(old)
+if count != 2:
+    raise SystemExit(f'mechanical patch anchor count for slab execution commands is {count}, expected 2')
+if 'from slab_runner_v3 import load_bulk_v04' not in src:
+    raise SystemExit('mechanical patch anchor missing: v0.4 bulk helper import')
+src=src.replace(old,new)
+if 'from slab_runner_v5 import load_bulk_v04' in src:
+    raise SystemExit('mechanical patch escaped into the v0.4 bulk helper import')
+if src.count(new) != 2:
+    raise SystemExit('V5 execution command count is not exactly 2 after patching')
+Path(sys.argv[2]).write_text(src)
 PY
-  chmod +x "$tmp"
+  chmod +x "$out"
+}
+
+delegate_v3_with_esm_centered_slab() {
+  local tmp
+  tmp=$(mktemp)
+  patch_v3_for_esm_centered_slab "$tmp"
   bash "$tmp" "$@"
 }
 
@@ -55,6 +69,15 @@ case "${1:?stage required}" in
     python3 na_cu001_ci/test_bulk_v04_run_audit_v1.py
     python3 -m py_compile na_cu001_ci/slab_runner_v4.py na_cu001_ci/slab_runner_v5.py na_cu001_ci/test_slab_runner_v4.py na_cu001_ci/test_slab_runner_v5.py
     (cd na_cu001_ci && python3 test_slab_runner_v4.py && python3 test_slab_runner_v5.py)
+    esm_tmp=$(mktemp)
+    patch_v3_for_esm_centered_slab "$esm_tmp"
+    bash -n "$esm_tmp"
+    grep -Fq 'from slab_runner_v3 import load_bulk_v04' "$esm_tmp"
+    test "$(grep -Fc 'python3 na_cu001_ci/slab_runner_v5.py' "$esm_tmp")" -eq 2
+    if grep -Fq 'from slab_runner_v5 import load_bulk_v04' "$esm_tmp"; then
+      echo 'HOLD: V5 patch altered the v0.4 bulk helper import' >&2
+      exit 2
+    fi
     tmp=$(mktemp)
     patch_v3_for_verified_packaging_exception "$tmp"
     GH_TOKEN="${GH_TOKEN:?GH_TOKEN required}" bash "$tmp" prepare
