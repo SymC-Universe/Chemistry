@@ -4,8 +4,9 @@
 This version preserves the registered 64-case matrix and the V2 energy
 analysis, while correcting the ESM geometry convention: the slab is centered
 around Cartesian z=0, atomic positions are emitted explicitly in angstrom, and
-the open boundaries lie at +/- Lz/2. Analysis is then passed through the V4
-enforcement of the frozen seven-layer downstream floor.
+the open boundaries lie at +/- Lz/2. Analysis verifies the actual QE input
+files and is then passed through the V4 enforcement of the frozen seven-layer
+downstream floor.
 """
 from __future__ import annotations
 
@@ -173,13 +174,82 @@ def run_case(args: argparse.Namespace) -> None:
     )
 
 
+def audit_input_file(record_path: Path, row: dict[str, Any]) -> dict[str, Any]:
+    tag = str(row.get("tag") or "")
+    if not tag:
+        raise SystemExit("missing record tag")
+    input_path = record_path.parent / f"{tag}.in"
+    if not input_path.is_file():
+        raise SystemExit(f"missing QE input file {input_path.name}")
+    actual_hash = v2.sha256(input_path)
+    if row.get("input_sha256") != actual_hash:
+        raise SystemExit("QE input SHA-256 does not match the run record")
+
+    text = input_path.read_text()
+    lines = [line.strip() for line in text.splitlines()]
+    if "assume_isolated = 'esm'," not in lines:
+        raise SystemExit("QE input does not set assume_isolated='esm'")
+    if "esm_bc = 'bc1'," not in lines:
+        raise SystemExit("QE input does not set esm_bc='bc1'")
+    if "ATOMIC_POSITIONS angstrom" not in lines or "ATOMIC_POSITIONS crystal" in lines:
+        raise SystemExit("QE input does not use the explicit angstrom atomic-position card")
+
+    nat = int(row.get("nat", -1))
+    if nat != int(row.get("layers", -2)) or nat <= 0:
+        raise SystemExit("QE input atom count cannot be reconciled with the layer count")
+    atom_start = lines.index("ATOMIC_POSITIONS angstrom") + 1
+    atom_lines = lines[atom_start : atom_start + nat]
+    if len(atom_lines) != nat:
+        raise SystemExit("QE input atomic-position block is incomplete")
+    coords = []
+    for line in atom_lines:
+        fields = line.split()
+        if len(fields) != 4 or fields[0] != "Cu":
+            raise SystemExit("QE input atomic-position line is malformed")
+        coords.append(tuple(float(value) for value in fields[1:4]))
+    z = [value[2] for value in coords]
+    if abs(sum(z) / len(z)) > 1e-9 or abs(min(z) + max(z)) > 1e-9:
+        raise SystemExit("QE input atoms are not symmetric around Cartesian z=0")
+
+    cell_start = lines.index("CELL_PARAMETERS angstrom") + 1
+    cell_lines = lines[cell_start : cell_start + 3]
+    if len(cell_lines) != 3:
+        raise SystemExit("QE input cell block is incomplete")
+    cell = [tuple(float(value) for value in line.split()) for line in cell_lines]
+    if any(len(vector) != 3 for vector in cell):
+        raise SystemExit("QE input cell vector is malformed")
+    if abs(cell[2][2] - float(row.get("cell_z_angstrom", -1.0))) > 1e-9:
+        raise SystemExit("QE input cell height disagrees with the run record")
+
+    k_start = lines.index("K_POINTS automatic") + 1
+    k_values = tuple(int(value) for value in lines[k_start].split())
+    kmesh = int(row.get("kmesh_inplane", -1))
+    if k_values != (kmesh, kmesh, 1, 0, 0, 0):
+        raise SystemExit("QE input k mesh disagrees with the run record")
+
+    return {
+        "tag": tag,
+        "input_file": input_path.name,
+        "input_sha256": actual_hash,
+        "nat": nat,
+        "atomic_position_card": "angstrom",
+        "z_mean_angstrom": sum(z) / len(z),
+        "z_min_plus_max_angstrom": min(z) + max(z),
+        "cell_z_angstrom": cell[2][2],
+        "kmesh_inplane": kmesh,
+        "assume_isolated": "esm",
+        "esm_bc": "bc1",
+    }
+
+
 def audit_raw_geometry(records_root: Path) -> dict[str, Any]:
     paths = sorted(records_root.rglob("run_record.json"))
     if len(paths) != 64:
         raise SystemExit(f"HOLD: expected 64 raw slab records, found {len(paths)}")
     rows = [json.loads(path.read_text()) for path in paths]
-    bad = []
-    for row in rows:
+    bad: list[dict[str, str]] = []
+    input_records: list[dict[str, Any]] = []
+    for path, row in zip(paths, rows):
         geom = row.get("geometry_convention") or {}
         conditions = [
             geom.get("schema") == GEOMETRY_SCHEMA,
@@ -192,18 +262,27 @@ def audit_raw_geometry(records_root: Path) -> dict[str, Any]:
             abs(2.0 * float(geom.get("vacuum_each_side_angstrom", -1.0)) - float(row["vacuum_angstrom"])) <= 1e-12,
         ]
         if not all(conditions):
-            bad.append(row.get("tag"))
+            bad.append({"tag": str(row.get("tag")), "reason": "geometry metadata mismatch"})
+            continue
+        try:
+            input_records.append(audit_input_file(path, row))
+        except (SystemExit, ValueError, IndexError) as exc:
+            bad.append({"tag": str(row.get("tag")), "reason": str(exc)})
     if bad:
-        raise SystemExit(f"HOLD: ESM-centered geometry audit failed for {bad}")
+        raise SystemExit(f"HOLD: ESM-centered raw/input audit failed: {json.dumps(bad, sort_keys=True)}")
     return {
-        "schema": "na-cu001-esm-centered-raw-audit-v0.2",
+        "schema": "na-cu001-esm-centered-raw-audit-v0.3",
         "status": "PASS",
         "verified_record_count": len(rows),
+        "verified_input_count": len(input_records),
         "geometry_schema": GEOMETRY_SCHEMA,
         "atomic_position_card": "angstrom",
         "coordinate_origin": "cartesian_z_zero",
         "all_slabs_symmetric_about_zero": True,
         "vacuum_split_equally_between_open_boundaries": True,
+        "all_input_hashes_match_run_records": True,
+        "all_inputs_set_esm_bc1": True,
+        "input_records": sorted(input_records, key=lambda item: item["tag"]),
     }
 
 
