@@ -57,19 +57,45 @@ def geometry_record(a0: float, layers: int, vacuum: float) -> dict[str, Any]:
     }
 
 
-def run_case(args: argparse.Namespace) -> None:
-    v2.load_bulk = v3.load_bulk_v04
-    v2.fcc001_geometry = fcc001_geometry_esm_centered
-    v2.run_case(args)
-    records = list(Path(args.out).resolve().rglob("run_record.json"))
-    if len(records) != 1:
-        raise SystemExit(f"HOLD: expected one slab run record, found {len(records)}")
-    path = records[0]
+def case_tag(layers: int, vacuum: float, kmesh: int) -> str:
+    return f"cu001_L{layers}_V{vacuum:g}_K{kmesh}"
+
+
+def case_record_path(out: Path, layers: int, vacuum: float, kmesh: int) -> Path:
+    tag = case_tag(layers, vacuum, kmesh)
+    return out.resolve() / tag / "run_record.json"
+
+
+def attach_geometry_to_case_record(
+    out: Path, layers: int, vacuum: float, kmesh: int
+) -> Path:
+    path = case_record_path(out, layers, vacuum, kmesh)
+    if not path.is_file():
+        raise SystemExit(f"HOLD: current slab record missing: {path}")
     row = json.loads(path.read_text())
+    expected_tag = case_tag(layers, vacuum, kmesh)
+    identity = {
+        "tag": row.get("tag") == expected_tag,
+        "layers": int(row.get("layers", -1)) == int(layers),
+        "vacuum": abs(float(row.get("vacuum_angstrom", -1.0)) - float(vacuum)) <= 1e-12,
+        "kmesh": int(row.get("kmesh_inplane", -1)) == int(kmesh),
+    }
+    if not all(identity.values()):
+        raise SystemExit(f"HOLD: current slab record identity mismatch: {identity}")
     row["geometry_convention"] = geometry_record(
         float(row["a0_angstrom"]), int(row["layers"]), float(row["vacuum_angstrom"])
     )
     path.write_text(json.dumps(row, indent=2) + "\n")
+    return path
+
+
+def run_case(args: argparse.Namespace) -> None:
+    v2.load_bulk = v3.load_bulk_v04
+    v2.fcc001_geometry = fcc001_geometry_esm_centered
+    v2.run_case(args)
+    attach_geometry_to_case_record(
+        Path(args.out), int(args.layers), float(args.vacuum), int(args.kmesh)
+    )
 
 
 def audit_raw_geometry(records_root: Path) -> dict[str, Any]:
