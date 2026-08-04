@@ -14,10 +14,10 @@ jobs:
   cancel:
     runs-on: ubuntu-24.04
     steps:
-      - name: Cancel superseded source runs
+      - name: Cancel all pre-holdout source runs
         env:
           GH_TOKEN: ${{ github.token }}
-          FINAL_SOURCE_SHA: '0305912d791fa260256a6a4f95a89cc46fad257d'
+          FINAL_SOURCE_SHA: 'PENDING_STRICT_HOLDOUT_GATE'
         run: |
           set -euo pipefail
           gh run list \
@@ -34,4 +34,3 @@ jobs:
                 echo "cancelling superseded C7 run $run_id at $head_sha"
                 gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY"
               done
-          jq -e --arg sha "$FINAL_SOURCE_SHA" '.[] | select(.headSha==$sha)' runs.json >/dev/null
