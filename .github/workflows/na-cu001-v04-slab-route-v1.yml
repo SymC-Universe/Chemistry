@@ -1,1 +1,143 @@
-{"name":"Na Cu001 v0.4 audited clean-slab closure","on":{"workflow_dispatch":{},"push":{"branches":["agent/na-cu001-integration"],"paths":["na_cu001_ci/bulk_v04_run_audit_v1.py","na_cu001_ci/test_bulk_v04_run_audit_v1.py","na_cu001_ci/workflow_contract_linter_v4_slab.py","na_cu001_ci/slab_runner_v2.py","na_cu001_ci/slab_runner_v3.py","na_cu001_ci/slab_runner_v4.py","na_cu001_ci/slab_runner_v5.py","na_cu001_ci/test_slab_runner_v4.py","na_cu001_ci/test_slab_runner_v5.py","na_cu001_ci/closure_engine_v3.py","na_cu001_ci/closure_engine_v4.py","na_cu001_ci/test_slab_handoff_v4.py","na_cu001_ci/run_computational_stage_v4.sh",".github/workflows/na-cu001-v04-slab-route-v1.yml"]}},"permissions":{"contents":"read","actions":"read"},"concurrency":{"group":"na-cu001-v04-slab-${{ github.sha }}","cancel-in-progress":false},"env":{"BULK_EXTENSION_RUN_ID":"30843005718","OMP_NUM_THREADS":"1"},"jobs":{"prepare":{"runs-on":"ubuntu-24.04","timeout-minutes":360,"steps":[{"uses":"actions/checkout@v4"},{"name":"Audit v0.4 run and prepare pinned surface engine","env":{"GH_TOKEN":"${{ github.token }}"},"run":"bash na_cu001_ci/run_computational_stage_v4.sh prepare"},{"uses":"actions/upload-artifact@v4","with":{"name":"na-cu001-c7-qe","path":"qe_bundle","retention-days":30,"if-no-files-found":"error"}},{"uses":"actions/upload-artifact@v4","with":{"name":"na-cu001-c7-base","path":"base","retention-days":90,"if-no-files-found":"error"}},{"uses":"actions/upload-artifact@v4","with":{"name":"na-cu001-c6-run-audit","path":"bulk_run_audit","retention-days":90,"if-no-files-found":"error"}}]},"slab-cases":{"runs-on":"ubuntu-24.04","needs":"prepare","timeout-minutes":360,"strategy":{"fail-fast":false,"max-parallel":8,"matrix":{"include":[{"layers":5,"vacuum":12,"tag":"l5_v12"},{"layers":5,"vacuum":16,"tag":"l5_v16"},{"layers":5,"vacuum":20,"tag":"l5_v20"},{"layers":5,"vacuum":24,"tag":"l5_v24"},{"layers":7,"vacuum":12,"tag":"l7_v12"},{"layers":7,"vacuum":16,"tag":"l7_v16"},{"layers":7,"vacuum":20,"tag":"l7_v20"},{"layers":7,"vacuum":24,"tag":"l7_v24"},{"layers":9,"vacuum":12,"tag":"l9_v12"},{"layers":9,"vacuum":16,"tag":"l9_v16"},{"layers":9,"vacuum":20,"tag":"l9_v20"},{"layers":9,"vacuum":24,"tag":"l9_v24"},{"layers":11,"vacuum":12,"tag":"l11_v12"},{"layers":11,"vacuum":16,"tag":"l11_v16"},{"layers":11,"vacuum":20,"tag":"l11_v20"},{"layers":11,"vacuum":24,"tag":"l11_v24"}]}},"steps":[{"uses":"actions/checkout@v4"},{"uses":"actions/download-artifact@v4","with":{"name":"na-cu001-c7-qe","path":"qe_bundle"}},{"uses":"actions/download-artifact@v4","with":{"name":"na-cu001-c7-base","path":"base"}},{"run":"bash na_cu001_ci/run_computational_stage_v4.sh slab-case '${{ matrix.layers }}' '${{ matrix.vacuum }}' '${{ matrix.tag }}'"},{"uses":"actions/upload-artifact@v4","if":"always()","with":{"name":"na-cu001-c7-raw-slab-${{ matrix.tag }}","path":"slab_outputs","retention-days":30,"if-no-files-found":"error"}}]},"slab-gate":{"runs-on":"ubuntu-24.04","needs":["prepare","slab-cases"],"steps":[{"uses":"actions/checkout@v4"},{"uses":"actions/download-artifact@v4","with":{"name":"na-cu001-c7-base","path":"base"}},{"uses":"actions/download-artifact@v4","with":{"pattern":"na-cu001-c7-raw-slab-*","path":"slab_outputs","merge-multiple":true}},{"run":"bash na_cu001_ci/run_computational_stage_v4.sh slab-analyze"},{"uses":"actions/upload-artifact@v4","with":{"name":"na-cu001-c7-stage2","path":"stage2","retention-days":90,"if-no-files-found":"error"}}]}}}
+{
+  "name": "Na Cu001 v0.4 audited clean-slab closure",
+  "on": {
+    "workflow_dispatch": {},
+    "push": {
+      "branches": ["agent/na-cu001-integration"],
+      "paths": [
+        "na_cu001_ci/bulk_v04_run_audit_v1.py",
+        "na_cu001_ci/test_bulk_v04_run_audit_v1.py",
+        "na_cu001_ci/workflow_contract_linter_v4_slab.py",
+        "na_cu001_ci/slab_runner_v2.py",
+        "na_cu001_ci/slab_runner_v3.py",
+        "na_cu001_ci/slab_runner_v4.py",
+        "na_cu001_ci/slab_runner_v5.py",
+        "na_cu001_ci/test_slab_runner_v4.py",
+        "na_cu001_ci/test_slab_runner_v5.py",
+        "na_cu001_ci/closure_engine_v3.py",
+        "na_cu001_ci/closure_engine_v4.py",
+        "na_cu001_ci/test_slab_handoff_v4.py",
+        "na_cu001_ci/run_computational_stage_v4.sh",
+        ".github/workflows/na-cu001-v04-slab-route-v1.yml"
+      ]
+    }
+  },
+  "permissions": {"contents": "read", "actions": "read"},
+  "concurrency": {
+    "group": "na-cu001-v04-slab-${{ github.sha }}",
+    "cancel-in-progress": false
+  },
+  "env": {
+    "BULK_EXTENSION_RUN_ID": "30843005718",
+    "OMP_NUM_THREADS": "1"
+  },
+  "jobs": {
+    "prepare": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 360,
+      "steps": [
+        {"uses": "actions/checkout@v4"},
+        {
+          "name": "Audit v0.4 run and prepare pinned surface engine",
+          "env": {"GH_TOKEN": "${{ github.token }}"},
+          "run": "bash na_cu001_ci/run_computational_stage_v4.sh prepare"
+        },
+        {
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "na-cu001-c7-qe",
+            "path": "qe_bundle",
+            "retention-days": 30,
+            "if-no-files-found": "error"
+          }
+        },
+        {
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "na-cu001-c7-base",
+            "path": "base",
+            "retention-days": 90,
+            "if-no-files-found": "error"
+          }
+        },
+        {
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "na-cu001-c6-run-audit",
+            "path": "bulk_run_audit",
+            "retention-days": 90,
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "slab-cases": {
+      "runs-on": "ubuntu-24.04",
+      "needs": "prepare",
+      "timeout-minutes": 360,
+      "strategy": {
+        "fail-fast": false,
+        "max-parallel": 8,
+        "matrix": {
+          "layers": [5, 7, 9, 11],
+          "vacuum": [12, 16, 20, 24],
+          "kmesh": [16, 18, 20, 22]
+        }
+      },
+      "steps": [
+        {"uses": "actions/checkout@v4"},
+        {
+          "uses": "actions/download-artifact@v4",
+          "with": {"name": "na-cu001-c7-qe", "path": "qe_bundle"}
+        },
+        {
+          "uses": "actions/download-artifact@v4",
+          "with": {"name": "na-cu001-c7-base", "path": "base"}
+        },
+        {
+          "name": "Run one independently checkpointed slab SCF",
+          "run": "bash na_cu001_ci/run_computational_stage_v4.sh slab-case-one '${{ matrix.layers }}' '${{ matrix.vacuum }}' '${{ matrix.kmesh }}' 'l${{ matrix.layers }}_v${{ matrix.vacuum }}_k${{ matrix.kmesh }}'"
+        },
+        {
+          "uses": "actions/upload-artifact@v4",
+          "if": "always()",
+          "with": {
+            "name": "na-cu001-c7-raw-slab-l${{ matrix.layers }}_v${{ matrix.vacuum }}_k${{ matrix.kmesh }}",
+            "path": "slab_outputs/**/run_record.json\nslab_outputs/**/*.in\nslab_outputs/**/*.out\nslab_outputs/**/COMPACT_EVIDENCE.sha256\n",
+            "retention-days": 30,
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "slab-gate": {
+      "runs-on": "ubuntu-24.04",
+      "needs": ["prepare", "slab-cases"],
+      "steps": [
+        {"uses": "actions/checkout@v4"},
+        {
+          "uses": "actions/download-artifact@v4",
+          "with": {"name": "na-cu001-c7-base", "path": "base"}
+        },
+        {
+          "uses": "actions/download-artifact@v4",
+          "with": {
+            "pattern": "na-cu001-c7-raw-slab-*",
+            "path": "slab_outputs",
+            "merge-multiple": true
+          }
+        },
+        {"run": "bash na_cu001_ci/run_computational_stage_v4.sh slab-analyze"},
+        {
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "na-cu001-c7-stage2",
+            "path": "stage2",
+            "retention-days": 90,
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    }
+  }
+}
