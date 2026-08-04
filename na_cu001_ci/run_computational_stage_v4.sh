@@ -92,7 +92,7 @@ record={
     'artifact_created_at':row.get('created_at'),
     'artifact_expires_at':row.get('expires_at'),
 }
-Path('base/QE_ENGINE_ARTIFACT_PROVENANCE.json').write_text(json.dumps(record,indent=2)+'\n')
+Path('base/QE_ENGINE_ARTIFACT_PROVENANCE.json').write_text(json.dumps(record,indent=2)+'\\n')
 PYQE
     rm -rf qe_bundle qe_bundle_import
     mkdir -p qe_bundle_import
