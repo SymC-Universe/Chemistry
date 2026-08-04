@@ -3,8 +3,9 @@
 
 This version preserves the registered 64-case matrix and the V2 energy
 analysis, while correcting the ESM geometry convention: the slab is centered
-around Cartesian z=0 and the open boundaries lie at +/- Lz/2. Analysis is then
-passed through the V4 enforcement of the frozen seven-layer downstream floor.
+around Cartesian z=0, atomic positions are emitted explicitly in angstrom, and
+the open boundaries lie at +/- Lz/2. Analysis is then passed through the V4
+enforcement of the frozen seven-layer downstream floor.
 """
 from __future__ import annotations
 
@@ -19,12 +20,13 @@ import slab_runner_v2 as v2
 import slab_runner_v3 as v3
 import slab_runner_v4 as v4
 
-GEOMETRY_SCHEMA = "na-cu001-esm-centered-slab-v0.1"
+GEOMETRY_SCHEMA = "na-cu001-esm-centered-slab-v0.2"
 
 
 def fcc001_geometry_esm_centered(
     a0: float, layers: int, vacuum: float
 ) -> tuple[list[tuple[float, float, float]], float, float]:
+    """Return primitive-cell fractional coordinates with z measured from zero."""
     if layers not in v2.LAYERS:
         raise ValueError(f"layers must be one of {v2.LAYERS}")
     dz = a0 / 2.0
@@ -40,11 +42,27 @@ def fcc001_geometry_esm_centered(
     return atoms, cell_z, area
 
 
+def fcc001_cartesian_atoms_esm_centered(
+    a0: float, layers: int, vacuum: float
+) -> tuple[list[tuple[float, float, float]], float, float]:
+    """Return explicit Cartesian atomic positions in angstrom around z=0."""
+    fractional, cell_z, area = fcc001_geometry_esm_centered(a0, layers, vacuum)
+    h = a0 / 2.0
+    atoms = []
+    for f1, f2, f3 in fractional:
+        x = f1 * h + f2 * (-h)
+        y = f1 * h + f2 * h
+        z = f3 * cell_z
+        atoms.append((x, y, z))
+    return atoms, cell_z, area
+
+
 def geometry_record(a0: float, layers: int, vacuum: float) -> dict[str, Any]:
-    atoms, cell_z, _ = fcc001_geometry_esm_centered(a0, layers, vacuum)
-    z_cart = [z * cell_z for _, _, z in atoms]
+    atoms, cell_z, _ = fcc001_cartesian_atoms_esm_centered(a0, layers, vacuum)
+    z_cart = [z for _, _, z in atoms]
     return {
         "schema": GEOMETRY_SCHEMA,
+        "atomic_position_card": "angstrom",
         "coordinate_origin": "cartesian_z_zero",
         "slab_center_z_angstrom": 0.0,
         "cell_boundaries_z_angstrom": [-cell_z / 2.0, cell_z / 2.0],
@@ -55,6 +73,62 @@ def geometry_record(a0: float, layers: int, vacuum: float) -> dict[str, Any]:
         "vacuum_each_side_angstrom": vacuum / 2.0,
         "symmetric_about_zero": abs(min(z_cart) + max(z_cart)) <= 1e-12,
     }
+
+
+def qe_input_esm_centered(
+    *,
+    bulk: dict,
+    layers: int,
+    vacuum: float,
+    kmesh: int,
+    pseudo_dir: Path,
+    outdir: Path,
+    tag: str,
+) -> str:
+    """Build an ESM input with explicit real-space coordinates around z=0."""
+    atoms, cell_z, _ = fcc001_cartesian_atoms_esm_centered(
+        float(bulk["a0_angstrom"]), layers, vacuum
+    )
+    h = float(bulk["a0_angstrom"]) / 2.0
+    lines = [
+        "&CONTROL",
+        "  calculation = 'scf',",
+        f"  prefix = '{tag}',",
+        f"  pseudo_dir = '{pseudo_dir}',",
+        f"  outdir = '{outdir}',",
+        "  tprnfor = .true.,",
+        "  tstress = .true.,",
+        "  verbosity = 'high',",
+        "/",
+        "&SYSTEM",
+        "  ibrav = 0,",
+        f"  nat = {len(atoms)},",
+        "  ntyp = 1,",
+        f"  ecutwfc = {bulk['ecutwfc_ry']},",
+        f"  ecutrho = {bulk['ecutrho_ry']},",
+        "  occupations = 'smearing',",
+        "  smearing = 'mv',",
+        "  degauss = 0.02,",
+        "  nosym = .true.,",
+        "  assume_isolated = 'esm',",
+        "  esm_bc = 'bc1',",
+        "/",
+        "&ELECTRONS",
+        "  conv_thr = 1.0d-10,",
+        "  mixing_beta = 0.3,",
+        "  electron_maxstep = 250,",
+        "/",
+        "ATOMIC_SPECIES",
+        f"Cu 63.54600000 {v2.PSEUDO_NAME}",
+        "CELL_PARAMETERS angstrom",
+        f" {h:.12f} {h:.12f} 0.0",
+        f" {-h:.12f} {h:.12f} 0.0",
+        f" 0.0 0.0 {cell_z:.12f}",
+        "ATOMIC_POSITIONS angstrom",
+    ]
+    lines.extend(f"Cu {x:.12f} {y:.12f} {z:.12f}" for x, y, z in atoms)
+    lines.extend(["K_POINTS automatic", f"{kmesh} {kmesh} 1 0 0 0"])
+    return "\n".join(lines) + "\n"
 
 
 def case_tag(layers: int, vacuum: float, kmesh: int) -> str:
@@ -92,6 +166,7 @@ def attach_geometry_to_case_record(
 def run_case(args: argparse.Namespace) -> None:
     v2.load_bulk = v3.load_bulk_v04
     v2.fcc001_geometry = fcc001_geometry_esm_centered
+    v2.qe_input = qe_input_esm_centered
     v2.run_case(args)
     attach_geometry_to_case_record(
         Path(args.out), int(args.layers), float(args.vacuum), int(args.kmesh)
@@ -108,6 +183,7 @@ def audit_raw_geometry(records_root: Path) -> dict[str, Any]:
         geom = row.get("geometry_convention") or {}
         conditions = [
             geom.get("schema") == GEOMETRY_SCHEMA,
+            geom.get("atomic_position_card") == "angstrom",
             geom.get("coordinate_origin") == "cartesian_z_zero",
             abs(float(geom.get("slab_center_z_angstrom", 1.0))) <= 1e-12,
             abs(float(geom.get("atomic_z_mean_angstrom", 1.0))) <= 1e-12,
@@ -120,10 +196,11 @@ def audit_raw_geometry(records_root: Path) -> dict[str, Any]:
     if bad:
         raise SystemExit(f"HOLD: ESM-centered geometry audit failed for {bad}")
     return {
-        "schema": "na-cu001-esm-centered-raw-audit-v0.1",
+        "schema": "na-cu001-esm-centered-raw-audit-v0.2",
         "status": "PASS",
         "verified_record_count": len(rows),
         "geometry_schema": GEOMETRY_SCHEMA,
+        "atomic_position_card": "angstrom",
         "coordinate_origin": "cartesian_z_zero",
         "all_slabs_symmetric_about_zero": True,
         "vacuum_split_equally_between_open_boundaries": True,
