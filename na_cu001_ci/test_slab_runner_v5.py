@@ -59,11 +59,7 @@ def test_geometry_record_is_explicit_and_symmetric():
 
 def test_qe_input_uses_explicit_angstrom_coordinates_at_zero():
     a0 = 3.6
-    bulk = {
-        "a0_angstrom": a0,
-        "ecutwfc_ry": 90,
-        "ecutrho_ry": 270,
-    }
+    bulk = {"a0_angstrom": a0, "ecutwfc_ry": 90, "ecutrho_ry": 270}
     text = v5.qe_input_esm_centered(
         bulk=bulk,
         layers=7,
@@ -133,6 +129,44 @@ def test_record_identity_mismatch_rejected():
         raise AssertionError("mismatched current record identity was accepted")
 
 
+def write_complete_inventory(root: Path, tamper_index: int | None = None) -> None:
+    bulk = {"a0_angstrom": 3.6, "ecutwfc_ry": 90, "ecutrho_ry": 270}
+    index = 0
+    for layers in v2.LAYERS:
+        for vacuum in v2.VACUUM:
+            for kmesh in (16, 18, 20, 22):
+                tag = v5.case_tag(layers, vacuum, kmesh)
+                directory = root / str(index)
+                directory.mkdir(parents=True)
+                input_path = directory / f"{tag}.in"
+                input_text = v5.qe_input_esm_centered(
+                    bulk=bulk,
+                    layers=layers,
+                    vacuum=vacuum,
+                    kmesh=kmesh,
+                    pseudo_dir=Path("/tmp/pseudo"),
+                    outdir=Path("/tmp/out"),
+                    tag=tag,
+                )
+                input_path.write_text(input_text)
+                _, cell_z, _ = v5.fcc001_geometry_esm_centered(3.6, layers, vacuum)
+                record = {
+                    "tag": tag,
+                    "layers": layers,
+                    "nat": layers,
+                    "vacuum_angstrom": vacuum,
+                    "kmesh_inplane": kmesh,
+                    "a0_angstrom": 3.6,
+                    "cell_z_angstrom": cell_z,
+                    "input_sha256": v2.sha256(input_path),
+                    "geometry_convention": v5.geometry_record(3.6, layers, vacuum),
+                }
+                (directory / "run_record.json").write_text(json.dumps(record) + "\n")
+                if tamper_index == index:
+                    input_path.write_text(input_text + "! tampered after hashing\n")
+                index += 1
+
+
 def test_raw_geometry_audit_rejects_old_fractional_half_centering():
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
@@ -161,27 +195,28 @@ def test_raw_geometry_audit_rejects_old_fractional_half_centering():
         raise AssertionError("miscentered raw matrix was accepted")
 
 
+def test_raw_geometry_audit_rejects_tampered_input():
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        write_complete_inventory(root, tamper_index=37)
+        try:
+            v5.audit_raw_geometry(root)
+        except SystemExit:
+            return
+        raise AssertionError("tampered QE input was accepted")
+
+
 def test_raw_geometry_audit_accepts_complete_centered_inventory():
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
-        idx = 0
-        for layers in v2.LAYERS:
-            for vacuum in v2.VACUUM:
-                for kmesh in (16, 18, 20, 22):
-                    path = root / str(idx) / "run_record.json"
-                    path.parent.mkdir(parents=True)
-                    path.write_text(json.dumps({
-                        "tag": f"L{layers}-V{vacuum}-K{kmesh}",
-                        "layers": layers,
-                        "vacuum_angstrom": vacuum,
-                        "kmesh_inplane": kmesh,
-                        "geometry_convention": v5.geometry_record(3.6, layers, vacuum),
-                    }) + "\n")
-                    idx += 1
+        write_complete_inventory(root)
         out = v5.audit_raw_geometry(root)
         assert out["status"] == "PASS"
         assert out["verified_record_count"] == 64
+        assert out["verified_input_count"] == 64
         assert out["atomic_position_card"] == "angstrom"
+        assert out["all_input_hashes_match_run_records"] is True
+        assert len(out["input_records"]) == 64
 
 
 if __name__ == "__main__":
@@ -194,9 +229,10 @@ if __name__ == "__main__":
         test_sequential_four_kmesh_updates_target_only_current_record,
         test_record_identity_mismatch_rejected,
         test_raw_geometry_audit_rejects_old_fractional_half_centering,
+        test_raw_geometry_audit_rejects_tampered_input,
         test_raw_geometry_audit_accepts_complete_centered_inventory,
     ]
     for test in tests:
         test()
         print("PASS", test.__name__)
-    print(f"PASS {len(tests)} ESM-centered slab geometry tests")
+    print(f"PASS {len(tests)} ESM-centered slab/input tests")
