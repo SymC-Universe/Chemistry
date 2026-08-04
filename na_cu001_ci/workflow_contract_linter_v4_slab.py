@@ -22,6 +22,13 @@ REQUIRED_TRIGGER_PATHS = {
     ".github/workflows/na-cu001-v04-slab-route-v1.yml",
 }
 
+COMPACT_UPLOAD_PATHS = {
+    "slab_outputs/**/run_record.json",
+    "slab_outputs/**/*.in",
+    "slab_outputs/**/*.out",
+    "slab_outputs/**/COMPACT_EVIDENCE.sha256",
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(f"HOLD: {message}")
@@ -45,13 +52,19 @@ def main() -> None:
         fail("slab matrix fail-fast must remain disabled")
     if int(strategy.get("max-parallel", -1)) != 8:
         fail("slab matrix max-parallel must remain 8")
-    include = (strategy.get("matrix") or {}).get("include") or []
-    expected = {(layer, vacuum) for layer in (5, 7, 9, 11) for vacuum in (12, 16, 20, 24)}
-    actual = {(int(row["layers"]), int(row["vacuum"])) for row in include}
-    if len(include) != 16 or actual != expected:
-        fail("slab matrix is not the frozen 4x4 layer/vacuum grid")
-    if len({row.get("tag") for row in include}) != 16:
-        fail("slab matrix tags are not unique")
+    matrix = strategy.get("matrix") or {}
+    expected_axes = {
+        "layers": [5, 7, 9, 11],
+        "vacuum": [12, 16, 20, 24],
+        "kmesh": [16, 18, 20, 22],
+    }
+    if matrix != expected_axes:
+        fail(f"slab matrix is not the frozen 4x4x4 grid: {matrix}")
+    case_count = 1
+    for values in matrix.values():
+        case_count *= len(values)
+    if case_count != 64:
+        fail("slab matrix does not expand to exactly 64 independent SCF jobs")
 
     trigger = (data.get("on") or {}).get("push") or {}
     if trigger.get("branches") != ["agent/na-cu001-integration"]:
@@ -65,25 +78,35 @@ def main() -> None:
         fail("workflow permissions must remain read-only")
     if data.get("env", {}).get("BULK_EXTENSION_RUN_ID") != "30843005718":
         fail("workflow is not bound to the audited v0.4 bulk run")
+    if jobs["prepare"].get("timeout-minutes") != 360:
+        fail("prepare timeout changed")
+    if jobs["slab-cases"].get("timeout-minutes") != 360:
+        fail("independent slab-case timeout must remain 360 minutes")
 
     text = path.read_text()
     required_text = [
         "run_computational_stage_v4.sh prepare",
-        "run_computational_stage_v4.sh slab-case",
+        "run_computational_stage_v4.sh slab-case-one",
         "run_computational_stage_v4.sh slab-analyze",
         "na-cu001-c7-qe",
         "na-cu001-c7-base",
         "na-cu001-c6-run-audit",
-        "na-cu001-c7-raw-slab-${{ matrix.tag }}",
+        "na-cu001-c7-raw-slab-l${{ matrix.layers }}_v${{ matrix.vacuum }}_k${{ matrix.kmesh }}",
         "na-cu001-c7-stage2",
     ]
     missing_text = [token for token in required_text if token not in text]
     if missing_text:
         fail(f"workflow contract tokens missing: {missing_text}")
-    if jobs["prepare"].get("timeout-minutes") != 360:
-        fail("prepare timeout changed")
-    if jobs["slab-cases"].get("timeout-minutes") != 240:
-        fail("slab-case timeout changed")
+
+    run_steps = [step for step in jobs["slab-cases"].get("steps", []) if "run" in step]
+    if len(run_steps) != 1:
+        fail("each slab matrix job must contain exactly one computational run step")
+    command = run_steps[0]["run"]
+    for token in ("matrix.layers", "matrix.vacuum", "matrix.kmesh"):
+        if token not in command:
+            fail(f"single-SCF command is missing {token}")
+    if "slab-case '" in command or "run_pair" in command:
+        fail("multi-SCF worker scheduling remains in the source workflow")
 
     upload_steps = [
         step
@@ -91,14 +114,21 @@ def main() -> None:
         if step.get("uses") == "actions/upload-artifact@v4"
     ]
     if len(upload_steps) != 1 or upload_steps[0].get("if") != "always()":
-        fail("each slab worker must retain its raw evidence even on failure")
+        fail("each slab worker must retain compact evidence even on failure")
     upload = upload_steps[0].get("with", {})
-    if upload.get("if-no-files-found") != "error" or upload.get("path") != "slab_outputs":
-        fail("raw slab artifact upload is not fail-closed")
+    if upload.get("if-no-files-found") != "error":
+        fail("compact slab artifact upload is not fail-closed")
+    upload_paths = {line.strip() for line in str(upload.get("path", "")).splitlines() if line.strip()}
+    if upload_paths != COMPACT_UPLOAD_PATHS:
+        fail(f"slab upload is not the exact compact evidence allowlist: {sorted(upload_paths)}")
+    forbidden = ("tmp", ".save", "wfc", "charge-density")
+    if any(token in line for line in upload_paths for token in forbidden):
+        fail("QE restart scratch is included in slab artifacts")
 
     print(
-        "PASS C6-C7 workflow contract: 3 jobs, 16 matrix jobs, 64 slab SCFs, "
-        "definitive V5 geometry, strict holdouts, and proof-carrying handoff"
+        "PASS C6-C7 workflow contract: 3 jobs, 64 independent slab SCFs, "
+        "compact artifacts, definitive V5 ESM geometry, strict holdouts, "
+        "seven-layer floor, and proof-carrying handoff"
     )
 
 
