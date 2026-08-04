@@ -30,8 +30,8 @@ def test_all_registered_layers_have_equal_vacuum_halves():
     a0 = 3.61
     for layers in v2.LAYERS:
         for vacuum in v2.VACUUM:
-            atoms, cell_z, _ = v5.fcc001_geometry_esm_centered(a0, layers, vacuum)
-            z = [row[2] * cell_z for row in atoms]
+            atoms, cell_z, _ = v5.fcc001_cartesian_atoms_esm_centered(a0, layers, vacuum)
+            z = [row[2] for row in atoms]
             left = min(z) - (-cell_z / 2)
             right = cell_z / 2 - max(z)
             assert close(left, vacuum / 2)
@@ -41,19 +41,55 @@ def test_all_registered_layers_have_equal_vacuum_halves():
 
 def test_layer_spacing_and_fcc_shift_preserved():
     a0 = 3.63
-    atoms, cell_z, _ = v5.fcc001_geometry_esm_centered(a0, 11, 24.0)
-    z = [row[2] * cell_z for row in atoms]
+    atoms, _, _ = v5.fcc001_cartesian_atoms_esm_centered(a0, 11, 24.0)
+    z = [row[2] for row in atoms]
     assert all(close(z[i + 1] - z[i], a0 / 2) for i in range(len(z) - 1))
-    assert [(x, y) for x, y, _ in atoms[:4]] == [(0.0, 0.0), (0.5, 0.5), (0.0, 0.0), (0.5, 0.5)]
+    assert [(x, y) for x, y, _ in atoms[:4]] == [(0.0, 0.0), (0.0, a0 / 2), (0.0, 0.0), (0.0, a0 / 2)]
 
 
 def test_geometry_record_is_explicit_and_symmetric():
     record = v5.geometry_record(3.6, 7, 16.0)
     assert record["schema"] == v5.GEOMETRY_SCHEMA
+    assert record["atomic_position_card"] == "angstrom"
     assert record["coordinate_origin"] == "cartesian_z_zero"
     assert record["symmetric_about_zero"] is True
     assert close(record["atomic_z_mean_angstrom"], 0.0)
     assert close(record["vacuum_each_side_angstrom"], 8.0)
+
+
+def test_qe_input_uses_explicit_angstrom_coordinates_at_zero():
+    a0 = 3.6
+    bulk = {
+        "a0_angstrom": a0,
+        "ecutwfc_ry": 90,
+        "ecutrho_ry": 270,
+    }
+    text = v5.qe_input_esm_centered(
+        bulk=bulk,
+        layers=7,
+        vacuum=16.0,
+        kmesh=18,
+        pseudo_dir=Path("/tmp/pseudo"),
+        outdir=Path("/tmp/out"),
+        tag="test",
+    )
+    assert "ATOMIC_POSITIONS angstrom" in text
+    assert "ATOMIC_POSITIONS crystal" not in text
+    assert "assume_isolated = 'esm'" in text
+    assert "esm_bc = 'bc1'" in text
+    lines = text.splitlines()
+    start = lines.index("ATOMIC_POSITIONS angstrom") + 1
+    atom_lines = lines[start : start + 7]
+    coords = [[float(value) for value in line.split()[1:4]] for line in atom_lines]
+    x = [row[0] for row in coords]
+    y = [row[1] for row in coords]
+    z = [row[2] for row in coords]
+    assert all(close(value, 0.0) for value in x)
+    assert y == [0.0, a0 / 2, 0.0, a0 / 2, 0.0, a0 / 2, 0.0]
+    assert close(sum(z) / len(z), 0.0)
+    assert close(min(z) + max(z), 0.0)
+    assert min(z) < 0.0 < max(z)
+    assert lines[start + 7] == "K_POINTS automatic"
 
 
 def write_case_record(root: Path, layers: int, vacuum: float, kmesh: int) -> Path:
@@ -73,13 +109,14 @@ def write_case_record(root: Path, layers: int, vacuum: float, kmesh: int) -> Pat
 def test_sequential_four_kmesh_updates_target_only_current_record():
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
-        paths = {k: write_case_record(root, 7, 16.0, k) for k in (16, 18, 20, 22)}
-        for index, kmesh in enumerate((16, 18, 20, 22), start=1):
+        meshes = (16, 18, 20, 22)
+        paths = {k: write_case_record(root, 7, 16.0, k) for k in meshes}
+        for index, kmesh in enumerate(meshes, start=1):
             updated = v5.attach_geometry_to_case_record(root, 7, 16.0, kmesh)
             assert updated == paths[kmesh]
             for candidate_k, path in paths.items():
                 row = json.loads(path.read_text())
-                assert ("geometry_convention" in row) is (candidate_k in (16, 18, 20, 22)[:index])
+                assert ("geometry_convention" in row) is (candidate_k in meshes[:index])
 
 
 def test_record_identity_mismatch_rejected():
@@ -108,6 +145,7 @@ def test_raw_geometry_audit_rejects_old_fractional_half_centering():
                 "vacuum_angstrom": 12.0,
                 "geometry_convention": {
                     "schema": v5.GEOMETRY_SCHEMA,
+                    "atomic_position_card": "crystal",
                     "coordinate_origin": "fractional_z_half",
                     "slab_center_z_angstrom": 9.0,
                     "atomic_z_mean_angstrom": 9.0,
@@ -143,6 +181,7 @@ def test_raw_geometry_audit_accepts_complete_centered_inventory():
         out = v5.audit_raw_geometry(root)
         assert out["status"] == "PASS"
         assert out["verified_record_count"] == 64
+        assert out["atomic_position_card"] == "angstrom"
 
 
 if __name__ == "__main__":
@@ -151,6 +190,7 @@ if __name__ == "__main__":
         test_all_registered_layers_have_equal_vacuum_halves,
         test_layer_spacing_and_fcc_shift_preserved,
         test_geometry_record_is_explicit_and_symmetric,
+        test_qe_input_uses_explicit_angstrom_coordinates_at_zero,
         test_sequential_four_kmesh_updates_target_only_current_record,
         test_record_identity_mismatch_rejected,
         test_raw_geometry_audit_rejects_old_fractional_half_centering,
