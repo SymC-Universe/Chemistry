@@ -43,17 +43,67 @@ if 'from slab_runner_v3 import load_bulk_v04' not in src:
 src=src.replace(old_runner,new_runner)
 if 'from slab_runner_v5 import load_bulk_v04' in src:
     raise SystemExit('mechanical patch escaped into the v0.4 bulk helper import')
-if src.count(new_runner) != 2:
-    raise SystemExit('V5 execution command count is not exactly 2 after patching')
-old_engine='ENGINE=na_cu001_ci/closure_engine_v3.py'
-new_engine='ENGINE=na_cu001_ci/closure_engine_v4.py'
+
 had_trailing_newline=src.endswith('\n')
 lines=src.splitlines()
+old_loop=[
+    '    for kmesh in $meshes; do',
+    '      python3 na_cu001_ci/slab_runner_v5.py run --layers "$layers" --vacuum "$vacuum" --kmesh "$kmesh" \\',
+    '        --handoff base/BULK_HANDOFF.json --bulk-result base/BULK_CONVERGENCE_RESULT.json \\',
+    '        --pw qe_bundle/bin/pw.x --pseudo-dir qe_bundle/pseudos --out "slab_outputs/$tag" --np 2',
+    '    done',
+]
+loop_starts=[i for i,line in enumerate(lines) if line == old_loop[0]]
+if len(loop_starts) != 1:
+    raise SystemExit(f'mechanical patch exact loop count is {len(loop_starts)}, expected 1')
+loop_start=loop_starts[0]
+if lines[loop_start:loop_start+len(old_loop)] != old_loop:
+    raise SystemExit('mechanical patch slab loop structure differs from the verified source')
+new_loop='''    read -r k16 k18 k20 k22 extra <<< "$meshes"
+    if [[ -z "$k16" || -z "$k18" || -z "$k20" || -z "$k22" || -n "${extra:-}" ]]; then
+      echo "HOLD: expected exactly four registered slab k meshes, got: $meshes" >&2
+      exit 2
+    fi
+    run_mesh() {
+      local kmesh="$1"
+      python3 na_cu001_ci/slab_runner_v5.py run --layers "$layers" --vacuum "$vacuum" --kmesh "$kmesh" \\
+        --handoff base/BULK_HANDOFF.json --bulk-result base/BULK_CONVERGENCE_RESULT.json \\
+        --pw qe_bundle/bin/pw.x --pseudo-dir qe_bundle/pseudos --out "slab_outputs/$tag" --np 2
+    }
+    run_pair() {
+      local first="$1"
+      local second="$2"
+      local first_pid second_pid first_rc second_rc
+      run_mesh "$first" &
+      first_pid=$!
+      run_mesh "$second" &
+      second_pid=$!
+      set +e
+      wait "$first_pid"
+      first_rc=$?
+      wait "$second_pid"
+      second_rc=$?
+      set -e
+      if (( first_rc != 0 || second_rc != 0 )); then
+        echo "HOLD: paired slab SCF failure for k=$first/$second" >&2
+        return 2
+      fi
+    }
+    run_pair "$k16" "$k20"
+    run_pair "$k18" "$k22"'''.splitlines()
+lines[loop_start:loop_start+len(old_loop)]=new_loop
+
+old_engine='ENGINE=na_cu001_ci/closure_engine_v3.py'
+new_engine='ENGINE=na_cu001_ci/closure_engine_v4.py'
 engine_lines=[i for i,line in enumerate(lines) if line == old_engine]
 if len(engine_lines) != 1:
     raise SystemExit(f'mechanical patch exact-line count for closure engine is {len(engine_lines)}, expected 1')
 lines[engine_lines[0]]=new_engine
 src='\n'.join(lines)+('\n' if had_trailing_newline else '')
+if src.count(new_runner) != 2:
+    raise SystemExit('V5 execution command count is not exactly 2 after pairwise patching')
+if 'run_pair "$k16" "$k20"' not in src or 'run_pair "$k18" "$k22"' not in src:
+    raise SystemExit('pairwise slab scheduling anchors are missing after patching')
 Path(sys.argv[2]).write_text(src)
 PY
   chmod +x "$out"
@@ -94,6 +144,8 @@ case "${1:?stage required}" in
     grep -Fq 'from slab_runner_v3 import load_bulk_v04' "$definitive_tmp"
     test "$(grep -Fc 'python3 na_cu001_ci/slab_runner_v5.py' "$definitive_tmp")" -eq 2
     grep -Fq 'ENGINE=na_cu001_ci/closure_engine_v4.py' "$definitive_tmp"
+    grep -Fq 'run_pair "$k16" "$k20"' "$definitive_tmp"
+    grep -Fq 'run_pair "$k18" "$k22"' "$definitive_tmp"
     if grep -Fq 'from slab_runner_v5 import load_bulk_v04' "$definitive_tmp"; then
       echo 'HOLD: V5 patch altered the v0.4 bulk helper import' >&2
       exit 2
