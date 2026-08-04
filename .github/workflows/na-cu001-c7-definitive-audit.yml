@@ -35,6 +35,8 @@ jobs:
       - name: Verify ESM geometry, strict holdouts, layer floor, and proof handoff
         run: |
           set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y python3-numpy
           python3 -m py_compile \
             na_cu001_ci/slab_runner_v2.py \
             na_cu001_ci/slab_runner_v3.py \
