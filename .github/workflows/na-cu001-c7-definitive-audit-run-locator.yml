@@ -14,7 +14,7 @@ jobs:
       - name: Record definitive C7 audit run
         env:
           GH_TOKEN: ${{ github.token }}
-          AUDIT_SHA: c3af2b7337f58c263c6d7cb95a8db09136347775
+          AUDIT_SHA: d05c7e8b54d87aa4eec3c242411a7d42a4ff5475
         shell: bash
         run: |
           set -euo pipefail
@@ -30,5 +30,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add na_cu001_ci/checkpoints/C7_DEFINITIVE_AUDIT_RUN.json
-          git commit -m 'chore(na-cu001): record hardened C7 audit run'
+          git commit -m 'chore(na-cu001): record dependency-fixed C7 audit run'
           git push
