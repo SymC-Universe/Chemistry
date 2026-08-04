@@ -60,6 +60,16 @@ case "${1:?stage required}" in
     GH_TOKEN="${GH_TOKEN:?GH_TOKEN required}" bash "$tmp" prepare
     cp bulk_run_audit/UPSTREAM_BULK_RUN_AUDIT.json base/
     sha256sum bulk_run_audit/jobs.json bulk_run_audit/artifacts.json base/UPSTREAM_BULK_RUN_AUDIT.json > base/UPSTREAM_BULK_RUN_AUDIT.sha256
+    sha256sum \
+      na_cu001_ci/slab_runner_v2.py \
+      na_cu001_ci/slab_runner_v3.py \
+      na_cu001_ci/slab_runner_v4.py \
+      na_cu001_ci/slab_runner_v5.py \
+      na_cu001_ci/test_slab_runner_v4.py \
+      na_cu001_ci/test_slab_runner_v5.py \
+      na_cu001_ci/run_computational_stage_v4.sh \
+      .github/workflows/na-cu001-v04-slab-route-v1.yml \
+      > base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256
     ;;
   slab-case|slab-analyze)
     delegate_v3_with_esm_centered_slab "$@"
