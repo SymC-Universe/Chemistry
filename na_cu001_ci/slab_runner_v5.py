@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""Definitive v0.4-aware clean-slab entrypoint for ESM calculations.
+
+This version preserves the registered 64-case matrix and the V2 energy
+analysis, while correcting the ESM geometry convention: the slab is centered
+around Cartesian z=0 and the open boundaries lie at +/- Lz/2. Analysis is then
+passed through the V4 enforcement of the frozen seven-layer downstream floor.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+import slab_runner_v2 as v2
+import slab_runner_v3 as v3
+import slab_runner_v4 as v4
+
+GEOMETRY_SCHEMA = "na-cu001-esm-centered-slab-v0.1"
+
+
+def fcc001_geometry_esm_centered(
+    a0: float, layers: int, vacuum: float
+) -> tuple[list[tuple[float, float, float]], float, float]:
+    if layers not in v2.LAYERS:
+        raise ValueError(f"layers must be one of {v2.LAYERS}")
+    dz = a0 / 2.0
+    slab_height = (layers - 1) * dz
+    cell_z = slab_height + vacuum
+    atoms: list[tuple[float, float, float]] = []
+    midpoint = (layers - 1) / 2.0
+    for layer in range(layers):
+        shift = 0.5 if layer % 2 else 0.0
+        z_cart = (layer - midpoint) * dz
+        atoms.append((shift, shift, z_cart / cell_z))
+    area = a0 * a0 / 2.0
+    return atoms, cell_z, area
+
+
+def geometry_record(a0: float, layers: int, vacuum: float) -> dict[str, Any]:
+    atoms, cell_z, _ = fcc001_geometry_esm_centered(a0, layers, vacuum)
+    z_cart = [z * cell_z for _, _, z in atoms]
+    return {
+        "schema": GEOMETRY_SCHEMA,
+        "coordinate_origin": "cartesian_z_zero",
+        "slab_center_z_angstrom": 0.0,
+        "cell_boundaries_z_angstrom": [-cell_z / 2.0, cell_z / 2.0],
+        "atomic_z_min_angstrom": min(z_cart),
+        "atomic_z_max_angstrom": max(z_cart),
+        "atomic_z_mean_angstrom": sum(z_cart) / len(z_cart),
+        "vacuum_total_angstrom": vacuum,
+        "vacuum_each_side_angstrom": vacuum / 2.0,
+        "symmetric_about_zero": abs(min(z_cart) + max(z_cart)) <= 1e-12,
+    }
+
+
+def run_case(args: argparse.Namespace) -> None:
+    v2.load_bulk = v3.load_bulk_v04
+    v2.fcc001_geometry = fcc001_geometry_esm_centered
+    v2.run_case(args)
+    records = list(Path(args.out).resolve().rglob("run_record.json"))
+    if len(records) != 1:
+        raise SystemExit(f"HOLD: expected one slab run record, found {len(records)}")
+    path = records[0]
+    row = json.loads(path.read_text())
+    row["geometry_convention"] = geometry_record(
+        float(row["a0_angstrom"]), int(row["layers"]), float(row["vacuum_angstrom"])
+    )
+    path.write_text(json.dumps(row, indent=2) + "\n")
+
+
+def audit_raw_geometry(records_root: Path) -> dict[str, Any]:
+    paths = sorted(records_root.rglob("run_record.json"))
+    if len(paths) != 64:
+        raise SystemExit(f"HOLD: expected 64 raw slab records, found {len(paths)}")
+    rows = [json.loads(path.read_text()) for path in paths]
+    bad = []
+    for row in rows:
+        geom = row.get("geometry_convention") or {}
+        conditions = [
+            geom.get("schema") == GEOMETRY_SCHEMA,
+            geom.get("coordinate_origin") == "cartesian_z_zero",
+            abs(float(geom.get("slab_center_z_angstrom", 1.0))) <= 1e-12,
+            abs(float(geom.get("atomic_z_mean_angstrom", 1.0))) <= 1e-12,
+            bool(geom.get("symmetric_about_zero")),
+            abs(float(geom.get("vacuum_total_angstrom", -1.0)) - float(row["vacuum_angstrom"])) <= 1e-12,
+            abs(2.0 * float(geom.get("vacuum_each_side_angstrom", -1.0)) - float(row["vacuum_angstrom"])) <= 1e-12,
+        ]
+        if not all(conditions):
+            bad.append(row.get("tag"))
+    if bad:
+        raise SystemExit(f"HOLD: ESM-centered geometry audit failed for {bad}")
+    return {
+        "schema": "na-cu001-esm-centered-raw-audit-v0.1",
+        "status": "PASS",
+        "verified_record_count": len(rows),
+        "geometry_schema": GEOMETRY_SCHEMA,
+        "coordinate_origin": "cartesian_z_zero",
+        "all_slabs_symmetric_about_zero": True,
+        "vacuum_split_equally_between_open_boundaries": True,
+    }
+
+
+def analyze(args: argparse.Namespace) -> None:
+    records_root = Path(args.records).resolve()
+    geometry_audit = audit_raw_geometry(records_root)
+    out = Path(args.out).resolve()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpout = Path(tmpdir) / "FLOOR_AUDITED_RESULT.json"
+        try:
+            v4.analyze(SimpleNamespace(records=str(records_root), out=str(tmpout)))
+        except SystemExit as exc:
+            if not tmpout.is_file():
+                raise
+            result = json.loads(tmpout.read_text())
+            result["esm_geometry_audit"] = geometry_audit
+            result["analysis_entrypoint"] = "slab_runner_v5.py"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(result, indent=2) + "\n")
+            raise SystemExit(exc.code)
+        result = json.loads(tmpout.read_text())
+    result["esm_geometry_audit"] = geometry_audit
+    result["analysis_entrypoint"] = "slab_runner_v5.py"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2) + "\n")
+    print(json.dumps(result, indent=2))
+    if result.get("gate") != "PASS":
+        raise SystemExit(2)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+    run = sub.add_parser("run")
+    run.add_argument("--layers", type=int, required=True)
+    run.add_argument("--vacuum", type=float, required=True)
+    run.add_argument("--kmesh", type=int, required=True)
+    run.add_argument("--handoff", required=True)
+    run.add_argument("--bulk-result", required=True)
+    run.add_argument("--pw", required=True)
+    run.add_argument("--pseudo-dir", required=True)
+    run.add_argument("--out", required=True)
+    run.add_argument("--np", type=int, default=2)
+    ana = sub.add_parser("analyze")
+    ana.add_argument("--records", required=True)
+    ana.add_argument("--out", required=True)
+    args = parser.parse_args()
+    run_case(args) if args.command == "run" else analyze(args)
+
+
+if __name__ == "__main__":
+    main()
