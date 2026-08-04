@@ -79,7 +79,8 @@ case "${1:?stage required}" in
       na_cu001_ci/test_slab_runner_v4.py \
       na_cu001_ci/test_slab_runner_v5.py \
       na_cu001_ci/closure_engine_v4.py \
-      na_cu001_ci/test_slab_handoff_v4.py
+      na_cu001_ci/test_slab_handoff_v4.py \
+      na_cu001_ci/workflow_contract_linter_v4_slab.py
     (cd na_cu001_ci && \
       python3 test_slab_runner_v4.py && \
       python3 test_slab_runner_v5.py && \
@@ -109,6 +110,7 @@ case "${1:?stage required}" in
       na_cu001_ci/closure_engine_v3.py \
       na_cu001_ci/closure_engine_v4.py \
       na_cu001_ci/test_slab_handoff_v4.py \
+      na_cu001_ci/workflow_contract_linter_v4_slab.py \
       na_cu001_ci/run_computational_stage_v4.sh \
       .github/workflows/na-cu001-v04-slab-route-v1.yml \
       > base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256
