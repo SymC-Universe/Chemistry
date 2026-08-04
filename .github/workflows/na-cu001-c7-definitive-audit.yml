@@ -20,7 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SOURCE_C7_RUN_ID: '30864668012'
+  SOURCE_C7_RUN_ID: '30864911500'
+  SOURCE_C7_COMMIT: 'e66cae0bb7498fd5fc8acc728070c764ad74a79c'
 
 jobs:
   wait-and-audit:
@@ -95,6 +96,8 @@ jobs:
           gh run download "$SOURCE_C7_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name na-cu001-c7-base --dir base
           test "$(find slab_raw -type f -name run_record.json | wc -l)" -eq 64
+          test "$(cat base/COMPUTATIONAL_SOURCE_COMMIT.txt)" = "$SOURCE_C7_COMMIT"
+          sha256sum -c base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256
 
       - name: Recompute definitive clean-slab decision with ESM and floor audits
         run: |
@@ -110,6 +113,8 @@ jobs:
           find slab_raw -type f -name run_record.json -print0 \
             | sort -z | xargs -0 sha256sum \
             > definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256
+          cp base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256 definitive_stage2/
+          cp base/COMPUTATIONAL_SOURCE_COMMIT.txt definitive_stage2/
           python3 - <<'PY'
           import hashlib, json, os
           from pathlib import Path
@@ -122,14 +127,20 @@ jobs:
               raise SystemExit('HOLD: frozen downstream layer floor not satisfied')
           if geometry.get('status')!='PASS' or int(geometry.get('verified_record_count',0))!=64:
               raise SystemExit('HOLD: ESM-centered raw geometry audit not satisfied')
+          if geometry.get('geometry_schema')!='na-cu001-esm-centered-slab-v0.2':
+              raise SystemExit('HOLD: wrong ESM geometry schema')
+          if geometry.get('atomic_position_card')!='angstrom':
+              raise SystemExit('HOLD: atomic positions were not explicitly emitted in angstrom')
           record={
-            'schema':'na-cu001-c7-definitive-audit-v0.2',
+            'schema':'na-cu001-c7-definitive-audit-v0.3',
             'status':'PASS',
             'source_c7_run_id':int(os.environ['SOURCE_C7_RUN_ID']),
+            'source_c7_commit':os.environ['SOURCE_C7_COMMIT'],
             'raw_slab_record_count':64,
             'clean_slab_result_sha256':sha('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json'),
             'slab_handoff_sha256':sha('definitive_stage2/SLAB_HANDOFF.json'),
             'raw_manifest_sha256':sha('definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256'),
+            'source_manifest_sha256':sha('definitive_stage2/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256'),
             'selected_slab':result['recommended_smallest'],
             'layer_floor_audit':floor,
             'esm_geometry_audit':geometry,
