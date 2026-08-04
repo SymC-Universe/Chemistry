@@ -56,6 +56,46 @@ def test_geometry_record_is_explicit_and_symmetric():
     assert close(record["vacuum_each_side_angstrom"], 8.0)
 
 
+def write_case_record(root: Path, layers: int, vacuum: float, kmesh: int) -> Path:
+    tag = v5.case_tag(layers, vacuum, kmesh)
+    path = root / tag / "run_record.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "tag": tag,
+        "layers": layers,
+        "vacuum_angstrom": vacuum,
+        "kmesh_inplane": kmesh,
+        "a0_angstrom": 3.6,
+    }) + "\n")
+    return path
+
+
+def test_sequential_four_kmesh_updates_target_only_current_record():
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        paths = {k: write_case_record(root, 7, 16.0, k) for k in (16, 18, 20, 22)}
+        for index, kmesh in enumerate((16, 18, 20, 22), start=1):
+            updated = v5.attach_geometry_to_case_record(root, 7, 16.0, kmesh)
+            assert updated == paths[kmesh]
+            for candidate_k, path in paths.items():
+                row = json.loads(path.read_text())
+                assert ("geometry_convention" in row) is (candidate_k in (16, 18, 20, 22)[:index])
+
+
+def test_record_identity_mismatch_rejected():
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        path = write_case_record(root, 7, 16.0, 16)
+        row = json.loads(path.read_text())
+        row["kmesh_inplane"] = 18
+        path.write_text(json.dumps(row) + "\n")
+        try:
+            v5.attach_geometry_to_case_record(root, 7, 16.0, 16)
+        except SystemExit:
+            return
+        raise AssertionError("mismatched current record identity was accepted")
+
+
 def test_raw_geometry_audit_rejects_old_fractional_half_centering():
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
@@ -111,6 +151,8 @@ if __name__ == "__main__":
         test_all_registered_layers_have_equal_vacuum_halves,
         test_layer_spacing_and_fcc_shift_preserved,
         test_geometry_record_is_explicit_and_symmetric,
+        test_sequential_four_kmesh_updates_target_only_current_record,
+        test_record_identity_mismatch_rejected,
         test_raw_geometry_audit_rejects_old_fractional_half_centering,
         test_raw_geometry_audit_accepts_complete_centered_inventory,
     ]
