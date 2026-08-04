@@ -66,7 +66,7 @@ delegate_v3_with_definitive_slab() {
 case "${1:?stage required}" in
   prepare)
     sudo apt-get update
-    sudo apt-get install -y gh python3
+    sudo apt-get install -y gh python3 python3-numpy
     mkdir -p bulk_run_audit
     run_id="${BULK_EXTENSION_RUN_ID:?BULK_EXTENSION_RUN_ID required}"
     gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?filter=latest&per_page=100" > bulk_run_audit/jobs.json
