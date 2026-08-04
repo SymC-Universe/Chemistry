@@ -17,7 +17,7 @@ jobs:
       - name: Cancel pre-SCF source run
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: '30864668012'
+          SOURCE_RUN_ID: '30864911500'
         run: |
           set -euo pipefail
           state=$(gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json status,conclusion --jq '.status + " " + (.conclusion // "")')
