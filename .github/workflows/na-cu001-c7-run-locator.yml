@@ -14,7 +14,7 @@ jobs:
       - name: Record C7 launch run
         env:
           GH_TOKEN: ${{ github.token }}
-          LAUNCH_SHA: c9ec3e2a0fa5b3c1e6672d8a92c140ff05121a15
+          LAUNCH_SHA: e66cae0bb7498fd5fc8acc728070c764ad74a79c
         shell: bash
         run: |
           set -euo pipefail
@@ -29,5 +29,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add na_cu001_ci/checkpoints/C7_ACTIVE_RUN.json
-          git commit -m 'chore(na-cu001): record multi-k-mesh-safe C7 run'
+          git commit -m 'chore(na-cu001): record explicit-coordinate C7 run'
           git push
