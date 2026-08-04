@@ -1,5 +1,6 @@
 name: Na Cu001 C7 retarget definitive audit
 on:
+  workflow_dispatch:
   push:
     branches: [agent/na-cu001-integration]
     paths: ['.github/workflows/na-cu001-c7-retarget-audit.yml']
