@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SOURCE_C7_RUN_ID: '30864911500'
-  SOURCE_C7_COMMIT: 'e66cae0bb7498fd5fc8acc728070c764ad74a79c'
+  SOURCE_C7_RUN_ID: '30865116448'
+  SOURCE_C7_COMMIT: 'f2dd5df52975c5eb26cb020995a82e237a085edc'
 
 jobs:
   wait-and-audit:
@@ -125,18 +125,25 @@ jobs:
           geometry=result.get('esm_geometry_audit') or {}
           if floor.get('status')!='PASS' or int(result['recommended_smallest']['layers'])<7:
               raise SystemExit('HOLD: frozen downstream layer floor not satisfied')
-          if geometry.get('status')!='PASS' or int(geometry.get('verified_record_count',0))!=64:
+          if geometry.get('status')!='PASS':
               raise SystemExit('HOLD: ESM-centered raw geometry audit not satisfied')
+          if int(geometry.get('verified_record_count',0))!=64 or int(geometry.get('verified_input_count',0))!=64:
+              raise SystemExit('HOLD: the 64 raw records and QE inputs were not both verified')
+          if geometry.get('schema')!='na-cu001-esm-centered-raw-audit-v0.3':
+              raise SystemExit('HOLD: wrong ESM raw/input audit schema')
           if geometry.get('geometry_schema')!='na-cu001-esm-centered-slab-v0.2':
               raise SystemExit('HOLD: wrong ESM geometry schema')
           if geometry.get('atomic_position_card')!='angstrom':
               raise SystemExit('HOLD: atomic positions were not explicitly emitted in angstrom')
+          if not geometry.get('all_input_hashes_match_run_records') or not geometry.get('all_inputs_set_esm_bc1'):
+              raise SystemExit('HOLD: QE input hash or ESM boundary audit failed')
           record={
-            'schema':'na-cu001-c7-definitive-audit-v0.3',
+            'schema':'na-cu001-c7-definitive-audit-v0.4',
             'status':'PASS',
             'source_c7_run_id':int(os.environ['SOURCE_C7_RUN_ID']),
             'source_c7_commit':os.environ['SOURCE_C7_COMMIT'],
             'raw_slab_record_count':64,
+            'qe_input_count':64,
             'clean_slab_result_sha256':sha('definitive_stage2/CLEAN_SLAB_CONVERGENCE_RESULT.json'),
             'slab_handoff_sha256':sha('definitive_stage2/SLAB_HANDOFF.json'),
             'raw_manifest_sha256':sha('definitive_stage2/RAW_SLAB_RECORD_MANIFEST.sha256'),
