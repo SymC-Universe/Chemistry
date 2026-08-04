@@ -47,10 +47,13 @@ if src.count(new_runner) != 2:
     raise SystemExit('V5 execution command count is not exactly 2 after patching')
 old_engine='ENGINE=na_cu001_ci/closure_engine_v3.py'
 new_engine='ENGINE=na_cu001_ci/closure_engine_v4.py'
-engine_count=src.count(old_engine)
-if engine_count != 1:
-    raise SystemExit(f'mechanical patch anchor count for closure engine is {engine_count}, expected 1')
-src=src.replace(old_engine,new_engine,1)
+had_trailing_newline=src.endswith('\n')
+lines=src.splitlines()
+engine_lines=[i for i,line in enumerate(lines) if line == old_engine]
+if len(engine_lines) != 1:
+    raise SystemExit(f'mechanical patch exact-line count for closure engine is {len(engine_lines)}, expected 1')
+lines[engine_lines[0]]=new_engine
+src='\n'.join(lines)+('\n' if had_trailing_newline else '')
 Path(sys.argv[2]).write_text(src)
 PY
   chmod +x "$out"
