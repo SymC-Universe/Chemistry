@@ -1,4 +1,4 @@
-name: Na Cu001 cancel pre-SCF C7 route
+name: Na Cu001 prune superseded C7 runs
 
 on:
   push:
@@ -14,14 +14,25 @@ jobs:
   cancel:
     runs-on: ubuntu-24.04
     steps:
-      - name: Cancel pre-SCF source run
+      - name: Cancel superseded source runs
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: '30864911500'
+          FINAL_SOURCE_SHA: 'f2dd5df52975c5eb26cb020995a82e237a085edc'
         run: |
           set -euo pipefail
-          state=$(gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json status,conclusion --jq '.status + " " + (.conclusion // "")')
-          echo "source state before cancellation: $state"
-          if [[ "$state" == in_progress* || "$state" == queued* ]]; then
-            gh run cancel "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY"
-          fi
+          gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow "Na Cu001 v0.4 audited clean-slab closure" \
+            --branch agent/na-cu001-integration \
+            --limit 30 \
+            --json databaseId,headSha,status,conclusion \
+            > runs.json
+          jq -c '.[] | select((.status=="in_progress" or .status=="queued") and .headSha != env.FINAL_SOURCE_SHA)' runs.json \
+            | while read -r row; do
+                run_id=$(jq -r '.databaseId' <<<"$row")
+                head_sha=$(jq -r '.headSha' <<<"$row")
+                echo "cancelling superseded C7 run $run_id at $head_sha"
+                gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY"
+              done
+          final=$(jq -c --arg sha "$FINAL_SOURCE_SHA" '.[] | select(.headSha==$sha) | .[0] // empty' runs.json 2>/dev/null || true)
+          echo "final source SHA retained: $FINAL_SOURCE_SHA"
