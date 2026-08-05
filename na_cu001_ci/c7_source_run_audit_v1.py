@@ -35,10 +35,14 @@ def order_key(job: dict[str, Any]) -> tuple[int, int]:
     return int(job.get("run_attempt") or 0), int(job.get("id") or 0)
 
 
-def latest_named(jobs: list[dict[str, Any]], name: str) -> dict[str, Any]:
-    matches = [job for job in jobs if job.get("name") == name]
+def completed(job: dict[str, Any]) -> bool:
+    return job.get("status") == "completed"
+
+
+def latest_completed_named(jobs: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    matches = [job for job in jobs if job.get("name") == name and completed(job)]
     if not matches:
-        raise SystemExit(f"HOLD: source job missing: {name}")
+        raise SystemExit(f"HOLD: no completed source job found: {name}")
     return max(matches, key=order_key)
 
 
@@ -52,6 +56,17 @@ def compact_job(job: dict[str, Any]) -> dict[str, Any]:
         "started_at": job.get("started_at"),
         "completed_at": job.get("completed_at"),
     }
+
+
+def sorted_jobs(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        rows,
+        key=lambda row: (
+            str(row.get("name")),
+            int(row.get("run_attempt") or 0),
+            int(row.get("id") or 0),
+        ),
+    )
 
 
 def audit(args: argparse.Namespace) -> dict[str, Any]:
@@ -79,29 +94,42 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
 
     latest_slab_jobs: list[dict[str, Any]] = []
     superseded_failures: list[dict[str, Any]] = []
+    nonexecuted_records: list[dict[str, Any]] = []
     for key in sorted(expected):
         attempts = grouped.get(key) or []
         if not attempts:
             raise SystemExit(f"HOLD: source slab job missing for {key}")
-        latest = max(attempts, key=order_key)
-        if latest.get("status") != "completed" or latest.get("conclusion") != "success":
+        completed_attempts = [job for job in attempts if completed(job)]
+        incomplete_attempts = [job for job in attempts if not completed(job)]
+        nonexecuted_records.extend(compact_job(job) for job in incomplete_attempts)
+        if not completed_attempts:
+            raise SystemExit(f"HOLD: no completed source slab attempt found for {key}")
+        latest = max(completed_attempts, key=order_key)
+        if latest.get("conclusion") != "success":
             raise SystemExit(
-                f"HOLD: latest source slab attempt is not successful for {key}: "
+                f"HOLD: latest completed source slab attempt is not successful for {key}: "
                 f"status={latest.get('status')} conclusion={latest.get('conclusion')}"
             )
         latest_slab_jobs.append(compact_job(latest))
-        for prior in attempts:
+        for prior in completed_attempts:
             if prior is latest:
                 continue
-            if prior.get("status") == "completed" and prior.get("conclusion") != "success":
+            if prior.get("conclusion") != "success":
                 superseded_failures.append(compact_job(prior))
 
-    prepare = latest_named(jobs, "prepare")
-    if prepare.get("status") != "completed" or prepare.get("conclusion") != "success":
-        raise SystemExit("HOLD: latest source prepare job is not successful")
-    gate = latest_named(jobs, "slab-gate")
-    if gate.get("status") != "completed" or gate.get("conclusion") != "failure":
-        raise SystemExit("HOLD: latest source slab gate is not the registered scientific HOLD")
+    prepare = latest_completed_named(jobs, "prepare")
+    if prepare.get("conclusion") != "success":
+        raise SystemExit("HOLD: latest completed source prepare job is not successful")
+    gate = latest_completed_named(jobs, "slab-gate")
+    if gate.get("conclusion") != "failure":
+        raise SystemExit("HOLD: latest completed source slab gate is not the registered scientific HOLD")
+
+    named_nonexecuted = [
+        compact_job(job)
+        for job in jobs
+        if job.get("name") in {"prepare", "slab-gate"} and not completed(job)
+    ]
+    nonexecuted_records.extend(named_nonexecuted)
 
     by_name: dict[str, list[dict[str, Any]]] = {}
     for artifact in artifacts:
@@ -157,7 +185,7 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         }
 
     return {
-        "schema": "na-cu001-c7-source-run-audit-v0.2",
+        "schema": "na-cu001-c7-source-run-audit-v0.3",
         "status": "PASS",
         "source_run_id": args.source_run_id,
         "source_commit": args.source_commit,
@@ -168,11 +196,10 @@ def audit(args: argparse.Namespace) -> dict[str, Any]:
         "source_gate_scientific_hold_observed": True,
         "source_slab_job_count": 64,
         "source_slab_latest_attempts_all_success": True,
+        "source_slab_latest_completed_attempts_all_success": True,
         "latest_slab_jobs": latest_slab_jobs,
-        "superseded_failed_attempts": sorted(
-            superseded_failures,
-            key=lambda row: (str(row.get("name")), int(row.get("run_attempt") or 0), int(row.get("id") or 0)),
-        ),
+        "superseded_failed_attempts": sorted_jobs(superseded_failures),
+        "nonexecuted_job_records": sorted_jobs(nonexecuted_records),
         "source_raw_artifact_count": 64,
         "source_raw_artifacts": raw_records,
         "source_base_artifact": fixed_records["na-cu001-c7-base"],
