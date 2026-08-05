@@ -1,0 +1,36 @@
+name: Cancel superseded Na Cu001 L13 v2 run
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c7-cancel-superseded-l13-v2.yml'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cancel-superseded:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Cancel only the superseded partially tested run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_RUN_ID: '31030739668'
+          TARGET_HEAD_SHA: '9eca2a92e8f3f8fe292d790f42739bb3352ab575'
+          KEEP_RUN_ID: '31030768817'
+          KEEP_HEAD_SHA: '055b2f5d782c2a590e65ad429cefd0981f0dd37b'
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${TARGET_RUN_ID}")
+          keep=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${KEEP_RUN_ID}")
+          test "$(jq -r .head_sha <<<"$target")" = "$TARGET_HEAD_SHA"
+          test "$(jq -r .path <<<"$target")" = '.github/workflows/na-cu001-c7-l13-extension-v2.yml'
+          test "$(jq -r .head_sha <<<"$keep")" = "$KEEP_HEAD_SHA"
+          test "$(jq -r .path <<<"$keep")" = '.github/workflows/na-cu001-c7-l13-extension-v2.yml'
+          status=$(jq -r .status <<<"$target")
+          if [[ "$status" == queued || "$status" == in_progress || "$status" == waiting || "$status" == pending || "$status" == requested ]]; then
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/runs/${TARGET_RUN_ID}/cancel"
+          fi
