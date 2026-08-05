@@ -11,24 +11,30 @@ from c7_source_run_audit_v1 import KMESHES, LAYERS, VACUUMS, audit
 BASE_DIGEST = "sha256:" + "1" * 64
 QE_DIGEST = "sha256:" + "2" * 64
 SOURCE_COMMIT = "8ca3f708537886050ef18210315e79a43595d3f3"
+TARGET = "slab-cases (9, 20, 18)"
 
 
 def write(path: Path, payload):
     path.write_text(json.dumps(payload))
 
 
-def job(job_id, name, conclusion, attempt=1):
+def job(job_id, name, conclusion=None, attempt=1, status="completed"):
     return {
         "id": job_id,
         "name": name,
         "run_attempt": attempt,
-        "status": "completed",
+        "status": status,
         "conclusion": conclusion,
     }
 
 
-def payload(latest_bad=False):
-    jobs = [job(1, "prepare", "success", 1), job(2, "slab-gate", "failure", 2)]
+def payload(latest_completed_bad=False):
+    jobs = [
+        job(1, "prepare", "success", 1),
+        job(2, "slab-gate", "failure", 2),
+        job(9001, "prepare", None, 3, "queued"),
+        job(9002, "slab-gate", None, 3, "queued"),
+    ]
     next_id = 10
     for layer in LAYERS:
         for vacuum in VACUUMS:
@@ -36,10 +42,10 @@ def payload(latest_bad=False):
                 name = f"slab-cases ({layer}, {vacuum}, {kmesh})"
                 jobs.append(job(next_id, name, "success", 2))
                 next_id += 1
-    target = "slab-cases (9, 20, 18)"
-    jobs.append(job(5, target, "failure", 1))
-    if latest_bad:
-        jobs.append(job(999, target, "failure", 3))
+    jobs.append(job(5, TARGET, "failure", 1))
+    jobs.append(job(999, TARGET, None, 3, "queued"))
+    if latest_completed_bad:
+        jobs.append(job(1000, TARGET, "failure", 4))
 
     artifacts = []
     artifact_id = 1000
@@ -92,8 +98,8 @@ def args(root: Path):
     )
 
 
-def prepare(root: Path, latest_bad=False):
-    jobs, artifacts = payload(latest_bad=latest_bad)
+def prepare(root: Path, latest_completed_bad=False):
+    jobs, artifacts = payload(latest_completed_bad=latest_completed_bad)
     write(
         root / "run.json",
         {
@@ -107,35 +113,51 @@ def prepare(root: Path, latest_bad=False):
     write(root / "artifact_pages.json", [{"artifacts": artifacts[:40]}, {"artifacts": artifacts[40:]}])
 
 
-def test_superseded_failure_is_recorded_not_fatal():
+def test_queued_record_does_not_displace_completed_success():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         prepare(root)
         result = audit(args(root))
         assert result["status"] == "PASS"
         assert result["source_slab_job_count"] == 64
+
         superseded = result["superseded_failed_attempts"]
-        assert len(superseded) == 1
-        assert superseded[0]["name"] == "slab-cases (9, 20, 18)"
-        latest = [row for row in result["latest_slab_jobs"] if row["name"] == superseded[0]["name"]]
-        assert len(latest) == 1 and latest[0]["conclusion"] == "success" and latest[0]["run_attempt"] == 2
+        target_failures = [row for row in superseded if row["name"] == TARGET]
+        assert len(target_failures) == 1
+        assert target_failures[0]["conclusion"] == "failure"
+        assert target_failures[0]["run_attempt"] == 1
+
+        latest = [row for row in result["latest_slab_jobs"] if row["name"] == TARGET]
+        assert len(latest) == 1
+        assert latest[0]["conclusion"] == "success"
+        assert latest[0]["run_attempt"] == 2
+
+        nonexecuted = result["nonexecuted_job_records"]
+        queued_target = [row for row in nonexecuted if row["name"] == TARGET]
+        assert len(queued_target) == 1
+        assert queued_target[0]["status"] == "queued"
+        assert queued_target[0]["run_attempt"] == 3
+        assert any(row["name"] == "prepare" and row["status"] == "queued" for row in nonexecuted)
+        assert any(row["name"] == "slab-gate" and row["status"] == "queued" for row in nonexecuted)
+        assert result["source_prepare_job"]["conclusion"] == "success"
+        assert result["source_gate_job"]["conclusion"] == "failure"
 
 
-def test_latest_failure_is_fatal():
+def test_latest_completed_failure_is_fatal():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        prepare(root, latest_bad=True)
+        prepare(root, latest_completed_bad=True)
         try:
             audit(args(root))
         except SystemExit as exc:
-            assert "latest source slab attempt is not successful" in str(exc)
+            assert "latest completed source slab attempt is not successful" in str(exc)
         else:
-            raise AssertionError("latest failed attempt should fail closed")
+            raise AssertionError("latest completed failed attempt should fail closed")
 
 
 def main():
-    test_superseded_failure_is_recorded_not_fatal()
-    test_latest_failure_is_fatal()
+    test_queued_record_does_not_displace_completed_success()
+    test_latest_completed_failure_is_fatal()
     print("c7_source_run_audit_v1 tests: PASS")
 
 
