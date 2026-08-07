@@ -1,0 +1,329 @@
+name: Na Cu001 C7 definitive L13 independent audit v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c7-definitive-l13-audit-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c7-definitive-l13-independent-audit-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_C7_RUN_ID: '30949901790'
+  SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'
+  FROZEN_EXTENSION_CONTROL_COMMIT: '055b2f5d782c2a590e65ad429cefd0981f0dd37b'
+  ORIGINAL_L13_RUN_ID: '31030768817'
+  RECOVERY_RUN_ID: '31138393230'
+  EXTENSION_GATE_RUN_ID: '31164419589'
+  EXTENSION_GATE_COMMIT: '7472d37b81de004967ee7b7dbafec9a2731fbb0e'
+
+jobs:
+  independent-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact C7 source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_C7_COMMIT }}
+          path: source_code
+
+      - name: Checkout frozen extension control commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FROZEN_EXTENSION_CONTROL_COMMIT }}
+          path: frozen
+
+      - name: Verify bound code and upstream runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source_code rev-parse HEAD)" = "$SOURCE_C7_COMMIT"
+          test "$(git -C frozen rev-parse HEAD)" = "$FROZEN_EXTENSION_CONTROL_COMMIT"
+          python3 -m py_compile \
+            frozen/na_cu001_ci/slab_l13_extension_v1.py \
+            source_code/na_cu001_ci/closure_engine_v4.py
+          (cd frozen/na_cu001_ci && python3 test_slab_l13_extension_v1.py)
+          mkdir -p run_meta
+          for rid in "$SOURCE_C7_RUN_ID" "$RECOVERY_RUN_ID" "$EXTENSION_GATE_RUN_ID"; do
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${rid}" > "run_meta/${rid}.json"
+          done
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          source=json.loads(Path(f"run_meta/{os.environ['SOURCE_C7_RUN_ID']}.json").read_text())
+          recovery=json.loads(Path(f"run_meta/{os.environ['RECOVERY_RUN_ID']}.json").read_text())
+          gate=json.loads(Path(f"run_meta/{os.environ['EXTENSION_GATE_RUN_ID']}.json").read_text())
+          assert source['head_sha']==os.environ['SOURCE_C7_COMMIT']
+          assert recovery['conclusion']=='success'
+          assert gate['head_sha']==os.environ['EXTENSION_GATE_COMMIT']
+          assert gate['conclusion']=='success'
+          PY
+
+      - name: Download immutable 64-case source evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: na-cu001-c7-raw-slab-*
+          path: source_records
+          merge-multiple: true
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C7 base evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-base
+          path: base
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C7 QE bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download original L13 evidence block
+        uses: actions/download-artifact@v4
+        with:
+          pattern: na-cu001-c7-l13-v2-raw-*
+          path: extension_records/original
+          merge-multiple: true
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.ORIGINAL_L13_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Remove superseded incomplete L13 cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf \
+            extension_records/original/l13_v16_k22 \
+            extension_records/original/l13_v24_k20 \
+            extension_records/original/l13_v24_k22
+
+      - name: Download recovered V16 K22 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovered-v16_k22
+          path: extension_records/recovered/v16_k22
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download carried-forward V24 K20 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovered-v24_k20
+          path: extension_records/recovered/v24_k20
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download recovered V24 K22 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovered-v24_k22
+          path: extension_records/recovered/v24_k22
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download targeted recovery summary
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovery-summary
+          path: recovery_summary
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download registered extension decision
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-extension-gate-v1-decision
+          path: registered_decision
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.EXTENSION_GATE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify immutable source and recovery provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat base/COMPUTATIONAL_SOURCE_COMMIT.txt)" = "$SOURCE_C7_COMMIT"
+          (cd source_code && sha256sum -c ../base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256)
+          sha256sum -c qe_bundle/meta/engine_binaries.sha256
+          (cd registered_decision && sha256sum -c DECISION_ARTIFACTS.sha256)
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          summary=Path('recovery_summary/RECOVERY_SUMMARY.json')
+          manifest=Path('recovery_summary/RECOVERY_SUMMARY.sha256')
+          assert summary.is_file() and manifest.is_file()
+          assert manifest.read_text().split()[0]==sha(summary)
+          s=json.loads(summary.read_text())
+          assert s['scientific_settings_changed'] is False
+          assert s['frozen_source_commit']==os.environ['FROZEN_EXTENSION_CONTROL_COMMIT']
+          assert int(s['original_l13_run_id'])==int(os.environ['ORIGINAL_L13_RUN_ID'])
+          assert int(s['continuation_run_id'])==int(os.environ['RECOVERY_RUN_ID'])
+          assert s['supersedes_stale_recovery_run'] is True
+          PY
+
+      - name: Independently recompute preregistered L13 extension decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p definitive_stage2
+          python3 frozen/na_cu001_ci/slab_l13_extension_v1.py analyze \
+            --source-records source_records \
+            --extension-records extension_records \
+            --source-result-out definitive_stage2/SOURCE_64_RESULT.json \
+            --out definitive_stage2/L13_EXTENSION_RESULT.json
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          r=json.loads(Path('definitive_stage2/L13_EXTENSION_RESULT.json').read_text())
+          registered=json.loads(Path('registered_decision/L13_EXTENSION_RESULT.json').read_text())
+          assert r['gate']=='PASS'
+          assert r['next_gate']=='definitive_independent_audit'
+          assert int(r['source_c7_run_id'])==int(os.environ['SOURCE_C7_RUN_ID'])
+          assert r['source_c7_commit']==os.environ['SOURCE_C7_COMMIT']
+          assert float(r['energy_tolerance_mev_per_surface_atom'])==1.0
+          assert r['selected_vacuum_k_pair']==[12.0,16]
+          assert r['recommended_smallest']['layers']==11
+          audit=r['strict_l13_holdout_audit']
+          assert audit['status']=='PASS'
+          assert audit['extension_terminal_eligible_for_selection'] is False
+          assert audit['selection_candidates_are_source_layers_only'] is True
+          assert audit['selected_source_layers']==11
+          assert registered['gate']=='PASS'
+          assert registered['selected_vacuum_k_pair']==r['selected_vacuum_k_pair']
+          assert registered['recommended_smallest']['layers']==r['recommended_smallest']['layers']
+          assert registered['strict_l13_holdout_audit']['layer_diagnostics']==audit['layer_diagnostics']
+          assert registered['source_64_result_sha256']==sha('definitive_stage2/SOURCE_64_RESULT.json')
+          PY
+
+      - name: Build definitive proof-carrying clean-slab result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          source=json.loads(Path('definitive_stage2/SOURCE_64_RESULT.json').read_text())
+          ext=json.loads(Path('definitive_stage2/L13_EXTENSION_RESULT.json').read_text())
+          selected=ext['recommended_smallest']
+          source_holdout=source['strict_holdout_audit']
+          holdout=dict(source_holdout)
+          holdout['status']='PASS'
+          holdout['terminal_holdouts']=dict(source_holdout['terminal_holdouts'])
+          holdout['terminal_holdouts']['layers']=13
+          holdout['terminal_holdouts']['eligible_for_selection']=False
+          holdout['layer_diagnostics']=ext['strict_l13_holdout_audit']['layer_diagnostics']
+          holdout['eligible_layers']=ext['strict_l13_holdout_audit']['eligible_source_layers']
+          holdout['selected_layers']=ext['strict_l13_holdout_audit']['selected_source_layers']
+          holdout['reason']=None
+          holdout['extension_terminal_layer']=13
+          holdout['extension_terminal_eligible_for_selection']=False
+          holdout['selection_candidates_are_source_layers_only']=True
+          result=dict(source)
+          result['gate']='PASS'
+          result['recommended_smallest']=selected
+          result['layer_floor_audit']={
+            'status':'PASS',
+            'frozen_minimum_layers':7,
+            'reason':None,
+            'resolution':'preregistered 13-layer strict holdout extension',
+          }
+          result['strict_holdout_audit']=holdout
+          result['electrostatic_convention']={
+            'assume_isolated':'esm',
+            'esm_bc':'bc1',
+            'applied_to_all_64_cases':True,
+            'applied_to_l13_extension':True,
+          }
+          result['l13_extension_provenance']={
+            'original_l13_run_id':int(os.environ['ORIGINAL_L13_RUN_ID']),
+            'recovery_run_id':int(os.environ['RECOVERY_RUN_ID']),
+            'extension_gate_run_id':int(os.environ['EXTENSION_GATE_RUN_ID']),
+            'frozen_extension_control_commit':os.environ['FROZEN_EXTENSION_CONTROL_COMMIT'],
+            'extension_terminal_layer':13,
+            'extension_terminal_eligible_for_selection':False,
+            'scientific_settings_changed':False,
+            'independently_recomputed':True,
+          }
+          Path('definitive_stage2/DEFINITIVE_CLEAN_SLAB_RESULT.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+          python3 source_code/na_cu001_ci/closure_engine_v4.py slab-handoff \
+            --slab-result definitive_stage2/DEFINITIVE_CLEAN_SLAB_RESULT.json \
+            --bulk-handoff base/BULK_HANDOFF.json \
+            --out definitive_stage2/SLAB_HANDOFF.json
+
+      - name: Seal definitive audit record
+        shell: bash
+        run: |
+          set -euo pipefail
+          find source_records extension_records -type f \( -name run_record.json -o -name 'cu001_*.in' -o -name 'cu001_*.out' -o -name 'COMPACT_EVIDENCE.sha256' \) -print0 \
+            | sort -z | xargs -0 sha256sum > definitive_stage2/RAW_SOURCE_AND_L13_MANIFEST.sha256
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          result=json.loads(Path('definitive_stage2/DEFINITIVE_CLEAN_SLAB_RESULT.json').read_text())
+          handoff=json.loads(Path('definitive_stage2/SLAB_HANDOFF.json').read_text())
+          ext=json.loads(Path('definitive_stage2/L13_EXTENSION_RESULT.json').read_text())
+          assert result['gate']=='PASS'
+          assert handoff['status']=='PASS'
+          assert handoff['selected_slab_settings']['layers']==11
+          assert handoff['selected_slab_settings']['vacuum_angstrom']==12.0
+          assert handoff['selected_slab_settings']['kmesh_inplane']==16
+          assert handoff['next_gate']=='electrostatic_parity'
+          record={
+            'schema':'na-cu001-c7-definitive-l13-independent-audit-v0.1',
+            'status':'PASS',
+            'source_c7_run_id':int(os.environ['SOURCE_C7_RUN_ID']),
+            'source_c7_commit':os.environ['SOURCE_C7_COMMIT'],
+            'frozen_extension_control_commit':os.environ['FROZEN_EXTENSION_CONTROL_COMMIT'],
+            'original_l13_run_id':int(os.environ['ORIGINAL_L13_RUN_ID']),
+            'recovery_run_id':int(os.environ['RECOVERY_RUN_ID']),
+            'extension_gate_run_id':int(os.environ['EXTENSION_GATE_RUN_ID']),
+            'scientific_settings_changed':False,
+            'energy_tolerance_mev_per_surface_atom':1.0,
+            'selected_slab':result['recommended_smallest'],
+            'source_64_result_sha256':sha('definitive_stage2/SOURCE_64_RESULT.json'),
+            'l13_extension_result_sha256':sha('definitive_stage2/L13_EXTENSION_RESULT.json'),
+            'definitive_clean_slab_result_sha256':sha('definitive_stage2/DEFINITIVE_CLEAN_SLAB_RESULT.json'),
+            'slab_handoff_sha256':sha('definitive_stage2/SLAB_HANDOFF.json'),
+            'raw_source_and_l13_manifest_sha256':sha('definitive_stage2/RAW_SOURCE_AND_L13_MANIFEST.sha256'),
+            'registered_extension_decision_sha256':sha('registered_decision/L13_EXTENSION_RESULT.json'),
+            'next_gate':handoff['next_gate'],
+          }
+          Path('definitive_stage2/C7_DEFINITIVE_L13_INDEPENDENT_AUDIT.json').write_text(json.dumps(record,indent=2)+'\n')
+          PY
+          sha256sum definitive_stage2/* > definitive_stage2/DEFINITIVE_AUDIT_ARTIFACTS.sha256.tmp
+          mv definitive_stage2/DEFINITIVE_AUDIT_ARTIFACTS.sha256.tmp definitive_stage2/DEFINITIVE_AUDIT_ARTIFACTS.sha256
+
+      - name: Upload definitive C7 audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-definitive-l13-independent-audit-v1
+          path: definitive_stage2
+          retention-days: 90
+          if-no-files-found: error
