@@ -168,11 +168,27 @@ jobs:
           test "$(cat base/COMPUTATIONAL_SOURCE_COMMIT.txt)" = "$SOURCE_C7_COMMIT"
           (cd source_code && sha256sum -c ../base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256)
           sha256sum -c qe_bundle/meta/engine_binaries.sha256
-          (cd registered_decision && sha256sum -c DECISION_ARTIFACTS.sha256)
           python3 - <<'PY'
           import hashlib, json, os
           from pathlib import Path
-          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          decision_root=Path('registered_decision')
+          decision_manifest=decision_root/'DECISION_ARTIFACTS.sha256'
+          assert decision_manifest.is_file()
+          for line in decision_manifest.read_text().splitlines():
+              if not line.strip():
+                  continue
+              digest, recorded=line.split(maxsplit=1)
+              recorded=recorded.strip()
+              candidate=decision_root/recorded
+              if not candidate.is_file():
+                  candidate=decision_root/Path(recorded).name
+              assert candidate.is_file(), f'missing registered decision artifact: {recorded}'
+              assert sha(candidate)==digest, f'registered decision digest mismatch: {recorded}'
+
           summary=Path('recovery_summary/RECOVERY_SUMMARY.json')
           manifest=Path('recovery_summary/RECOVERY_SUMMARY.sha256')
           assert summary.is_file() and manifest.is_file()
