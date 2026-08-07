@@ -41,6 +41,17 @@ jobs:
           ref: ${{ env.FROZEN_EXTENSION_CONTROL_COMMIT }}
           path: frozen
 
+      - name: Install audit Python dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input 'numpy==1.26.4'
+          python3 - <<'PY'
+          import numpy as np
+          assert np.__version__ == '1.26.4'
+          print(f'numpy={np.__version__}')
+          PY
+
       - name: Verify bound code and upstream runs
         env:
           GH_TOKEN: ${{ github.token }}
