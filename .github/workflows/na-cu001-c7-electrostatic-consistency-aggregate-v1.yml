@@ -1,0 +1,202 @@
+name: Na Cu001 C7 electrostatic consistency aggregate v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c7-electrostatic-consistency-aggregate-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c7-electrostatic-consistency-aggregate-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_C7_RUN_ID: '30949901790'
+  SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'
+  DEFINITIVE_AUDIT_RUN_ID: '31200916291'
+  DEFINITIVE_AUDIT_COMMIT: 'bfc80e7a98feab3584e51cef06312eb594be75ff'
+  ORIGINAL_PARITY_RUN_ID: '31202274429'
+  ORIGINAL_PARITY_ARTIFACT: 'na-cu001-c7-electrostatic-consistency-v1'
+  RECOVERY_CASE_RUN_ID: '31220370153'
+  RECOVERY_CASE_COMMIT: '090a418205ac7c29d8d42e341b3ed24dc621a0c3'
+
+jobs:
+  aggregate-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout aggregation control commit
+        uses: actions/checkout@v4
+        with:
+          path: control
+
+      - name: Checkout exact recovery-case control commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RECOVERY_CASE_COMMIT }}
+          path: recovery_ref
+
+      - name: Checkout exact frozen C7 source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_C7_COMMIT }}
+          path: source_code
+
+      - name: Verify aggregation is mechanical only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C control rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C recovery_ref rev-parse HEAD)" = "$RECOVERY_CASE_COMMIT"
+          test "$(git -C source_code rev-parse HEAD)" = "$SOURCE_C7_COMMIT"
+          cmp control/na_cu001_ci/electrostatic_consistency_v1.py recovery_ref/na_cu001_ci/electrostatic_consistency_v1.py
+          cmp control/na_cu001_ci/electrostatic_consistency_recovery_v1.py recovery_ref/na_cu001_ci/electrostatic_consistency_recovery_v1.py
+          python3 -m py_compile control/na_cu001_ci/electrostatic_consistency_v1.py control/na_cu001_ci/electrostatic_consistency_recovery_v1.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('source_code/na_cu001_ci/method_protocol_v0.2.json').read_text())
+          assert p['status']=='FROZEN_BEFORE_DOWNSTREAM_RESULTS'
+          assert float(p['surface']['esm_vacuum_stability_tolerance_mev_per_surface_atom'])==1.0
+          assert p['surface']['registered_electrostatic_convention']['assume_isolated']=='esm'
+          assert p['surface']['registered_electrostatic_convention']['esm_bc']=='bc1'
+          PY
+
+      - name: Install provenance helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Verify recovery case jobs succeeded
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p provenance
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RECOVERY_CASE_RUN_ID}" > provenance/recovery_run.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RECOVERY_CASE_RUN_ID}/jobs?filter=latest&per_page=100" > provenance/recovery_jobs.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          run=json.loads(Path('provenance/recovery_run.json').read_text())
+          jobs=json.loads(Path('provenance/recovery_jobs.json').read_text())['jobs']
+          assert run['status']=='completed'
+          assert run['head_sha']==os.environ['RECOVERY_CASE_COMMIT']
+          cases={j['name']:j['conclusion'] for j in jobs if j['name'].startswith('recover-cases')}
+          assert cases.get('recover-cases (esm_next_vacuum)')=='success'
+          assert cases.get('recover-cases (periodic_diagnostic)')=='success'
+          PY
+
+      - name: Download original selected-ESM checkpoint
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ORIGINAL_PARITY_ARTIFACT }}
+          path: original
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.ORIGINAL_PARITY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download recovered next-vacuum case
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-electrostatic-recovery-esm_next_vacuum
+          path: recovered/esm_next_vacuum
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_CASE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download recovered periodic diagnostic
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-electrostatic-recovery-periodic_diagnostic
+          path: recovered/periodic_diagnostic
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_CASE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download original C7 QE bundle for immutable identity check
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Reassemble completed frozen electrostatic gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          slab=$(find original -type f -name SLAB_HANDOFF.json -print -quit)
+          audit=$(find original -type f -name C7_DEFINITIVE_L13_INDEPENDENT_AUDIT.json -print -quit)
+          selected=$(find original -type f -path '*/esm_selected/run_record.json' -print -quit)
+          next_record='recovered/esm_next_vacuum/run_record.json'
+          periodic_record='recovered/periodic_diagnostic/run_record.json'
+          test -n "$slab"
+          test -n "$audit"
+          test -n "$selected"
+          test -f "$next_record"
+          test -f "$periodic_record"
+          chmod +x qe_bundle/bin/pw.x
+          sha256sum -c qe_bundle/meta/engine_binaries.sha256
+          echo 'b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d  qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' | sha256sum -c -
+          mkdir -p parity_final
+          python3 control/na_cu001_ci/electrostatic_consistency_recovery_v1.py analyze \
+            --slab-handoff "$slab" \
+            --audit-record "$audit" \
+            --protocol source_code/na_cu001_ci/method_protocol_v0.2.json \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --selected-record "$selected" \
+            --next-record "$next_record" \
+            --periodic-record "$periodic_record" \
+            --source-run-id "$SOURCE_C7_RUN_ID" \
+            --source-commit "$SOURCE_C7_COMMIT" \
+            --audit-run-id "$DEFINITIVE_AUDIT_RUN_ID" \
+            --audit-commit "$DEFINITIVE_AUDIT_COMMIT" \
+            --control-commit "$GITHUB_SHA" \
+            --recovery-from-run-id "$ORIGINAL_PARITY_RUN_ID" \
+            --recovery-run-id "$RECOVERY_CASE_RUN_ID" \
+            --out parity_final/ELECTROSTATIC_CONSISTENCY.json
+          cp "$slab" parity_final/SLAB_HANDOFF.json
+          cp "$audit" parity_final/C7_DEFINITIVE_L13_INDEPENDENT_AUDIT.json
+          find original recovered -type f \( -name '*.in' -o -name '*.out' -o -name run_record.json \) -print0 | sort -z | xargs -0 sha256sum > parity_final/ELECTROSTATIC_RECOVERY_RAW_MANIFEST.sha256
+          sha256sum parity_final/ELECTROSTATIC_CONSISTENCY.json parity_final/SLAB_HANDOFF.json parity_final/C7_DEFINITIVE_L13_INDEPENDENT_AUDIT.json > parity_final/ELECTROSTATIC_RECOVERY_ARTIFACTS.sha256
+
+      - name: Enforce recovered scientific result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('parity_final/ELECTROSTATIC_CONSISTENCY.json').read_text())
+          assert r['schema']=='na-cu001-electrostatic-consistency-v0.3'
+          assert r['status']=='PASS'
+          assert r['selected_slab']=={'layers':11,'vacuum_angstrom':12.0,'kmesh_inplane':16}
+          assert r['selected_convention']=={'assume_isolated':'esm','esm_bc':'bc1'}
+          assert r['coordinate_convention']=={'atomic_position_card':'angstrom','origin':'cartesian_z_zero'}
+          assert float(r['tolerance_mev_per_surface_atom'])==1.0
+          assert r['pass_checks']['esm_next_vacuum_change_le_1mev_per_surface_atom'] is True
+          assert r['pass_checks']['periodic_diagnostic_nonselecting'] is True
+          assert r['provenance']['scientific_settings_changed'] is False
+          assert r['next_gate']=='clean_surface_relaxation'
+          PY
+
+      - name: Upload definitive recovered electrostatic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-electrostatic-consistency-recovery-v1
+          path: |
+            parity_final
+            provenance
+          retention-days: 90
+          if-no-files-found: error
