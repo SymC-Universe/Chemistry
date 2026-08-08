@@ -18,8 +18,8 @@ concurrency:
 env:
   SOURCE_C7_RUN_ID: '30949901790'
   SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'
-  PARITY_RECOVERY_COMMIT: '090a418205ac7c29d8d42e341b3ed24dc621a0c3'
-  PARITY_RECOVERY_WORKFLOW: 'na-cu001-c7-electrostatic-consistency-recovery-v1.yml'
+  PARITY_RECOVERY_COMMIT: '66a3409469dd8559d11b145fb01c8e097bb693f2'
+  PARITY_RECOVERY_WORKFLOW: 'na-cu001-c7-electrostatic-consistency-aggregate-v1.yml'
   PARITY_RECOVERY_ARTIFACT: 'na-cu001-c7-electrostatic-consistency-recovery-v1'
 
 jobs:
