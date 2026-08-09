@@ -204,7 +204,7 @@ jobs:
             --site '${{ matrix.site }}' \
             --height '${{ matrix.height }}' \
             --out-dir "case_output/$tag" \
-            --np 2 \
+            --np 1 \
             --max-seconds "$CASE_MAX_SECONDS" \
             --source-run-id "$SOURCE_C7_RUN_ID" \
             --source-commit "$SOURCE_C7_COMMIT" \
