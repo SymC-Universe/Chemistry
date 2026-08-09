@@ -40,8 +40,8 @@ No failed job may be silently retried. Before a retry, the failure must be class
 | C1 | Original 80 Ry/16^3 bulk holdout against historical matrix | `BULK_CONVERGENCE_RESULT.json` | SCIENTIFIC_HOLD |
 | C2 | Audited bulk-extension protocol frozen before results | protocol, runner, tests, workflow linter | PASS |
 | C3 | Extension engine and historical-input preparation | pinned QE/UPF artifacts and preflight test log | PASS |
-| C4 | Twenty-six six-point extension EOS calculations | 26 raw EOS artifacts and summaries | IN_PROGRESS |
-| C5 | Independent 140 Ry/22^3 reference audit against 150 Ry/24^3 and candidate selection | `BULK_CONVERGENCE_RESULT_V0.4.json`; PASS-only handoff | PENDING |
+| C4 | Twenty-six six-point extension EOS calculations | 26 raw EOS artifacts and summaries | PASS |
+| C5 | Independent 140 Ry/22^3 reference audit against 150 Ry/24^3 and candidate selection | `BULK_CONVERGENCE_RESULT_V0.4.json`; PASS-only handoff | IN_PROGRESS |
 | C6 | Independent v0.4 artifact audit and downstream bridge publication | verified run ID, result/handoff hashes, 46 summaries, bridge tests | PENDING |
 | C7 | 64-case ESM `bc1` clean-slab matrix and surface-excess gate | Stage 2 slab result and handoff | PENDING |
 | C8 | Electrostatic audit, clean relaxation/SCF reproduction, isolated Na reference | Stages 3-5 PASS artifacts | PENDING |
@@ -92,10 +92,12 @@ No failed job may be silently retried. Before a retry, the failure must be class
 ### C4: extension matrix execution
 
 **Workflow run:** `30843005718`.  
-**Status at ledger establishment:** 21 of 26 EOS jobs completed successfully; 5 in progress; 0 failed; final gate not yet released.  
-**Completed candidate groups:** all 80, 90, 100, and 110 Ry combinations; 120 Ry at 14^3, 16^3, and 18^3; 130 Ry at 14^3 and 16^3.  
-**In progress:** 120 Ry/20^3; 130 Ry/18^3; 130 Ry/20^3; 140 Ry/22^3 reference; 150 Ry/24^3 audit.  
-**Prohibited interpretation:** no candidate is selected and no bulk PASS exists until C5 finishes and the v0.4 artifacts are independently audited.
+**Launch commit:** `ec0e18c86ead22e7062047fdff68e43ead72945f`.  
+**Result:** PASS at 2026-08-03 16:34 America/Chicago.  
+**Execution inventory:** all 24 eligible candidate EOS calculations, the 140 Ry/22^3 finite reference, and the 150 Ry/24^3 independent audit completed successfully. Each registered case executed six SCFs and completed its per-case artifact upload.  
+**Artifact inventory:** all 26 named `na-cu001-bulk-extension-raw-e*_k*` artifacts are present and unexpired; GitHub reports a SHA-256 artifact digest for every archive. The set is exactly four k meshes at each candidate cutoff 80-130 Ry, plus `e140_k22` and `e150_k24`.  
+**Matrix job failures or cancellations:** zero.  
+**C5 release condition:** the extension-gate analysis step completed successfully and emitted the compact decision and 46-summary artifacts, but the job remains nonterminal while uploading the merged raw-complete archive. No candidate is admitted and C5 is not recorded PASS until the job terminates and the compact artifacts receive the independent v0.4 audit.
 
 ## 4. Failure and notification register
 
@@ -104,16 +106,15 @@ No failed job may be silently retried. Before a retry, the failure must be class
 | Run `30808976656`, legacy complete route; slab matrix failed | SUPERSEDED_EXPLORATORY_RUN | Earlier route reached slab jobs before the corrected electrostatic, geometry, mobility, provenance, and gate architecture was installed | Replaced by corrected V2 route. Outputs are not admissible and are not retried | Yes |
 | Install-route runs around commits `3e6093a`, `bd16768`, `a938498`, `ccb0622`, `18ce546` | MECHANICAL_FAILURE | Bootstrap transport/chunk verification and GitHub workflow-write permission limitations during source installation | Source archive was re-chunked and verified; source was installed first; workflow files were installed last through the connector; corrected source commit `02973538...` and launch commit `1cd76ee...` verified | Yes |
 | Run `30840469734`, corrected route prepare failed | SCIENTIFIC_HOLD | No historical candidate passed the frozen energy criterion against 80 Ry/16^3 | Retained; prospective v0.4 extension frozen and launched without threshold change | Yes, as HOLD |
-| Active extension run `30843005718` | no failure notification as of 2026-08-03 15:16 America/Chicago | 21/26 jobs successful and remaining five computing | Continue monitoring; no intervention permitted absent a classified failure | Open execution |
+| Active extension run `30843005718` | no failure notification as of 2026-08-03 16:34 America/Chicago | C4 completed 26/26 successfully; C5 gate calculation returned success and compact artifacts exist; merged raw-complete upload remains in progress | Do not advance until terminal job state and independent compact-artifact verification | Open execution |
 
-### Email reconciliation, 2026-08-03 15:16 America/Chicago
+### Email reconciliation, 2026-08-03 16:34 America/Chicago
 
-Mailbox search covered recent GitHub notifications for `SymCUniverse/Chemistry`, `Na Cu001`, `Na/Cu(001)`, workflows, failures, and cancellations.
+Mailbox search covered GitHub failure and cancellation notifications newer than the preceding checkpoint for `SymCUniverse/Chemistry`, `Na Cu001`, `Na/Cu(001)`, and the audited bulk-convergence workflow.
 
-- The newest failure email concerns run `30840469734` and matches the retained C1 scientific HOLD.
-- Earlier install-route failure emails match the resolved bootstrap and workflow-permission installation failures.
-- The earlier legacy slab-failure email matches the superseded exploratory route and is excluded from evidence.
-- No failure or cancellation email exists for active extension run `30843005718` at this checkpoint.
+- No new failure or cancellation email was found.
+- The newest historical failure remains run `30840469734`, already classified as the retained C1 scientific HOLD.
+- No unresolved email event is associated with active run `30843005718`.
 
 ## 5. Internal checkpoint rules for remaining execution
 
