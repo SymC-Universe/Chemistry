@@ -61,14 +61,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p engine/bin engine/pseudos engine/meta
+          mkdir -p engine/bin engine/pseudos engine/meta source_qe/sssp_unpacked
           cp source_qe/bin/pw.x engine/bin/pw.x
           chmod +x engine/bin/pw.x
+          archive=$(find source_qe -type f -name 'SSSP-lib-pbe-eff-v2.tar.gz' -print -quit)
+          test -n "$archive"
+          echo '67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2'"  $archive" | sha256sum -c -
+          tar -xzf "$archive" -C source_qe/sssp_unpacked
           for f in \
             Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf \
             C.us.pbe.z_4.uspp.gbrv.v1.2.upf \
             O.paw.pbe.z_6.ld1.psl.v0.1.upf; do
-            src=$(find source_qe -type f -name "$f" -print -quit)
+            src=$(find source_qe/sssp_unpacked source_qe/pseudos -type f -name "$f" -print -quit 2>/dev/null || true)
             test -n "$src"
             cp "$src" engine/pseudos/"$f"
           done
