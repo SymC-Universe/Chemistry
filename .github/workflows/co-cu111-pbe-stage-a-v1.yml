@@ -1,0 +1,241 @@
+name: CO Cu111 PBE Stage A non-kinetic screen v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/co-cu111-pbe-stage-a-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-stage-a-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_QE_RUN_ID: '30949901790'
+  SOURCE_QE_ARTIFACT: 'na-cu001-c7-qe'
+  PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  RUNNER: 'systems/co_cu111/pbe_stage_a_runner_v1.py'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen Stage A contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER"
+          python3 - <<'PY'
+          import json
+          p=json.load(open('systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'))
+          b=json.load(open('systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'))
+          assert p['schema']=='co-cu111-pbe-stage-a-protocol-v0.1'
+          assert p['status']=='FROZEN_BEFORE_PBE_STAGE_A_RESULTS'
+          assert b['schema']=='co-cu111-pbe-pseudopotential-bundle-v0.1'
+          assert b['status']=='PINNED_FOR_NON_KINETIC_METHOD_SCREEN'
+          assert [x['id'] for x in p['cutoff_pairs_ry']]==['C0','C1','C2']
+          assert p['cutoff_pairs_ry'][2]['selectable'] is False
+          assert p['bulk_cu']['kmeshes'][-1]=={'k':16,'selectable':False}
+          assert p['isolated_CO']['box_lengths_angstrom'][-1]=={'L':26,'selectable':False}
+          PY
+      - name: Download frozen QE and SSSP source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_QE_ARTIFACT }}
+          path: source_qe
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_QE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Build exact small PBE engine bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p engine/bin engine/pseudos engine/meta
+          cp source_qe/bin/pw.x engine/bin/pw.x
+          chmod +x engine/bin/pw.x
+          for f in \
+            Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf \
+            C.us.pbe.z_4.uspp.gbrv.v1.2.upf \
+            O.paw.pbe.z_6.ld1.psl.v0.1.upf; do
+            src=$(find source_qe -type f -name "$f" -print -quit)
+            test -n "$src"
+            cp "$src" engine/pseudos/"$f"
+          done
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          b=json.load(open('systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'))
+          def h(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          assert h('engine/bin/pw.x')==b['solver_bundle']['pw_x_sha256']
+          for s,r in b['pseudopotentials'].items():
+              p=Path('engine/pseudos')/r['filename']
+              assert h(p)==r['sha256'], (s,h(p),r['sha256'])
+          PY
+          sha256sum engine/bin/pw.x engine/pseudos/* > engine/meta/STAGE_A_ENGINE.sha256
+          cp "$PROTOCOL" engine/meta/
+          cp "$BUNDLE" engine/meta/
+          cp "$RUNNER" engine/meta/
+      - name: Upload exact Stage A engine
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-engine-v1
+          path: engine
+          retention-days: 90
+          if-no-files-found: error
+
+  bulk:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        cutoff: [C0, C1, C2]
+        kmesh: [12, 14, 16]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin python3-numpy
+      - name: Download exact Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-engine-v1
+          path: engine
+      - name: Verify engine snapshot against current frozen files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          cmp "$RUNNER" engine/meta/pbe_stage_a_runner_v1.py
+      - name: Run frozen bulk matrix member
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p stageA
+          python3 "$RUNNER" bulk-run \
+            --protocol "$PROTOCOL" --bundle "$BUNDLE" \
+            --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --cutoff-id '${{ matrix.cutoff }}' --kmesh '${{ matrix.kmesh }}' \
+            --out "stageA/bulk_${{ matrix.cutoff }}_k${{ matrix.kmesh }}"
+      - name: Upload raw bulk member
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-bulk-${{ matrix.cutoff }}-k${{ matrix.kmesh }}
+          path: stageA
+          retention-days: 90
+          if-no-files-found: error
+
+  molecule:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        cutoff: [C0, C1, C2]
+        box: [18, 22, 26]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin python3-numpy
+      - name: Download exact Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-engine-v1
+          path: engine
+      - name: Verify engine snapshot against current frozen files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          cmp "$RUNNER" engine/meta/pbe_stage_a_runner_v1.py
+      - name: Run frozen isolated CO matrix member
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p stageA
+          python3 "$RUNNER" co-run \
+            --protocol "$PROTOCOL" --bundle "$BUNDLE" \
+            --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --cutoff-id '${{ matrix.cutoff }}' --box '${{ matrix.box }}' \
+            --out "stageA/co_${{ matrix.cutoff }}_L${{ matrix.box }}"
+      - name: Upload raw CO member
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-co-${{ matrix.cutoff }}-L${{ matrix.box }}
+          path: stageA
+          retention-days: 90
+          if-no-files-found: error
+
+  analyze:
+    needs: [bulk, molecule]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install analysis runtime
+        run: sudo apt-get update && sudo apt-get install -y python3-numpy
+      - name: Download all Stage A members
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-stage-a-*
+          path: collected
+          merge-multiple: false
+      - name: Analyze prospectively without kinetic inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p decision
+          set +e
+          python3 "$RUNNER" analyze \
+            --protocol "$PROTOCOL" --bundle "$BUNDLE" \
+            --root collected --out decision/PBE_STAGE_A_RESULT.json \
+            > decision/PBE_STAGE_A_STDOUT.txt 2>&1
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > decision/PBE_STAGE_A_EXIT_CODE.txt
+          find collected -type f -name STAGE_TIME_MANIFEST.sha256 -print0 | sort -z | xargs -0 sha256sum > decision/UPSTREAM_STAGE_TIME_MANIFESTS.sha256
+          sha256sum "$PROTOCOL" "$BUNDLE" "$RUNNER" decision/PBE_STAGE_A_RESULT.json > decision/DECISION_INPUTS_AND_RESULT.sha256 2>/dev/null || true
+      - name: Upload Stage A decision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-decision-v1
+          path: decision
+          retention-days: 90
+          if-no-files-found: error
+      - name: Enforce Stage A PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f decision/PBE_STAGE_A_RESULT.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('decision/PBE_STAGE_A_RESULT.json'))
+          print('PBE_STAGE_A_STATUS=',r['status'])
+          print('NEXT_GATE=',r['next_gate'])
+          if r['status']!='PASS':
+              raise SystemExit(2)
+          PY
