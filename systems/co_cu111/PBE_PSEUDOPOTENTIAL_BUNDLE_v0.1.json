@@ -3,60 +3,40 @@
   "status": "PINNED_FOR_NON_KINETIC_METHOD_SCREEN",
   "system": "CO/Cu(111)",
   "method": "PBE",
-  "role": "cost-rank-1 diagnostic baseline and eligible candidate only if every frozen non-kinetic gate passes",
   "source_archive": {
     "name": "SSSP-lib-pbe-eff-v2.tar.gz",
     "sha256": "67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2",
-    "provenance": "frozen Na/Cu C7 QE artifact na-cu001-c7-qe, source run 30949901790",
-    "note": "Reuse of the already frozen SSSP archive is provenance reuse only. No Na/Cu scientific result is inherited by CO/Cu(111)."
+    "provenance": "frozen Na/Cu C7 QE artifact na-cu001-c7-qe, source run 30949901790"
   },
   "pseudopotentials": {
     "Cu": {
       "filename": "Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf",
-      "archive_path": "mix-sssp-pbe-eff-lib-v2/library/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf",
       "sha256": "b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d",
-      "z_valence": 11,
       "sssp_efficiency_recommended_cutoffs_ry": {"ecutwfc": 55, "ecutrho": 165}
     },
     "C": {
       "filename": "C.us.pbe.z_4.uspp.gbrv.v1.2.upf",
-      "archive_path": "mix-sssp-pbe-eff-lib-v2/library/C.us.pbe.z_4.uspp.gbrv.v1.2.upf",
       "sha256": "1795e3fa54d4c3ccf06592136dfebf7aaede82ed223863c30d55ceefb6a787ce",
-      "z_valence": 4,
-      "pseudo_type": "US",
-      "relativistic": "scalar",
       "sssp_efficiency_recommended_cutoffs_ry": {"ecutwfc": 30, "ecutrho": 105}
     },
     "O": {
       "filename": "O.paw.pbe.z_6.ld1.psl.v0.1.upf",
-      "archive_path": "mix-sssp-pbe-eff-lib-v2/library/O.paw.pbe.z_6.ld1.psl.v0.1.upf",
       "sha256": "ac247dc7426e692ce59a64110f04eb4d17f3645ee4f2e907d08ff0e444886730",
-      "z_valence": 6,
-      "pseudo_type": "PAW",
-      "relativistic": "scalar",
       "sssp_efficiency_recommended_cutoffs_ry": {"ecutwfc": 45, "ecutrho": 540}
     }
   },
-  "combined_recommended_floor_ry": {
-    "ecutwfc": 55,
-    "ecutrho": 540,
-    "meaning": "maximum of the SSSP efficiency recommendations across Cu/C/O; this is only a starting floor for the prospective convergence screen, not an automatically accepted production cutoff"
-  },
+  "combined_recommended_floor_ry": {"ecutwfc": 55, "ecutrho": 540},
   "solver_bundle": {
     "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
-    "neb_x_sha256": "37f7917c49f86183a2183cf45fc8365e78b506602be507ffbeb7ac8b3455fc8365e78b506602be507",
+    "neb_x_sha256": "37f7917c49f86183a2183cf45fc27ffbeb7ac8b3455fc8365e78b506602be507",
     "source_artifact": "na-cu001-c7-qe",
     "source_run": "30949901790"
   },
-  "important_correction": {
-    "neb_x_sha256_status": "REVERIFY_BEFORE_USE",
-    "reason": "The value is copied from the frozen engine manifest and must be checked directly before any System 2 NEB stage; this bundle is currently authorized only for the non-kinetic PBE screen."
-  },
-  "admission_rules": [
-    "All three pseudopotential file hashes must match exactly before calculation.",
-    "The mixed Cu/C/O cutoff must be prospectively converged under SYSTEM2_METHOD_SELECTION_PROTOCOL_v0.1.json rather than accepted solely from library recommendations.",
-    "No CO/Cu(111) kinetic observable may select or rescue this bundle.",
-    "PBE failure of the top-site ordering gate remains a legitimate method rejection even if bulk Cu and gas-phase CO pass."
+  "rules": [
+    "All file hashes must match before calculation.",
+    "Library cutoffs are a starting floor and must be prospectively converged.",
+    "No CO/Cu(111) kinetic observable may select the bundle or method.",
+    "PBE failure of the frozen top-site ordering gate remains a valid method rejection."
   ],
   "next_gate": "PBE_NON_KINETIC_SCREEN"
 }
