@@ -175,7 +175,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: co-cu111-stage-a-recovery-v2-C2-L22-i*
-          path: recovered
+          path: recovered/stageA
           merge-multiple: true
       - name: Assemble C2 L22 or emit mechanical state
         id: assemble
