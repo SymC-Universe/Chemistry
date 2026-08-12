@@ -122,7 +122,7 @@ jobs:
         with:
           name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
           path: engine
-          repository: SymCUniverse/Chemistry
+          repository: SymC-Universe/Chemistry
           run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
           github-token: ${{ github.token }}
 
