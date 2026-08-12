@@ -142,8 +142,8 @@ jobs:
     timeout-minutes: 180
 
     strategy:
-      fail-fast: false
-      max-parallel: 6
+      fail-fast: true
+      max-parallel: 1
       matrix:
         include:
           - {cutoff: C1, box: 26, start: 0, end: 7}
