@@ -184,7 +184,7 @@ jobs:
         with:
           name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
           path: engine
-          repository: SymCUniverse/Chemistry
+          repository: SymC-Universe/Chemistry
           run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
           github-token: ${{ github.token }}
 
@@ -207,7 +207,7 @@ jobs:
         with:
           name: co-cu111-pbe-stage-a-v2-co-${{ matrix.cutoff }}-L${{ matrix.box }}
           path: seed
-          repository: SymCUniverse/Chemistry
+          repository: SymC-Universe/Chemistry
           run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
           github-token: ${{ github.token }}
 
