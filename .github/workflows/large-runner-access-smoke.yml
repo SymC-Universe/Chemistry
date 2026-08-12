@@ -1,0 +1,32 @@
+name: Larger runner access smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/large-runner-access-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest-m
+    timeout-minutes: 10
+
+    steps:
+      - name: Confirm larger runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+          echo "processors:"
+          nproc
+          echo "memory:"
+          free -h
+          echo "kernel:"
+          uname -a
