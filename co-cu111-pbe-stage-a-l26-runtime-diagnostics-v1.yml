@@ -1,0 +1,192 @@
+name: CO Cu111 PBE Stage A L26 runtime diagnostics v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-pbe-stage-a-l26-runtime-diagnostics-v1.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  SOURCE_STAGE_A_RUN_ID: '31371043888'
+  SOURCE_ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  FROZEN_RUNNER: systems/co_cu111/pbe_stage_a_runner_v1.py
+  RECOVERY_RUNNER: systems/co_cu111/pbe_stage_a_recovery_v1.py
+  RECOVERY_CONTRACT: systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest-m
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch state
+        uses: actions/checkout@v4
+
+      - name: Record runner and cgroup allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "timestamp=$(date -u +%FT%TZ)"
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+          echo "nproc=$(nproc)"
+          echo "getconf_nproc=$(getconf _NPROCESSORS_ONLN || true)"
+          lscpu || true
+          free -h || true
+          df -h || true
+          echo "--- cgroup ---"
+          cat /proc/self/cgroup || true
+          for f in \
+            /sys/fs/cgroup/cpu.max \
+            /sys/fs/cgroup/cpu.stat \
+            /sys/fs/cgroup/cpuset.cpus \
+            /sys/fs/cgroup/cpuset.cpus.effective \
+            /sys/fs/cgroup/memory.current \
+            /sys/fs/cgroup/memory.max \
+            /sys/fs/cgroup/memory.events \
+            /sys/fs/cgroup/memory.swap.current \
+            /sys/fs/cgroup/memory.swap.max; do
+            if [ -r "$f" ]; then
+              echo "--- $f ---"
+              cat "$f"
+            fi
+          done
+
+      - name: Install unchanged runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            libopenblas-dev \
+            liblapack-dev \
+            libfftw3-dev \
+            libopenmpi-dev \
+            openmpi-bin \
+            python3-numpy
+
+      - name: Download exact source-run Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify and inspect exact frozen engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          cmp "$FROZEN_RUNNER" engine/meta/pbe_stage_a_runner_v1.py
+          chmod +x engine/bin/pw.x
+          echo "--- file ---"
+          file engine/bin/pw.x || true
+          echo "--- ldd ---"
+          ldd engine/bin/pw.x || true
+          echo "--- MPI linkage ---"
+          ldd engine/bin/pw.x | grep -Ei 'mpi|open-rte|open-pal|pmix|ucx' || true
+          echo "--- OpenMPI ---"
+          mpirun --version || true
+          ompi_info --version || true
+
+      - name: Start live resource monitor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/l26-monitor.sh <<'EOF'
+          #!/usr/bin/env bash
+          set +e
+          while true; do
+            echo "===== DIAG $(date -u +%FT%TZ) ====="
+            echo "load=$(cat /proc/loadavg 2>/dev/null)"
+            free -m 2>/dev/null || true
+            for f in /sys/fs/cgroup/cpu.stat /sys/fs/cgroup/memory.current /sys/fs/cgroup/memory.events; do
+              if [ -r "$f" ]; then
+                echo "--- $f ---"
+                cat "$f"
+              fi
+            done
+            ps -eo pid,ppid,pgid,stat,pcpu,pmem,rss,etimes,comm,args --sort=-pcpu | head -n 20 || true
+            sleep 10
+          done
+          EOF
+          chmod +x /tmp/l26-monitor.sh
+          nohup /tmp/l26-monitor.sh >/tmp/l26-monitor.log 2>&1 &
+          echo $! >/tmp/l26-monitor.pid
+
+      - name: Synthetic sustained CPU control 130 seconds
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "CPU_CONTROL_START=$(date -u +%FT%TZ)"
+          python3 - <<'PY'
+          import math
+          import time
+          end = time.monotonic() + 130.0
+          x = 0.123456789
+          n = 0
+          next_report = time.monotonic() + 10.0
+          while time.monotonic() < end:
+              for _ in range(200000):
+                  x = math.sin(x) + math.cos(x * 1.0000001)
+                  n += 1
+              now = time.monotonic()
+              if now >= next_report:
+                  print(f"CPU_CONTROL_HEARTBEAT iterations={n} x={x}", flush=True)
+                  next_report += 10.0
+          print(f"CPU_CONTROL_COMPLETE iterations={n} x={x}", flush=True)
+          PY
+          echo "CPU_CONTROL_END=$(date -u +%FT%TZ)"
+          tail -n 120 /tmp/l26-monitor.log || true
+
+      - name: Exact frozen C1 L26 probe with telemetry
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "QE_PROBE_START=$(date -u +%FT%TZ)"
+          mkdir -p stageA
+          set +e
+          python3 "$RECOVERY_RUNNER" co-chunk \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --pseudo-dir engine/pseudos \
+            --pw engine/bin/pw.x \
+            --cutoff-id C1 \
+            --box 26 \
+            --start-index 0 \
+            --end-index 7 \
+            --out stageA/co_C1_L26
+          rc=$?
+          set -e
+          echo "QE_PROBE_RC=$rc"
+          echo "QE_PROBE_END=$(date -u +%FT%TZ)"
+          tail -n 200 /tmp/l26-monitor.log || true
+          exit "$rc"
+
+      - name: Dump diagnostics after probe
+        if: always()
+        shell: bash
+        run: |
+          echo "FINAL_DIAG=$(date -u +%FT%TZ)"
+          tail -n 300 /tmp/l26-monitor.log || true
+          if [ -f /tmp/l26-monitor.pid ]; then
+            kill "$(cat /tmp/l26-monitor.pid)" 2>/dev/null || true
+          fi
+          find stageA -maxdepth 4 -type f -printf '%p %s bytes\n' 2>/dev/null | sort || true
