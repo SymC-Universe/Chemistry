@@ -21,12 +21,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "start=$(date -u +%FT%TZ)"
           echo "runner_name=${RUNNER_NAME}"
           echo "runner_os=${RUNNER_OS}"
           echo "runner_arch=${RUNNER_ARCH}"
-          echo "processors:"
-          nproc
-          echo "memory:"
-          free -h
-          echo "kernel:"
-          uname -a
+          echo "Beginning 180-second runner lifetime test"
+          sleep 180
+          echo "end=$(date -u +%FT%TZ)"
+          echo "LARGER_RUNNER_180_SECOND_LIFETIME_PASS"
