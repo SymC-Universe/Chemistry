@@ -47,6 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install analysis dependency for extension self-test
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-numpy
+
       - name: Verify frozen extension contract and unchanged Stage A files
         shell: bash
         run: |
