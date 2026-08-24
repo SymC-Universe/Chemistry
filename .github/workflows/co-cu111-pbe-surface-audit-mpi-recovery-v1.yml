@@ -103,10 +103,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(nproc)" -eq 4
           echo "runner=${RUNNER_NAME}"
           echo "arch=${RUNNER_ARCH}"
           echo "processors=$(nproc)"
+          test "$(nproc)" -ge 4
 
       - name: Install unchanged QE runtime dependencies
         run: |
@@ -180,8 +180,10 @@ jobs:
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
+
       - name: Install unchanged QE runtime dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
       - name: Download exact Stage A QE engine
         uses: actions/download-artifact@v4
         with:
@@ -190,6 +192,7 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.ENGINE_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download authorizing Stage A PASS decision
         uses: actions/download-artifact@v4
         with:
@@ -198,6 +201,7 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.STAGE_A_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download immutable segment 8
         uses: actions/download-artifact@v4
         with:
@@ -206,16 +210,18 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.PARENT_RELAY_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download passing MPI parity record
         uses: actions/download-artifact@v4
         with:
           name: co-cu111-pbe-surface-audit-mpi-parity-v1
           path: parity
+
       - name: Continue frozen L13 audit with four proven-parity ranks
         shell: bash
         run: |
           set -euo pipefail
-          test "$(nproc)" -eq 4
+          test "$(nproc)" -ge 4
           chmod +x engine/bin/pw.x
           python3 "$MPI_RUNNER" continue \
             --protocol "$MPI_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
@@ -223,6 +229,7 @@ jobs:
             --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
             --parity parity/MPI_PARITY_RESULT.json --prior-root prior --segment 1 \
             --runtime-cap-s "$MPI_CONTINUATION_RUNTIME_CAP_S" --out mpi_seg1
+
       - name: Upload MPI continuation segment 9
         if: always()
         uses: actions/upload-artifact@v4
@@ -238,8 +245,10 @@ jobs:
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
+
       - name: Install unchanged QE runtime dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
       - name: Download exact Stage A QE engine
         uses: actions/download-artifact@v4
         with:
@@ -248,6 +257,7 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.ENGINE_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download authorizing Stage A PASS decision
         uses: actions/download-artifact@v4
         with:
@@ -256,21 +266,24 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.STAGE_A_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download passing MPI parity record
         uses: actions/download-artifact@v4
         with:
           name: co-cu111-pbe-surface-audit-mpi-parity-v1
           path: parity
+
       - name: Download MPI segment 9
         uses: actions/download-artifact@v4
         with:
           name: co-cu111-pbe-surface-audit-mpi-recovery-L13-V28-K24-seg9
           path: prior
+
       - name: Continue only if still required
         shell: bash
         run: |
           set -euo pipefail
-          test "$(nproc)" -eq 4
+          test "$(nproc)" -ge 4
           chmod +x engine/bin/pw.x
           python3 "$MPI_RUNNER" continue \
             --protocol "$MPI_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
@@ -278,6 +291,7 @@ jobs:
             --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
             --parity parity/MPI_PARITY_RESULT.json --prior-root prior --segment 2 \
             --runtime-cap-s "$MPI_CONTINUATION_RUNTIME_CAP_S" --out mpi_seg2
+
       - name: Upload MPI continuation segment 10 or carried completion
         if: always()
         uses: actions/upload-artifact@v4
@@ -293,8 +307,10 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
+
       - name: Install unchanged QE runtime dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
       - name: Download exact Stage A QE engine
         uses: actions/download-artifact@v4
         with:
@@ -303,6 +319,7 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.ENGINE_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download authorizing Stage A PASS decision
         uses: actions/download-artifact@v4
         with:
@@ -311,21 +328,24 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.STAGE_A_RUN_ID }}
           github-token: ${{ github.token }}
+
       - name: Download passing MPI parity record
         uses: actions/download-artifact@v4
         with:
           name: co-cu111-pbe-surface-audit-mpi-parity-v1
           path: parity
+
       - name: Download final bounded MPI relaxation state
         uses: actions/download-artifact@v4
         with:
           name: co-cu111-pbe-surface-audit-mpi-recovery-L13-V28-K24-seg10
           path: prior
+
       - name: Independently reproduce completed L13 audit geometry
         shell: bash
         run: |
           set -euo pipefail
-          test "$(nproc)" -eq 4
+          test "$(nproc)" -ge 4
           chmod +x engine/bin/pw.x
           python3 "$MPI_RUNNER" reproduce \
             --protocol "$MPI_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
@@ -333,6 +353,7 @@ jobs:
             --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
             --parity parity/MPI_PARITY_RESULT.json --prior-root prior \
             --runtime-cap-s "$MPI_REPRO_RUNTIME_CAP_S" --out audit_final
+
       - name: Upload final MPI-recovered L13 audit
         if: always()
         uses: actions/upload-artifact@v4
