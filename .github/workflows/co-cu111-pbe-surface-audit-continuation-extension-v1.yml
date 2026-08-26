@@ -854,7 +854,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "${{COMPLETED_REFERENCE_SHA256}}  clean_collected/reference/summary.json" | sha256sum -c -
+          echo "${COMPLETED_REFERENCE_SHA256}  clean_collected/reference/summary.json" | sha256sum -c -
           mkdir -p clean_gate
           python3 "$SURFACE_RUNNER" clean-gate \
             --protocol "$SURFACE_PROTOCOL" \
