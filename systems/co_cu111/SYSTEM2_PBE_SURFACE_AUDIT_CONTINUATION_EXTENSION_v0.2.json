@@ -35,9 +35,9 @@
   },
   "frozen_parent": {
     "protocol_path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_RANK_FALLBACK_RECOVERY_v0.1.json",
-    "protocl_sha256": "3a51d86a1f3d2698aace29b243c8ac4a85c7d30919aa6898400ac15cc3a833c5",
+    "protocol_sha256": "3a51d86a1f3d2698aace29b243c8ac4a85c7d30919aa6898400ac15cc3a833c5",
     "runner_path": "systems/co_cu111/pbe_surface_audit_rank_fallback_recovery_v1.py",
-    "runner_sha256": "00260df6730d3812b4d1543654b491a3eab118a196ed1b4f53a71cde74099b5"
+    "runner_sha256": "00260df6730d3812b4d1543654b491a3eaeb118a196ed1b4f53a71cde74099b5"
   },
   "selection": {
     "source_run_id": 32915640451,
@@ -45,7 +45,7 @@
     "artifact_id": 9592349315,
     "required_selected_mpi_ranks": 1,
     "required_execution_mode": "DIRECT_ONE_RANK",
-    "selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4"",
+    "selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4",
     "four_rank_reselection_forbidden": true,
     "new_rank_qualification_forbidden": true
   },
