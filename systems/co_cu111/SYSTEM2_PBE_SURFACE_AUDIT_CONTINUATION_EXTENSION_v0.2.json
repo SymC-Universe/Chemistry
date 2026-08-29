@@ -1,0 +1,120 @@
+{
+  "schema": "co-cu111-pbe-surface-audit-continuation-extension-v0.2",
+  "status": "FROZEN_MECHANICAL_CONTINUATION_EXTENSION_AFTER_SEGMENT24_EXHAUSTION",
+  "system": "CO/Cu(111)",
+  "scientific_scope": "NO_SCIENTIFIC_CONFIGURATION_CHANGE",
+  "purpose": "Continue only the frozen L13/V28/K24 clean-surface audit from the immutable logical-segment-24 BFGS proposal after continuation extension v1 exhausted its twelve bounded direct-one-rank slots. Preserve DIRECT_ONE_RANK execution, exact Stage A pw.x and pseudopotentials, all electronic and slab settings, the 0.020 eV/A movable-force gate, the 0.001 eV independent-SCF reproduction gate, and unchanged clean-surface adjudication. Authorize six additional bounded 4.5-hour slots, logical segments 25-30. Once RELAX_COMPLETE occurs, later slots carry the completed state without recomputation.",
+  "parent_run": {
+    "run_id": 33023196067,
+    "workflow_name": "CO Cu111 PBE surface audit continuation extension v1",
+    "head_sha": "ee529264f5e7cd7188fa3620056ced8aad3d1c2a",
+    "segment24_artifact": "co-cu111-pbe-surface-audit-continuation-extension-L13-V28-K24-seg24",
+    "segment24_artifact_id": 9710023337,
+    "segment24_artifact_digest": "sha256:c4310a852c91e713bdf415b88531fbdeebb480fe2f1339aea95c6df6732a12c6",
+    "segment24_record_sha256": "d85f3eb36ef5b86da15640e23597e23d2164c2f912613352f501c4c47beb7727",
+    "required_schema": "co-cu111-pbe-surface-audit-continuation-extension-segment-v0.1",
+    "required_status": "CONTINUE",
+    "required_segment": 12,
+    "required_logical_segment": 24,
+    "required_execution_mode": "DIRECT_ONE_RANK",
+    "required_mpi_ranks": 1,
+    "latest_authoritative_max_movable_force_ev_per_angstrom": 0.02317772558394175,
+    "energy_ev": -37690.403685120844,
+    "next_trial_displacement_angstrom": 0.000477036000001263,
+    "raw_relax_input_sha256": "a2d89af5cf9092bcbb55e93838ff9e8400639e47efade17023e6e3f6eaadabf2",
+    "raw_relax_output_sha256": "6c6a5c14e5af2e3f07a19de93a4e3d3ffe07cf9bf7ec32aa4ea17b1b6cade62e",
+    "pw_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "extension_v1_protocol_sha256": "5ce59d236bf77324d9ba52eff92b8f4d83d4f162e8d2f058bfbca4a8557656bd",
+    "rank_selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4"
+  },
+  "frozen_extension_v1": {
+    "protocol_path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_CONTINUATION_EXTENSION_v0.1.json",
+    "protocol_sha256": "5ce59d236bf77324d9ba52eff92b8f4d83d4f162e8d2f058bfbca4a8557656bd",
+    "runner_path": "systems/co_cu111/pbe_surface_audit_continuation_extension_v1.py",
+    "runner_sha256": "2e72878ec30ce233fd72d6f8aed9089efa0374c6b81ef99c4b1da4f3e89a5ed0"
+  },
+  "frozen_parent": {
+    "protocol_path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_RANK_FALLBACK_RECOVERY_v0.1.json",
+    "protocl_sha256": "3a51d86a1f3d2698aace29b243c8ac4a85c7d30919aa6898400ac15cc3a833c5",
+    "runner_path": "systems/co_cu111/pbe_surface_audit_rank_fallback_recovery_v1.py",
+    "runner_sha256": "00260df6730d3812b4d1543654b491a3eab118a196ed1b4f53a71cde74099b5"
+  },
+  "selection": {
+    "source_run_id": 32915640451,
+    "artifact": "co-cu111-pbe-surface-audit-rank-selection-v1",
+    "artifact_id": 9592349315,
+    "required_selected_mpi_ranks": 1,
+    "required_execution_mode": "DIRECT_ONE_RANK",
+    "selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4"",
+    "four_rank_reselection_forbidden": true,
+    "new_rank_qualification_forbidden": true
+  },
+  "execution": {
+    "runner_label": "ubuntu-24.04",
+    "continuation_segment_runtime_cap_seconds": 16200,
+    "reproduction_runtime_cap_seconds": 7200,
+    "maximum_new_continuation_segments": 6,
+    "logical_segment_numbers": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "thread_caps": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1
+    },
+    "restart_claim": "NOT_EXACT_QE_RESTART",
+    "continuation_mode": "EVALUATE_PRIOR_BFGS_PROPOSED_TRIAL_FROM_SCRATCH",
+    "electronic_scratch_reused": false
+  },
+  "unchanged_science": {
+    "case_id": "L13-V28-K24-audit",
+    "layers": 13,
+    "vacuum_angstrom": 28.0,
+    "kmesh": 24,
+    "role": "audit",
+    "executable": "exact Stage A pw.x",
+    "pseudopotentials": "exact Stage A Cu/C/O bundle",
+    "ecutwfc_ry": 90,
+    "ecutrho_ry": 900,
+    "input_dft": "PBE",
+    "occupations": "smearing",
+    "smearing": "mv",
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "assume_isolated": "esm",
+    "esm_bc": "bc1",
+    "ion_dynamics": "bfgs",
+    "movable_components": "outer two layers on each face, z only",
+    "force_gate_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_gate_ev": 0.001,
+    "surface_excess_convergence_max_ev_per_surface_atom": 0.001,
+    "reference_audit_rule": "unchanged",
+    "candidate_selection_rule": "unchanged"
+  },
+  "reuse_contract": {
+    "completed_reference_run_id": 32435777875,
+    "completed_reference_artifact": "co-cu111-pbe-clean-timeout-recovery-repro1-L11-V24-K20-reference",
+    "completed_reference_summary_sha256": "88b0df1455d2d34963b6503a980fb79260e93c3785b94ba4cefab110fcfc0245",
+    "eight_candidate_source_run_id": 31922544540,
+    "eight_completed_candidates_recomputed": false,
+    "reference_recomputed": false,
+    "audit_only_recomputed": true,
+    "clean_gate_implementation": "unchanged pbe_surface_site_ordering_v1.py clean-gate",
+    "site_ordering_dispatched_by_this_recovery": false
+  },
+  "provenance": {
+    "scientific_settings_changed": false,
+    "parity_thresholds_changed": false,
+    "selected_execution_mode_changed": false,
+    "continuation_budget_extension_is_mechanical_only": true,
+    "kinetic_inputs_used": false,
+    "surface_energy_or_kinetic_result_used_to_change_science": false
+  }
+}
