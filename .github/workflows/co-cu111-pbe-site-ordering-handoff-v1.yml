@@ -1,0 +1,305 @@
+name: CO Cu111 PBE site ordering handoff v1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-site-ordering-handoff-v1
+  cancel-in-progress: false
+
+env:
+  HANDOFF: systems/co_cu111/SYSTEM2_PBE_SITE_ORDERING_HANDOFF_v0.1.json
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  RUNNER: systems/co_cu111/pbe_surface_site_ordering_v1.py
+  TEST: systems/co_cu111/test_pbe_surface_site_ordering_v1.py
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  METHOD_PROTOCOL: systems/co_cu111/SYSTEM2_METHOD_SELECTION_PROTOCOL_v0.1.json
+  STAGE_A_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+  STAGE_A_EXTENSION: systems/co_cu111/SYSTEM2_PBE_STAGE_A_NUMERICAL_EXTENSION_v0.1.json
+  CURRENT_AUDIT_RUN_ID: '33254238443'
+  CURRENT_GATE_ARTIFACT: co-cu111-pbe-clean-surface-continuation-extension-v2-gate
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  SOURCE_SURFACE_RUN_ID: '31922544540'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    name: verify-authoritative-handoff
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      gate_status: ${{ steps.gate.outputs.status }}
+      selected_case: ${{ steps.gate.outputs.selected_case }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify unchanged frozen repository contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$RUNNER" self-test --protocol "$SURFACE_PROTOCOL"
+          python3 "$TEST" -v
+          test "$(git hash-object "$METHOD_PROTOCOL")" = "44f0514a2c3421139d33ad4094fac541ee4bbd9f"
+          test "$(git hash-object "$STAGE_A_PROTOCOL")" = "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336"
+          test "$(git hash-object "$BUNDLE")" = "4a23d19bbd4374e250582fb1d02419828a06eb5d"
+          test "$(git hash-object "$STAGE_A_EXTENSION")" = "fb5bae726bb35bfaa10106714250d3e0ad458307"
+          test "$(git hash-object "$SURFACE_PROTOCOL")" = "95ced1096e4dbc3c0a75c5a4f7aa6b9693cdb924"
+          test "$(git hash-object "$RUNNER")" = "d65050b77527de8453d42a77c2c45a0629a07fd3"
+          test "$(git hash-object "$TEST")" = "b9c065af878713f128223b14b7b60ead97cae0f6"
+          python3 - <<'PY'
+          import json
+          h=json.load(open('systems/co_cu111/SYSTEM2_PBE_SITE_ORDERING_HANDOFF_v0.1.json'))
+          assert h['status']=='FROZEN_BEFORE_CURRENT_AUDIT_FINAL_GATE'
+          assert h['authoritative_current_audit']['workflow_run_id']==33254238443
+          assert h['authoritative_current_audit']['required_clean_gate_status']=='CLEAN_SURFACE_PASS'
+          assert h['provenance']['kinetic_inputs_used'] is False
+          assert h['provenance']['scientific_settings_changed'] is False
+          assert h['provenance']['clean_surface_recomputation_authorized'] is False
+          print('HANDOFF_CONTRACT_VERIFIED')
+          PY
+
+      - name: Download authoritative recovered clean gate
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CURRENT_GATE_ARTIFACT }}
+          path: clean_gate
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.CURRENT_AUDIT_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Require clean-surface PASS and export selected case
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r=json.load(open('clean_gate/CLEAN_SURFACE_GATE.json'))
+          status=r['status']
+          selected=(r.get('selected') or {}).get('case_id','')
+          assert status=='CLEAN_SURFACE_PASS', f'authoritative clean gate is {status}, not CLEAN_SURFACE_PASS'
+          assert selected, 'clean gate PASS did not provide selected case'
+          assert r['provenance']['kinetic_inputs_used'] is False
+          print('status='+status)
+          print('selected_case='+selected)
+          PY
+
+      - name: Download immutable original clean candidates
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: clean_candidates
+          merge-multiple: false
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_SURFACE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify selected clean candidate exists exactly once
+        shell: bash
+        env:
+          SELECTED_CASE: ${{ steps.gate.outputs.selected_case }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          selected=os.environ['SELECTED_CASE']
+          hits=[]
+          for p in Path('clean_candidates').rglob('summary.json'):
+              s=json.loads(p.read_text())
+              if s.get('case_id')==selected:
+                  hits.append((p,s))
+          assert len(hits)==1, (selected, [str(x[0]) for x in hits])
+          p,s=hits[0]
+          assert s.get('status')=='COMPLETE'
+          assert s.get('role')=='candidate'
+          assert s.get('provenance',{}).get('kinetic_inputs_used') is False
+          print('SELECTED_CLEAN_CASE_VERIFIED='+selected)
+          print('SELECTED_SUMMARY='+str(p))
+          PY
+
+      - name: Download exact Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify exact Stage A engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$STAGE_A_PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+
+      - name: Publish verified handoff inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-site-ordering-handoff-inputs-v1
+          path: |
+            clean_gate
+            clean_candidates
+            engine
+          retention-days: 90
+          if-no-files-found: error
+
+  site_relax:
+    name: relax-${{ matrix.site }}
+    needs: prepare
+    if: ${{ needs.prepare.outputs.gate_status == 'CLEAN_SURFACE_PASS' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-site-ordering-handoff-inputs-v1
+          path: handoff_inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Relax frozen adsorption site
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x handoff_inputs/engine/bin/pw.x
+          python3 "$RUNNER" site-run \
+            --protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --clean-gate handoff_inputs/clean_gate/CLEAN_SURFACE_GATE.json \
+            --clean-root handoff_inputs/clean_candidates \
+            --bundle "$BUNDLE" \
+            --pseudo-dir handoff_inputs/engine/pseudos \
+            --pw handoff_inputs/engine/bin/pw.x \
+            --site '${{ matrix.site }}' \
+            --out 'site_primary/${{ matrix.site }}'
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-site-primary-handoff-v1-${{ matrix.site }}
+          path: site_primary/${{ matrix.site }}
+          retention-days: 90
+          if-no-files-found: error
+
+  site_audit:
+    name: audit-${{ matrix.site }}
+    needs: [prepare, site_relax]
+    if: ${{ needs.prepare.outputs.gate_status == 'CLEAN_SURFACE_PASS' && needs.site_relax.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-site-ordering-handoff-inputs-v1
+          path: handoff_inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-site-primary-handoff-v1-${{ matrix.site }}
+          path: primary
+      - name: Run unchanged independent k6 site-energy audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x handoff_inputs/engine/bin/pw.x
+          python3 "$RUNNER" site-audit \
+            --protocol "$SURFACE_PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --pseudo-dir handoff_inputs/engine/pseudos \
+            --pw handoff_inputs/engine/bin/pw.x \
+            --primary primary/summary.json \
+            --out 'site_audit/${{ matrix.site }}'
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-site-audit-handoff-v1-${{ matrix.site }}
+          path: site_audit/${{ matrix.site }}
+          retention-days: 90
+          if-no-files-found: error
+
+  finalize:
+    name: finalize-site-ordering
+    needs: [prepare, site_relax, site_audit]
+    if: ${{ always() && needs.prepare.result == 'success' && needs.prepare.outputs.gate_status == 'CLEAN_SURFACE_PASS' && needs.site_relax.result == 'success' && needs.site_audit.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-site-ordering-handoff-inputs-v1
+          path: handoff_inputs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-site-primary-handoff-v1-*
+          path: site_collected/primary
+          merge-multiple: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-site-audit-handoff-v1-*
+          path: site_collected/audit
+          merge-multiple: false
+      - name: Finalize unchanged site-ordering decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p final
+          python3 "$RUNNER" finalize \
+            --protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --clean-gate handoff_inputs/clean_gate/CLEAN_SURFACE_GATE.json \
+            --site-root site_collected \
+            --out final/PBE_SURFACE_SITE_ORDERING_RESULT.json \
+            > final/PBE_SURFACE_SITE_ORDERING_STDOUT.txt
+          cat final/PBE_SURFACE_SITE_ORDERING_STDOUT.txt
+          sha256sum \
+            "$HANDOFF" "$METHOD_PROTOCOL" "$STAGE_A_PROTOCOL" "$STAGE_A_EXTENSION" "$BUNDLE" \
+            "$SURFACE_PROTOCOL" "$RUNNER" \
+            stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            handoff_inputs/clean_gate/CLEAN_SURFACE_GATE.json \
+            final/PBE_SURFACE_SITE_ORDERING_RESULT.json \
+            > final/SITE_ORDERING_HANDOFF_INPUTS_AND_RESULT.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-site-ordering-handoff-decision-v1
+          path: final
+          retention-days: 90
+          if-no-files-found: error
