@@ -1,0 +1,116 @@
+{
+  "schema": "symc-program-decision-ledger-v1.0",
+  "status": "ACTIVE_APPEND_ONLY_LEDGER",
+  "created_date": "2026-08-30",
+  "rules": {
+    "entries_may_not_be_deleted": true,
+    "superseded_entries_remain_visible": true,
+    "new_decisions_require_new_ids": true,
+    "historical_failures_remain_historical_failures": true
+  },
+  "entries": [
+    {
+      "id": "DEC-2026-08-30-001",
+      "scope": "program-wide",
+      "status": "ACTIVE",
+      "decision": "The research program is evidence-first. Prior SymC work is mathematical and hypothesis-generating ancestry, not doctrine that future results are required to confirm.",
+      "consequence": "Prospective calculations and external datasets are allowed to contradict earlier interpretations without retuning or forced reconciliation."
+    },
+    {
+      "id": "DEC-2026-08-30-002",
+      "scope": "chi interpretation",
+      "status": "ACTIVE",
+      "decision": "The fullest characterization of chi-related stability uses three complementary views: scalar coordinates, modal/subspace structure, and conglomeration/system-level coupling or organization.",
+      "consequence": "Scalar similarity alone cannot establish modal or system-level equivalence; modal analysis does not replace scalar chi; conglomeration is not inferred from either one alone."
+    },
+    {
+      "id": "DEC-2026-08-30-003",
+      "scope": "chi interpretation",
+      "status": "ACTIVE",
+      "decision": "The symbol chi carries no universal physical interpretation across domains without a domain-specific semantic license tied to the generator/source equations.",
+      "consequence": "Each future chi definition must state derivation, dimensions, interpretation, chi=1 meaning if any, and permitted/forbidden inferences."
+    },
+    {
+      "id": "DEC-2026-08-30-004",
+      "scope": "Barrier Height/Rate Atlas",
+      "status": "ACTIVE",
+      "decision": "The current breadth weakness is mechanistic-family independence, not physical-phase coordinate count. Multiple conditions from one family do not create new independent families.",
+      "consequence": "The preferred low-cost expansion is literature-first acquisition of additional independent reaction families, targeting at least two independent families per mechanistic class before launching expensive new computation solely for breadth."
+    },
+    {
+      "id": "DEC-2026-08-30-005",
+      "scope": "Barrier Height/Rate Atlas",
+      "status": "ACTIVE",
+      "decision": "Barrier/rate evidence must not be made circular by deriving the rate from the same stability coordinate later used to claim predictive agreement.",
+      "consequence": "Observed/published kinetic values and independently derived descriptors remain separate evidence channels; unavailable values are caveated or refused rather than reconstructed by assumption."
+    },
+    {
+      "id": "DEC-2026-08-30-006",
+      "scope": "CO/Cu(111) clean-surface convergence",
+      "status": "ACTIVE",
+      "decision": "The original L11/V24/K20 versus L13/V28/K24 clean-surface convergence test failed the frozen 0.001 eV/surface-atom criterion with an observed difference of 0.001572865239722887 eV/surface atom.",
+      "evidence": {
+        "run_id": 33306112961,
+        "status": "NUMERICAL_HOLD",
+        "next_gate": "PBE_CU111_SURFACE_HOLD_REVIEW"
+      },
+      "consequence": "This result remains a failure permanently. The threshold is not loosened."
+    },
+    {
+      "id": "DEC-2026-08-30-007",
+      "scope": "CO/Cu(111) clean-surface convergence",
+      "status": "ACTIVE",
+      "decision": "One and only one deeper audit rung was prospectively authorized after the L11-L13 HOLD: L15/V32/K28, using L13 surface z offsets only as an initialization seed.",
+      "consequence": "No L17 or other deeper scientific rung is automatically authorized. L15 must independently satisfy the unchanged force, reproduction, and surface-excess gates."
+    },
+    {
+      "id": "DEC-2026-08-30-008",
+      "scope": "CO/Cu(111) execution",
+      "status": "ACTIVE",
+      "decision": "DIRECT_ONE_RANK is the qualified execution mode for the active Cu(111) chain. Four-rank execution failed frozen force parity; three- and two-rank modes also failed their frozen parity qualification.",
+      "evidence": {
+        "four_rank_run_id": 32857157316,
+        "rank_selection_run_id": 32915640451,
+        "rank_selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4"
+      },
+      "consequence": "No MPI reselection or requalification may occur implicitly inside a recovery workflow."
+    },
+    {
+      "id": "DEC-2026-08-30-009",
+      "scope": "CO/Cu(111) execution",
+      "status": "ACTIVE",
+      "decision": "Run 33313295522 demonstrated that the L15/V32/K28 calculation can consume a 19,800-second wrapper window before producing any complete force block or BFGS proposal. External termination therefore cannot serve as an adequate checkpoint boundary for this rung.",
+      "evidence": {
+        "run_id": 33313295522,
+        "artifact_id": 9736967037,
+        "artifact_digest": "sha256:6bf6729233d94c24e776d4167bf5305f73938e742be2e27885ae71aaf4c5a8fd",
+        "last_observed_scf_iteration": 28,
+        "authoritative_force_blocks": 0,
+        "bfgs_proposals": 0,
+        "job_done": false
+      },
+      "consequence": "After the already-running runtime-recovery attempt 33329096616 terminates, no further identical unsalvageable retry is allowed. Any further L15 recovery must use a validated native clean checkpoint/restart path or receive explicit exception authorization."
+    },
+    {
+      "id": "DEC-2026-08-30-010",
+      "scope": "Quantum ESPRESSO long-run execution",
+      "status": "ACTIVE",
+      "decision": "Use Quantum ESPRESSO native clean stopping and restart for calculations that can exceed the batch window. A valid restart state must originate from QE max_seconds or another documented clean-stop mechanism, not from killing pw.x externally.",
+      "consequence": "The restart state must be persisted between runners, integrity-checked, and resumed with the same processor count/parallelization. The final independent reproduction audit remains from scratch."
+    },
+    {
+      "id": "DEC-2026-08-30-011",
+      "scope": "publication and reproducibility",
+      "status": "ACTIVE",
+      "decision": "Compute accounting must distinguish measured QE wall-clock time from configured runtime ceilings, CI/setup time, CPU-hours, and unreconstructed historical compute.",
+      "consequence": "Do not claim a grand total when the ledger is incomplete. Failed and mechanically wasted runs are reported rather than omitted."
+    },
+    {
+      "id": "DEC-2026-08-30-012",
+      "scope": "publication and release control",
+      "status": "ACTIVE",
+      "decision": "Frozen retrospective Atlas releases and active prospective CO/Cu calculations are separate authorities.",
+      "consequence": "A later CO/Cu result may extend or challenge interpretation but cannot silently rewrite the frozen 61-coordinate Atlas or its historical claims."
+    }
+  ]
+}
