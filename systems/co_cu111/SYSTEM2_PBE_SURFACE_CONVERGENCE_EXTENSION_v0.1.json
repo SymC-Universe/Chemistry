@@ -1,0 +1,204 @@
+{
+  "candidate_reuse": {
+    "candidate_count": 8,
+    "candidate_force_blocks_reaudited": true,
+    "candidates_recomputed": false,
+    "comparison_reference_if_extension_audit_passes": "L13-V28-K24-audit",
+    "force_gate_ev_per_angstrom": 0.02,
+    "no_candidate_adjudication_before_extension_audit_pass": true,
+    "reproduction_gate_ev": 0.001,
+    "selection_rule": "Choose the passing candidate with minimum estimated cost layers*kmesh^2*cell_z; break ties by fewer layers, smaller vacuum, then smaller k mesh.",
+    "source_run_id": 31922544540,
+    "surface_excess_delta_to_extension_reference_max_ev_per_surface_atom": 0.001
+  },
+  "decision": {
+    "automatic_site_ordering_dispatch": false,
+    "candidate_grid_hold_next_gate": "PBE_CU111_CANDIDATE_GRID_EXTENSION_REVIEW",
+    "extension_audit_hold_next_gate": "PBE_CU111_SURFACE_HOLD_REVIEW",
+    "extension_audit_pass_requires": [
+      "L15 force <= 0.020 eV/A",
+      "L15 independent-SCF reproduction delta <= 0.001 eV",
+      "abs(surface_excess_L15 - surface_excess_L13) <= 0.001 eV/surface atom"
+    ],
+    "no_additional_scientific_rung_authorized": true,
+    "no_threshold_retuning_after_results": true,
+    "pass_next_gate": "PBE_CO_SITE_ORDERING_SCREEN"
+  },
+  "execution": {
+    "continuation_mode": "EVALUATE_PRIOR_BFGS_PROPOSED_TRIAL_FROM_SCRATCH",
+    "continuation_segment_runtime_cap_seconds": 19800,
+    "electronic_scratch_reused": false,
+    "execution_mode": "DIRECT_ONE_RANK",
+    "four_rank_reselection_forbidden": true,
+    "logical_segment_numbers": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36
+    ],
+    "maximum_continuation_segments": 36,
+    "mpi_ranks": 1,
+    "new_rank_qualification_forbidden": true,
+    "reproduction_runtime_cap_seconds": 19200,
+    "restart_claim": "NOT_EXACT_QE_RESTART",
+    "runner_label": "ubuntu-24.04",
+    "thread_caps": {
+      "MKL_NUM_THREADS": 1,
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1
+    }
+  },
+  "extension_audit": {
+    "case_id": "L15-V32-K28-extension-audit",
+    "kmesh": 28,
+    "layers": 15,
+    "role": "extension_audit",
+    "rung_rule": "Continue the already frozen reference-to-audit ladder by exactly +2 layers, +4 Angstrom vacuum, +4 in-plane k points from L13/V28/K24.",
+    "surface_excess_definition": "(E_slab_fixed_geometry_scf - N_Cu * E_bulk_selected_per_atom) / 2; eV per surface atom per face.",
+    "vacuum_angstrom": 32.0
+  },
+  "extension_reference": {
+    "case_id": "L13-V28-K24-audit",
+    "energy_reproduction_delta_ev": 0.0,
+    "fixed_geometry_scf_energy_ev": -37690.40381614367,
+    "kmesh": 24,
+    "layers": 13,
+    "max_movable_force_ev_per_angstrom": 0.019443455043810964,
+    "new_role": "extension_reference",
+    "pw_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "rank_selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4",
+    "required_mechanical_pass": true,
+    "required_status": "COMPLETE",
+    "source_artifact": "co-cu111-pbe-clean-audit-reproduction-recovery-v2-L13-V28-K24",
+    "source_artifact_digest": "sha256:fd2e3d025923fa6aa706281820061ee6481b5aad92e0657cfb0f590022a8e2ea",
+    "source_artifact_id": 9730278899,
+    "source_run_id": 33296522880,
+    "source_workflow": "CO Cu111 PBE surface audit reproduction recovery v2",
+    "summary_sha256": "f199a2a26e1465a8cff815a0568ea2d1eb24b31a74868a061523b93c09859ddc",
+    "surface_excess_ev_per_surface_atom": 0.47680671935813734,
+    "vacuum_angstrom": 28.0
+  },
+  "frozen_method": {
+    "assume_isolated": "esm",
+    "bulk_e0_ev_per_atom": -2899.3351868909526,
+    "bulk_lattice_constant_angstrom": 3.632355796707377,
+    "degauss_ry": 0.02,
+    "ecutrho_ry": 900,
+    "ecutwfc_ry": 90,
+    "electron_conv_thr": 1e-10,
+    "electron_maxstep": 200,
+    "esm_bc": "bc1",
+    "exchange_correlation": "PBE",
+    "force_gate_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_gate_ev": 0.001,
+    "ion_dynamics": "bfgs",
+    "mixing_beta": 0.3,
+    "movable_components": "outer two layers on each face, z only",
+    "occupations": "Marzari-Vanderbilt smearing",
+    "surface_excess_convergence_max_ev_per_surface_atom": 0.001
+  },
+  "frozen_sources": {
+    "proposal_relay_runner": {
+      "path": "systems/co_cu111/pbe_surface_audit_proposal_relay_v1.py",
+      "sha256": "33d1620e3af2a072e1f14e4f2fefa72cf7c5f53ff247b0fb394aa72130764696"
+    },
+    "pseudopotential_bundle_sha256": "6a2216a776cbe3bf8a08e1f7215bcf0ff77caf96a2f2529875a0157f4bbfed3f",
+    "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "rank_fallback_runner": {
+      "path": "systems/co_cu111/pbe_surface_audit_rank_fallback_recovery_v1.py",
+      "sha256": "00260df6730d3812b4d1543654b491a3eaeb118a196ed1b4f53a71cde74099b5"
+    },
+    "rank_selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4",
+    "stage_a_result_sha256": "2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3",
+    "surface_protocol": {
+      "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json",
+      "sha256": "1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f"
+    },
+    "surface_runner": {
+      "path": "systems/co_cu111/pbe_surface_site_ordering_v1.py",
+      "sha256": "f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b"
+    }
+  },
+  "initialization": {
+    "description": "Generate ideal L15/V32 geometry from the frozen Stage A bulk lattice constant. Copy only the z relaxation offsets, relative to each slab ideal geometry, from the L13 outermost and subsurface layers onto the corresponding two surface depths of L15. Keep all x/y coordinates and every inner-layer z coordinate at the ideal L15 values. This seed has no role in acceptance or threshold selection.",
+    "energy_or_surface_excess_used_to_seed": false,
+    "expected_l15_seed_outer_z_angstrom": {
+      "0": -14.659354218621502,
+      "1": -12.579819761921502,
+      "13": 12.579819761921502,
+      "14": 14.659354218621502
+    },
+    "initialization_only": true,
+    "l13_offsets_angstrom": {
+      "bottom_outermost": 0.02063696052901065,
+      "bottom_subsurface": 0.003029820207508749,
+      "top_outermost": -0.02063696052901065,
+      "top_subsurface": -0.003029820207508749
+    },
+    "rule": "L13_SURFACE_RELAXATION_OFFSETS_ONLY",
+    "symmetry_required": true
+  },
+  "provenance": {
+    "candidate_selection_rule_changed": false,
+    "force_gate_changed": false,
+    "kinetic_inputs_used": false,
+    "numerical_grid_extended": true,
+    "prior_failure_preserved_as_failure": true,
+    "reproduction_gate_changed": false,
+    "scientific_settings_changed_from_original_method": false,
+    "surface_excess_gate_changed": false,
+    "surface_or_kinetic_result_used_to_relax_acceptance_threshold": false
+  },
+  "purpose": "Resolve the preregistered clean-Cu(111) numerical HOLD without relaxing any acceptance threshold. Promote the independently reproduced L13/V28/K24 case to an extension reference and test one prospectively fixed deeper audit rung, L15/V32/K28. Only if the L13-L15 surface-excess difference is <= 0.001 eV per surface atom may the original eight candidates be reconsidered against L13 using the unchanged candidate mechanics, convergence tolerance, cost ranking and tie-break rules.",
+  "schema": "co-cu111-pbe-surface-convergence-extension-v0.1",
+  "scientific_scope": "PROSPECTIVE_NUMERICAL_CONVERGENCE_EXTENSION_AFTER_PREREGISTERED_HOLD",
+  "source_hold": {
+    "artifact": "co-cu111-pbe-clean-surface-gate-recovery-v1",
+    "artifact_digest": "sha256:b8241a5ad3a9cb2c56f6b46f5e6e4506678f9df678d5a628325e2f799d496dfe",
+    "artifact_id": 9730511510,
+    "frozen_threshold_ev_per_surface_atom": 0.001,
+    "gate_filename": "CLEAN_SURFACE_GATE.json",
+    "gate_sha256": "afa8239acbb6ed08b92fcff881bbf4f33f95cb196c595c1f1940a100fab251b3",
+    "head_sha": "b5d48402692a0deb5b6a8cdf4a3d1d079f986da2",
+    "observed_l11_l13_delta_ev_per_surface_atom": 0.001572865239722887,
+    "required_next_gate": "PBE_CU111_SURFACE_HOLD_REVIEW",
+    "required_status": "NUMERICAL_HOLD",
+    "run_id": 33306112961,
+    "threshold_was_not_met": true,
+    "workflow_name": "CO Cu111 PBE clean surface gate recovery v1"
+  },
+  "status": "FROZEN_BEFORE_L15_RESULTS",
+  "system": "CO/Cu(111)"
+}
