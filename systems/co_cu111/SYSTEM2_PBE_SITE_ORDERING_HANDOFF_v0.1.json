@@ -5,13 +5,13 @@
   "purpose": "Permit immediate transition from the already-running L13 clean-surface audit to the prospectively frozen adsorption-site ordering gate without recomputing the completed clean-surface matrix.",
   "scientific_scope": "mechanical handoff only; no scientific setting, threshold, model, pseudopotential, convergence rule, geometry rule, or kinetic input is changed",
   "authoritative_current_audit": {
-    "workflow": "CO Cu111 PBE surface audit continuation extension v2",
-    "workflow_run_id": 33254238443,
-    "workflow_head_sha": "862de36943efe3b3bec442db70d4ee1d4973d581",
+    "workflow": "CO Cu111 PBE surface audit continuation extension v2 closure recovery v1",
+    "workflow_run_id": 33289747543,
+    "workflow_head_sha": "e4137b37dbdc808b258d238e42c11f93a9b8046d",
     "protocol": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_CONTINUATION_EXTENSION_v0.2.json",
     "protocol_sha256": "e9f6bcbf82837cfb28f6330b069404eae19a0c42981963c04d7f8ea492f0ddc5",
     "required_final_audit_artifact": "co-cu111-pbe-clean-audit-continuation-extension-v2-final-L13-V28-K24-audit",
-    "required_clean_gate_artifact": "co-cu111-pbe-clean-surface-continuation-extension-v2-gate",
+    "required_clean_gate_artifact": "co-cu111-pbe-clean-surface-continuation-extension-v2-closure-recovery-gate",
     "required_clean_gate_status": "CLEAN_SURFACE_PASS"
   },
   "frozen_site_ordering_contract": {
