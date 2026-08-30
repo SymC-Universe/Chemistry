@@ -1,0 +1,41 @@
+name: Program governance audit
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - 'governance/**'
+      - 'systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json'
+      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json'
+      - '.github/workflows/program-governance-audit.yml'
+  pull_request:
+    paths:
+      - 'governance/**'
+      - 'systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json'
+      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json'
+      - '.github/workflows/program-governance-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governance-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse machine-readable governance files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.0.json >/dev/null
+          python3 -m json.tool governance/PROGRAM_DECISION_LEDGER_v1.0.json >/dev/null
+          python3 -m json.tool systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json >/dev/null
+          python3 -m json.tool systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json >/dev/null
+      - name: Enforce scientific and execution firewalls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 governance/verify_program_governance.py
