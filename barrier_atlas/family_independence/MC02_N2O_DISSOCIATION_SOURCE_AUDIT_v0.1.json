@@ -1,0 +1,104 @@
+{
+  "schema": "barrier-atlas-mc02-n2o-dissociation-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_AUDIT_READY_FOR_ADJUDICATION_WITHOUT_PARENT_MUTATION",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "selection_basis": "MC02 dissociation/fragmentation ontology gap plus availability of a separately published direct gas-phase kinetic comparator; no predicted-versus-observed residual, chi, or ChemSA expectation selected this family or the electronic-structure method",
+    "theory_rate_agreement_quarantined_from_selection": true
+  },
+  "trail_id": "FI-MC02-N2O-SPIN-FORBIDDEN-DISSOCIATION",
+  "target_class": "MC02",
+  "target_class_name": "dissociation_fragmentation",
+  "candidate_family": "nitrous-oxide spin-forbidden unimolecular dissociation",
+  "reaction": "N2O(X1Sigma+) -> N2(X1Sigma_g+) + O(3P)",
+  "classification_gate": "PASS_MC02_GENUINE_BOND_DISSOCIATION_FRAGMENTATION",
+  "classification_basis": [
+    "The physical event cleaves the terminal N-O bond and produces two separated fragments, N2 and O(3P).",
+    "It is not an electrocyclic ring opening and therefore does not repurpose the refused cyclobutene MC02 trail.",
+    "It is physically distinct from the frozen FAM-GAS-CYCLOBUTANE-RING-OPENING family."
+  ],
+  "barrier_source": {
+    "authors": "Tien V. Pham, T. J. Tsay, M. C. Lin",
+    "title": "Thermal decomposition of N2O near 900 K studied by FTIR spectrometry: Comparison of experimental and theoretical O(3P) formation kinetics",
+    "journal": "International Journal of Chemical Kinetics",
+    "year": 2020,
+    "volume": 52,
+    "pages": "632-644",
+    "doi": "10.1002/kin.21388",
+    "electronic_structure_level": "CCSD(T)/CBS(TQ5)//CCSD(T)/aug-cc-pVTZ+d",
+    "reported_quantity": {
+      "value": 60.1,
+      "unit": "kcal/mol",
+      "type": "reported ab initio minimum-energy crossing-point (MSX) energy for the spin-forbidden N2O(X1Sigma+) -> N2(X1Sigma_g+) + O(3P) transition, relative to the N2O ground-state reference used by the source",
+      "zpe_status": "NOT_ASSERTED_BEYOND_SOURCE_WORDING",
+      "thermal_correction_status": "NOT_A_THERMAL_ACTIVATION_ENTHALPY",
+      "free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+      "arrhenius_activation_energy_status": "NOT_AN_EXPERIMENTAL_ARRHENIUS_ACTIVATION_ENERGY"
+    },
+    "source_theoretical_rate_expression_quarantine": {
+      "high_pressure_limit": "k_inf = 10^11.90 exp[-61.54 kcal mol^-1/(RT)] s^-1",
+      "low_pressure_limit": "k_0 = 10^14.97 exp[-60.05 kcal mol^-1/(RT)] cm^3 mol^-1 s^-1",
+      "role": "REPRESENTATION_AND_PROVENANCE_ONLY_NOT_SELECTION_OR_INDEPENDENT_COMPARATOR",
+      "reason": "The 2020 source explicitly compares these NA-RRKM predictions with literature kinetics. The campaign does not use that agreement to choose, rank, or promote the candidate."
+    }
+  },
+  "source_gate": "PASS",
+  "barrier_gate": "PASS_EXACTLY_TYPED_MINIMUM_ENERGY_CROSSING_POINT_NOT_RELABELLED_AS_DELTA_G_DAGGER_OR_EA",
+  "observed_comparator": {
+    "authors": "Michael Roehrig, Eric L. Petersen, David F. Davidson, Ronald K. Hanson",
+    "title": "The pressure dependence of the thermal decomposition of N2O",
+    "journal": "International Journal of Chemical Kinetics",
+    "year": 1996,
+    "volume": 28,
+    "pages": "599-608",
+    "doi": "10.1002/(SICI)1097-4601(1996)28:8<599::AID-KIN5>3.0.CO;2-Q",
+    "measurement": "shock-wave N2O concentration histories measured by infrared emission",
+    "phase": "gas",
+    "temperature_range_K": [1570.0, 3100.0],
+    "pressure_range_atm": [0.3, 450.0],
+    "selected_comparator_regime": "high-pressure limiting unimolecular first-order dissociation",
+    "high_pressure_limit_expression": "k_inf = 10^(12.1 +/- 0.4) exp[-(262 +/- 3 kJ mol^-1)/(RT)] s^-1",
+    "reported_model_range_note": "The authors state that their limiting coefficients are suitable for kinetic modeling over approximately 800-2000 K and pressures up to 450 atm.",
+    "activation_energy_quarantine": "The 262 +/- 3 kJ/mol Arrhenius term is rate-derived from the experimental kinetics and is not treated as an independent barrier measurement."
+  },
+  "comparator_gate": "PASS_INDEPENDENT_DIRECT_PRIMARY_GAS_PHASE_KINETIC_COMPARATOR",
+  "condition_gate": "PASS_SAME_GAS_PHASE_UNIMOLECULAR_EVENT_WITH_HIGH_PRESSURE_LIMIT_EXPLICITLY_SELECTED",
+  "condition_basis": [
+    "Both evidence chains concern isolated gas-phase N2O dissociation to N2 + O(3P), with no solvent or solution standard-state conversion.",
+    "The comparator is explicitly the experimentally reconstructed high-pressure limiting first-order rate, so falloff is not silently mixed into a single-pressure rate constant.",
+    "The 60.1 kcal/mol MSX quantity is an electronic crossing-point energy and is therefore not assigned an artificial experimental temperature."
+  ],
+  "independence_gate": "PASS_DISTINCT_FAMILY_AND_SEPARATE_PRIMARY_COMPARATOR_WITH_NO_TARGET_RATE_FIT_DISCLOSED_FOR_AB_INITIO_MSX_ENERGY",
+  "independence_basis": [
+    "The 1996 comparator is a separate primary shock-wave experiment published 24 years before the 2020 ab initio source.",
+    "The selected 60.1 kcal/mol quantity is the source's explicitly reported high-level ab initio crossing-point prediction, not a parameter regressed to the 1996 rate expression.",
+    "The campaign does not use the 2020 paper's stated rate-agreement quality as evidence for promotion.",
+    "No residual, chi value, or expected ChemSA agreement has been computed or used to select this candidate."
+  ],
+  "representation_mode": "NETWORK_RESOLVED_NONADIABATIC_SPIN_CROSSING_DISSOCIATION_HIGH_PRESSURE_LIMIT",
+  "representation_gate": "PASS_NETWORK_RESOLVED",
+  "representation_basis": [
+    "The reaction is spin-forbidden from singlet N2O to triplet O products and therefore requires an intersystem-crossing bottleneck rather than a conventional single adiabatic saddle-point label.",
+    "The experimental kinetics are pressure dependent, so the registered comparator is explicitly the high-pressure limiting branch rather than an arbitrary finite-pressure scalar.",
+    "Future coordinate adjudication must retain the MSX/nonadiabatic and high-pressure-limit semantics."
+  ],
+  "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+  "terminal_state": "READY_FOR_ADJUDICATION",
+  "ready_for_adjudication": true,
+  "automatic_admission": false,
+  "adjudication_caveat": "READY_FOR_ADJUDICATION is not admission. Any future coordinate must be added only in a new Atlas release and must preserve the network-resolved spin-crossing representation; Barrier_Height_Rate_Atlas_v0.9 remains immutable."
+}
