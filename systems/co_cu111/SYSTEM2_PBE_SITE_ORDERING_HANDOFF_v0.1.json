@@ -2,16 +2,17 @@
   "schema": "co-cu111-pbe-site-ordering-handoff-v0.1",
   "status": "FROZEN_BEFORE_CURRENT_AUDIT_FINAL_GATE",
   "system": "CO/Cu(111)",
-  "purpose": "Permit immediate transition from the already-running L13 clean-surface audit to the prospectively frozen adsorption-site ordering gate without recomputing the completed clean-surface matrix.",
+  "purpose": "Permit immediate transition from the prospectively frozen L15 clean-surface convergence-extension adjudication to the already-frozen adsorption-site ordering gate without recomputing the completed clean-surface candidate matrix or the completed L15 relaxation.",
   "scientific_scope": "mechanical handoff only; no scientific setting, threshold, model, pseudopotential, convergence rule, geometry rule, or kinetic input is changed",
   "authoritative_current_audit": {
-    "workflow": "CO Cu111 PBE surface audit continuation extension v2 closure recovery v1",
-    "workflow_run_id": 33289747543,
-    "workflow_head_sha": "e4137b37dbdc808b258d238e42c11f93a9b8046d",
-    "protocol": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_CONTINUATION_EXTENSION_v0.2.json",
-    "protocol_sha256": "e9f6bcbf82837cfb28f6330b069404eae19a0c42981963c04d7f8ea492f0ddc5",
-    "required_final_audit_artifact": "co-cu111-pbe-clean-audit-continuation-extension-v2-final-L13-V28-K24-audit",
-    "required_clean_gate_artifact": "co-cu111-pbe-clean-surface-continuation-extension-v2-closure-recovery-gate",
+    "workflow": "CO Cu111 L15 post-relax adjudication v1",
+    "workflow_run_id": 33390385236,
+    "workflow_head_sha": "264585c766141a55d90f8e9ae33204787a71c9a6",
+    "protocol": "systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json",
+    "protocol_sha256": "518583a18ec5a26b442523601e325b2b525fd5a374f37c255eb9c5fff163ebd7",
+    "required_final_audit_artifact": "co-cu111-l15-native-postrelax-reproduced-v1",
+    "required_clean_gate_artifact": "co-cu111-l15-native-postrelax-gate-v1",
+    "required_clean_gate_file": "SURFACE_CONVERGENCE_EXTENSION_GATE.json",
     "required_clean_gate_status": "CLEAN_SURFACE_PASS"
   },
   "frozen_site_ordering_contract": {
@@ -42,7 +43,7 @@
   },
   "handoff_rules": [
     "Do not dispatch adsorption-site calculations unless the authoritative current-audit clean gate is CLEAN_SURFACE_PASS.",
-    "Do not rerun the completed clean-surface Cartesian matrix merely to reach site ordering.",
+    "Do not rerun the completed clean-surface Cartesian matrix or completed L15 relaxation merely to reach site ordering.",
     "Read the selected candidate case_id from the authoritative clean gate and retrieve that exact completed candidate from the original clean-surface run.",
     "Require exactly one source summary matching the selected case_id and require that source row to be COMPLETE and role=candidate.",
     "Use the exact frozen Stage A Quantum ESPRESSO engine and pseudopotential bundle already bound by the site-ordering protocol.",
@@ -56,6 +57,8 @@
     "scientific_settings_changed": false,
     "clean_surface_recomputation_authorized": false,
     "automatic_threshold_relaxation_authorized": false,
-    "post_result_method_switch_authorized": false
+    "post_result_method_switch_authorized": false,
+    "prior_failed_recovery_run_preserved": true,
+    "current_audit_pointer_updated_before_final_L15_adjudication_result": true
   }
 }
