@@ -72,6 +72,13 @@ jobs:
           run-id: ${{ env.L15_PRODUCTION_RUN_ID }}
           github-token: ${{ github.token }}
 
+      - name: Normalize native artifact layout without changing contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d prior/chunk_out
+          cp -a prior/chunk_out/. prior/
+
       - name: Bind adjudication to completed native L15 result
         shell: bash
         run: |
