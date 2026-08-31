@@ -1,0 +1,98 @@
+{
+  "schema": "h-ru0001-evidence-readiness-and-promotion-protocol-v0.1",
+  "status": "FROZEN_BEFORE_SYSTEM3_NONKINETIC_RESULTS",
+  "effective_date": "2026-08-30",
+  "system": "H/Ru(0001)",
+  "purpose": "Transfer the strongest epistemic controls from the polyimide/siloxane investigation into System 3 without transferring its chemistry: readiness before interpretation, nested evidence promotion, independent gates, raw-record precedence, and fail-closed disagreement handling.",
+  "state_record": {
+    "required_execution_states": ["PLANNED", "EXECUTED", "MEASURED", "VALID", "ADJUDICATED"],
+    "states_are_not_synonyms": true,
+    "raw_output_precedes_derived_summary_when_in_conflict": true,
+    "conflict_resolution_required_before_pass": true
+  },
+  "readiness_ladder": [
+    {
+      "state": "METHOD_READY",
+      "requires": ["pseudopotential provenance", "bulk numerical convergence", "bulk structural gate"],
+      "forbids": ["using H diffusion kinetics to choose electronic settings", "using published site ordering as a method tiebreaker"]
+    },
+    {
+      "state": "SURFACE_READY",
+      "requires": ["METHOD_READY", "clean Ru(0001) slab numerical convergence", "clean-surface force/reproduction gate"],
+      "forbids": ["interpreting H adsorption or barriers before the clean surface is qualified"]
+    },
+    {
+      "state": "ADSORPTION_READY",
+      "requires": ["SURFACE_READY", "prospectively defined top/bridge/fcc/hcp screen", "numerical site-ordering sensitivity quantified", "local H vibrational stability for the numerically selected minimum"],
+      "forbids": ["forcing the published adsorption minimum onto the new calculation"]
+    },
+    {
+      "state": "PATH_READY",
+      "requires": ["ADSORPTION_READY", "ordinary NEB convergence", "CI-NEB convergence", "one unstable saddle mode aligned with the computed path"],
+      "forbids": ["allowing a later rate comparison to rescue a failed or ambiguous reaction path"]
+    },
+    {
+      "state": "QUANTUM_READY",
+      "requires": ["PATH_READY", "qualified compute environment", "prospective bead-convergence gate", "reaction-coordinate admissibility"],
+      "forbids": ["switching quantum rate theory after inspecting experimental agreement without a separately frozen amendment"]
+    },
+    {
+      "state": "DISSIPATION_READY",
+      "requires": ["coordinate-matched independently sourced projected dissipation", "state-point compatibility", "dephasing/population/friction distinction resolved"],
+      "forbids": ["treating HeSE dephasing as reaction-coordinate gamma by default"]
+    },
+    {
+      "state": "CHEMSA_ELIGIBLE",
+      "requires": ["DISSIPATION_READY", "domain-specific chi semantic license if chi is used"],
+      "forbids": ["using chi to retroactively select any earlier method, path, bead count, or threshold"]
+    }
+  ],
+  "promotion_rules": {
+    "later_tier_may_not_back_justify_earlier_tier": true,
+    "richer_model_or_tier_must_earn_promotion": true,
+    "promotion_basis": "An added tier is admitted only to support an additional claim that cannot be licensed by the simpler qualified tier, and its own numerical/admissibility gates must pass prospectively.",
+    "failed_simpler_gate_cannot_be_rescued_by_richer_model": true,
+    "observationally_or_numerically_indistinguishable_models_keep_simpler_interpretation": true,
+    "unidentifiable_parameters_are_reported_undefined": true
+  },
+  "independent_gate_rule": {
+    "numerical_convergence": "independent gate",
+    "physical_or_structural_admissibility": "independent gate",
+    "reproduction": "independent gate",
+    "later_rate_or_experimental_comparison": "independent held-out comparator",
+    "disagreement_policy": "HOLD_AND_INVESTIGATE_NOT_AVERAGE_TO_PASS"
+  },
+  "evidence_language": {
+    "rule": "State only the strongest conclusion licensed by the highest readiness state actually reached.",
+    "examples": {
+      "bulk_pass_only": "PBE candidate passed frozen Ru bulk gates; it is not yet a qualified H/Ru surface method.",
+      "surface_pass_only": "Clean Ru(0001) numerical model is qualified under the frozen surface protocol; H adsorption and diffusion remain unadjudicated.",
+      "classical_path_pass": "Classical PES/path baseline is qualified; no full quantum rate claim follows.",
+      "quantum_pass_without_dissipation": "Quantum free-energy/rate tier may be compared under its registered scope; no scalar damping or chi claim follows.",
+      "dissipation_missing": "DISSIPATION_NOT_ESTABLISHED / CHEMSA_NOT_ELIGIBLE."
+    }
+  },
+  "causal_separation_rule": {
+    "principle": "Do not collapse distinct causes or evidence channels into one explanation when the design can separate them.",
+    "system3_application": [
+      "bulk numerical adequacy versus surface adequacy",
+      "adsorption-site ordering versus diffusion-path barrier",
+      "classical barrier versus nuclear quantum correction",
+      "dephasing versus population relaxation versus projected friction",
+      "scalar stability coordinate versus modal/subspace structure versus conglomeration/system coupling"
+    ]
+  },
+  "holdout_rule": {
+    "published_H_Ru_rates_are_quarantined_during_method_and_path_selection": true,
+    "comparison_occurs_only_after_relevant_tier_is_frozen_and_computed": true,
+    "thresholds_may_not_be_learned_from_the_comparator": true
+  },
+  "provenance": {
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "acceptance_rule_changed": false,
+    "kinetic_inputs_used": false,
+    "prior_failure_preserved": true,
+    "prospective_before_results": true
+  }
+}
