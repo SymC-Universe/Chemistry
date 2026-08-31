@@ -14,14 +14,24 @@
       "claim_allowed": "Governance v1.1 is frozen but must be rewired and re-audited before ACTIVE may be claimed."
     },
     "qe_native_checkpoint_restart": {
-      "state": "FROZEN",
+      "state": "QUALIFIED",
       "protocol": "systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json",
       "qualification_required": true,
-      "qualification_run_id": null,
+      "qualification_run_id": 33343734581,
+      "qualification_result_artifact_id": 9741750399,
+      "qualification_status": "PASS",
+      "energy_absolute_difference_ev": 1.3605858839582652e-7,
+      "energy_tolerance_ev": 0.0001,
+      "force_component_absolute_difference_max_ev_per_angstrom": 0.000035738336896046104,
+      "force_tolerance_ev_per_angstrom": 0.0001,
+      "crossed_fresh_github_runners": true,
+      "direct_one_rank": true,
+      "scientific_settings_changed": false,
+      "thresholds_changed": false,
       "production_commit": null,
       "production_workflow": null,
       "production_active": false,
-      "claim_allowed": "Native QE checkpoint/restart protocol is frozen prospectively but is not yet qualified, wired, or active in production."
+      "claim_allowed": "Native QE checkpoint/restart has passed the frozen cross-runner qualification but is not ACTIVE until a production workflow is explicitly wired to it and CI verifies that wiring."
     },
     "l15_runtime_recovery_run_33329096616": {
       "state": "WIRED",
@@ -31,6 +41,17 @@
       "native_checkpoint_protected": false,
       "successor_identical_unsalvageable_retry_allowed": false,
       "claim_allowed": "This already-running legacy recovery may finish, but it is not protected by the native QE checkpoint protocol and may not be followed by another identical unsalvageable retry."
+    },
+    "system3_h_ru0001_pbe_bulk_candidate": {
+      "state": "WIRED",
+      "scope": "NON_KINETIC_METHOD_CANDIDATE_AUDIT",
+      "protocol": "systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json",
+      "production_workflow": ".github/workflows/system3-h-ru0001-pbe-bulk-candidate-v1.yml",
+      "active_run_id": 33345475633,
+      "head_commit": "46c14cf534dd2ff54e7bbd9ee8d972dac091c704",
+      "kinetic_inputs_used": false,
+      "cross_system_inference_allowed": false,
+      "claim_allowed": "The prospectively frozen H/Ru(0001) non-kinetic PBE bulk candidate audit is wired and currently executing; no PASS may be claimed until the frozen numerical and structural gates adjudicate the result."
     }
   }
 }
