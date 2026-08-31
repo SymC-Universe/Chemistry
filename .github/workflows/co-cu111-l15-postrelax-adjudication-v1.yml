@@ -78,6 +78,7 @@ jobs:
           set -euo pipefail
           test -d prior/chunk_out
           cp -a prior/chunk_out/. prior/
+          rm -rf prior/chunk_out
 
       - name: Bind adjudication to completed native L15 result
         shell: bash
