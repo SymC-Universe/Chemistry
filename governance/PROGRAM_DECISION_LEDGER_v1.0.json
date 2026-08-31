@@ -111,6 +111,20 @@
       "status": "ACTIVE",
       "decision": "Frozen retrospective Atlas releases and active prospective CO/Cu calculations are separate authorities.",
       "consequence": "A later CO/Cu result may extend or challenge interpretation but cannot silently rewrite the frozen 61-coordinate Atlas or its historical claims."
+    },
+    {
+      "id": "DEC-2026-08-30-013",
+      "scope": "program implementation control",
+      "status": "ACTIVE",
+      "decision": "A protocol or safeguard is not described as implemented, set up, active, or protecting production merely because its specification exists in the repository. Implementation state is tracked as FROZEN, QUALIFIED, WIRED, or ACTIVE.",
+      "consequence": "ACTIVE requires the mechanism to be prospectively frozen, successfully qualified when qualification is required, explicitly invoked by the production workflow, and verified by the relevant audit/CI. This decision records the implementation-description failure exposed by the second L15 wrapper run."
+    },
+    {
+      "id": "DEC-2026-08-30-014",
+      "scope": "System 3 H/Ru(0001)",
+      "status": "ACTIVE",
+      "decision": "System 3 non-kinetic qualification is authorized to proceed in parallel with unresolved System 2 work, while cross-system inference and any use of System 2 outcomes to select System 3 settings remain forbidden.",
+      "consequence": "Ru bulk, clean-surface, adsorption-site, vibrational, and other prospectively frozen non-kinetic qualification may advance without waiting for L15. System 3 kinetic comparison, chi interpretation, and cross-system conclusions remain subject to their own readiness gates and cannot retroactively tune earlier settings."
     }
   ]
 }
