@@ -1,0 +1,176 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v0.4",
+  "status": "ADDITIVE_CANDIDATE_HOLD_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_six_trail_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.3.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "mechanistic-class gap search; no predicted-versus-observed residual, chi, or ChemSA expectation was used to select or promote either trail"
+  },
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC15-VASKA-H2-OXIDATIVE-ADDITION",
+      "target_class": "MC15",
+      "target_class_name": "organometallic_bond_activation_migration",
+      "candidate_family": "Vaska-complex dihydrogen oxidative addition",
+      "reaction": "trans-IrCl(CO)(PPh3)2 + H2 -> cis-IrClH2(CO)(PPh3)2",
+      "classification_gate": "PASS_MC15_ORGANOMETALLIC_BOND_ACTIVATION",
+      "classification_basis": "Both the primary kinetic literature and the independent computational study identify H2 addition to square-planar Ir(I) as oxidative addition; this family is mechanistically distinct from the frozen Pd/PCy3/PhBr oxidative-addition family.",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_GAS_PHASE_DFT_POTENTIAL_ENERGY_BARRIER",
+      "barrier_quantity": {
+        "value": 5.1,
+        "unit": "kcal/mol",
+        "type": "PBE-D3/def2-SVP gas-phase electronic potential-energy activation barrier for H2 activation, evaluated as E(TS)-E(isolated Ir(I) complex)-E(H2)",
+        "temperature_K": null,
+        "solvent": null,
+        "zpe_status": "NOT_REPORTED_AS_INCLUDED_IN_THE_DATASET_BARRIER_DEFINITION",
+        "thermal_correction_status": "NOT_REPORTED_AS_INCLUDED_IN_THE_DATASET_BARRIER_DEFINITION",
+        "free_energy": false,
+        "source": {
+          "authors": "Pascal Friederich, Gabriel dos Passos Gomes, Riccardo De Bin, Alan Aspuru-Guzik, David Balcells",
+          "title": "Machine learning dihydrogen activation in the chemical space surrounding Vaska's complex",
+          "journal": "Chemical Science",
+          "year": 2020,
+          "volume": 11,
+          "pages": "4584-4601",
+          "doi": "10.1039/D0SC00445F"
+        },
+        "reproducibility_repository": {
+          "repository": "pascalfriederich/vaskas-space",
+          "commit": "0c7ee7f5e32fa1d977ce8612daf60563f6945137",
+          "file": "data/vaskas_features_properties_smiles_filenames.csv",
+          "canonical_vaska_filename": "ir_tbp_1_dft-pph3_1_dft-pph3_1_dft-co_1_chloride_1_smi1_1_s_1",
+          "canonical_vaska_barrier_kcal_per_mol": 5.1
+        },
+        "typing_caveat": "The source explicitly optimized geometries in the gas phase and defines the target as a potential-energy difference. This value may not be relabeled as a benzene-solution DeltaG-dagger, an experimental activation enthalpy, or a rate-derived activation quantity."
+      },
+      "comparator_gate": "PASS_INDEPENDENT_PRIMARY_DIRECT_SOLUTION_KINETICS",
+      "observed_comparator": {
+        "type": "direct experimental second-order H2 oxidative-addition rate constant",
+        "source": {
+          "authors": "Pwen Boon Chock and Jack Halpern",
+          "title": "Kinetics of the Addition of Hydrogen, Oxygen, and Methyl Iodide to Some Square-Planar Iridium(I) Complexes",
+          "journal": "Journal of the American Chemical Society",
+          "year": 1966,
+          "volume": 88,
+          "issue": 15,
+          "pages": "3511-3514",
+          "doi": "10.1021/ja00967a009"
+        },
+        "medium": "benzene",
+        "temperature_C": 30.0,
+        "temperature_K": 303.15,
+        "rate_constant": 0.93,
+        "unit": "M^-1 s^-1",
+        "rate_law": "rate = k2[IrCl(CO)(PPh3)2][H2]",
+        "derived_activation_enthalpy_kcal_per_mol": 10.8,
+        "derived_activation_entropy_eu": -23,
+        "derived_quantity_quarantine": "The 10.8 kcal/mol activation enthalpy and -23 eu activation entropy are rate-derived from the experimental kinetics and are retained only as descriptive provenance; they do not independently validate the rate."
+      },
+      "condition_gate": "HOLD_GAS_PHASE_ELECTRONIC_BARRIER_VS_BENZENE_SOLUTION_RATE",
+      "condition_hold_basis": [
+        "The computational barrier is an isolated gas-phase electronic potential-energy threshold with no reported solvent, zero-point, thermal, entropy, or solution-standard-state correction in the dataset barrier definition.",
+        "The observed comparator is a bimolecular rate constant measured in benzene solution at 303.15 K.",
+        "The frozen campaign rule requires medium and standard-state matching or an explicit defensible mapping; no such mapping is currently present.",
+        "Agreement with the experimental rate or activation parameters may not be used to choose a correction scheme or promote the candidate."
+      ],
+      "independence_gate": "NOT_REACHED_AFTER_CONDITION_HOLD",
+      "representation_mode": "SINGLE_BARRIER_OXIDATIVE_ADDITION_PROVISIONAL",
+      "representation_gate": "HOLD_WITH_CONDITION_MAPPING",
+      "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+      "terminal_state": "CONDITION_AND_QUANTITY_MAPPING_HOLD",
+      "ready_for_adjudication": false,
+      "automatic_admission": false,
+      "next_gate": "Locate a barrier or activation free energy for the exact Vaska/H2 oxidative-addition event in benzene (or a quantitatively defensible solvent/standard-state mapping fixed independently of target agreement), with method choice not selected from residual quality."
+    },
+    {
+      "trail_id": "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION",
+      "target_class": "MC05",
+      "target_class_name": "elimination",
+      "candidate_family": "gas-phase ethyl-chloride unimolecular HCl elimination",
+      "reaction": "C2H5Cl -> C2H4 + HCl",
+      "classification_gate": "PASS_MC05_ELIMINATION",
+      "classification_basis": "The primary kinetic source explicitly identifies homogeneous molecular pyrolysis of ethyl chloride yielding ethylene and hydrogen chloride; this is a genuine elimination family distinct from the frozen ethoxyheterocycle ethylene-elimination family.",
+      "source_gate": "PASS",
+      "kinetics_first_comparator": {
+        "source": {
+          "authors": "K. A. Holbrook and A. R. W. Marsh",
+          "title": "Unimolecular gas-phase pyrolysis of ethyl chloride",
+          "journal": "Transactions of the Faraday Society",
+          "year": 1967,
+          "volume": 63,
+          "pages": "643-654",
+          "doi": "10.1039/TF9676300643"
+        },
+        "phase": "gas",
+        "temperature_range_C": [402.0, 521.0],
+        "temperature_range_K": [675.15, 794.15],
+        "pressure_floor_mmHg": 0.2,
+        "reaction_order": 1,
+        "high_pressure_arrhenius_expression": "k_inf = 10^(14.03 +/- 0.44) * exp(-(58430 +/- 1500 cal mol^-1)/(R*T)) s^-1",
+        "mechanistic_evidence": "unimolecular nature confirmed using inhibitor comparisons; experimental falloff was studied and a high-pressure rate expression was reconstructed"
+      },
+      "barrier_search_source": {
+        "authors": "Alexis Maldonado, Jose R. Mora, Tania Cordova, Gabriel Chuchani",
+        "title": "Density functional theory calculations of the gas-phase elimination kinetics of 2-(dimethylamino)ethyl chloride and ethyl chloride",
+        "journal": "Journal of Molecular Structure: THEOCHEM",
+        "year": 2010,
+        "volume": 961,
+        "pages": "55-61",
+        "doi": "10.1016/j.theochem.2010.08.037",
+        "methods": ["B3LYP/6-31G(d,p)", "B3LYP/6-31++G(d,p)", "MPW1PW91/6-31G(d,p)", "MPW1PW91/6-31++G(d,p)", "PBEPBE/6-31G(d,p)", "PBEPBE/6-31++G(d,p)"],
+        "mechanism": "four-centered cyclic transition state involving Cl, H, and the two carbon atoms"
+      },
+      "barrier_gate": "HOLD_EXACT_NUMERIC_PARENT_BARRIER_AND_METHOD_SELECTION_AUDIT_INCOMPLETE",
+      "barrier_hold_basis": [
+        "The accessible source record confirms an explicit ethyl-chloride theoretical comparison and transition-state topology but does not expose the full parent-compound numerical barrier table needed for exact quantity typing.",
+        "The 2010 paper discusses agreement with experimental activation values; before using any one functional/basis result, method selection must be audited to ensure the same target kinetics did not select the model.",
+        "The experimental Arrhenius activation energy may not be substituted for an independent theoretical barrier because it is derived from the target rate data."
+      ],
+      "comparator_gate": "PRESENT_BUT_NOT_CONTIGUOUSLY_PROMOTED_BECAUSE_BARRIER_GATE_OPEN",
+      "condition_gate": "NOT_REACHED",
+      "independence_gate": "NOT_REACHED",
+      "representation_mode": "UNIMOLECULAR_ELIMINATION_WITH_FALLOFF_REQUIRING_HIGH_PRESSURE_MAPPING",
+      "highest_contiguous_promotion_state": "SOURCE_QUALIFIED",
+      "terminal_state": "BARRIER_QUANTITY_AND_METHOD_SELECTION_HOLD",
+      "ready_for_adjudication": false,
+      "automatic_admission": false,
+      "next_gate": "Recover the full 2010 barrier table or an alternative independently selected ab initio barrier source, type electronic/ZPE/thermal/free-energy terms exactly, then map only to the experimentally reconstructed high-pressure unimolecular regime."
+    }
+  ],
+  "aggregate": {
+    "new_ready_for_adjudication": 0,
+    "family_depth_classes_with_additive_ready_second_family": ["MC06", "MC11", "MC14"],
+    "ready_second_family_count": 3,
+    "target_class_count": 11,
+    "new_comparator_qualified_condition_holds": 1,
+    "new_source_qualified_barrier_holds": 1,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}
