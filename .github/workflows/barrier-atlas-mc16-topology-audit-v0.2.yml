@@ -1,0 +1,37 @@
+name: Barrier Atlas MC16 topology audit v0.2
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - 'barrier_atlas/family_independence/MC16_METHYLPEROXY_SCIENTIFIC_TOPOLOGY_AUDIT_v0.2.json'
+      - 'barrier_atlas/family_independence/validate_mc16_methylperoxy_scientific_topology_v0_2.py'
+      - 'barrier_atlas/family_independence/test_mc16_methylperoxy_scientific_topology_v0_2.py'
+      - '.github/workflows/barrier-atlas-mc16-topology-audit-v0.2.yml'
+  pull_request:
+    paths:
+      - 'barrier_atlas/family_independence/MC16_METHYLPEROXY_SCIENTIFIC_TOPOLOGY_AUDIT_v0.2.json'
+      - 'barrier_atlas/family_independence/validate_mc16_methylperoxy_scientific_topology_v0_2.py'
+      - 'barrier_atlas/family_independence/test_mc16_methylperoxy_scientific_topology_v0_2.py'
+      - '.github/workflows/barrier-atlas-mc16-topology-audit-v0.2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen-science topology hold
+        run: |
+          python barrier_atlas/family_independence/validate_mc16_methylperoxy_scientific_topology_v0_2.py \
+            --audit barrier_atlas/family_independence/MC16_METHYLPEROXY_SCIENTIFIC_TOPOLOGY_AUDIT_v0.2.json
+      - name: Run MC16 topology regression tests
+        run: |
+          python -m pytest -q barrier_atlas/family_independence/test_mc16_methylperoxy_scientific_topology_v0_2.py
