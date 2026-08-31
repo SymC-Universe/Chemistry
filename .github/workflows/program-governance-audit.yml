@@ -31,11 +31,20 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m json.tool governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.0.json >/dev/null
+          python3 -m json.tool governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.1.json >/dev/null
           python3 -m json.tool governance/PROGRAM_DECISION_LEDGER_v1.0.json >/dev/null
+          python3 -m json.tool governance/IMPLEMENTATION_STATUS_v1.0.json >/dev/null
+          python3 -m json.tool governance/decisions/DEC-2026-08-30-013.json >/dev/null
           python3 -m json.tool systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json >/dev/null
           python3 -m json.tool systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json >/dev/null
+          python3 -m py_compile governance/verify_program_governance.py governance/verify_implementation_state.py
       - name: Enforce scientific and execution firewalls
         shell: bash
         run: |
           set -euo pipefail
           python3 governance/verify_program_governance.py
+      - name: Enforce deployment-state truth
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 governance/verify_implementation_state.py
