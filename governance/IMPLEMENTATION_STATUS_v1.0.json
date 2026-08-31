@@ -5,12 +5,13 @@
   "state_vocabulary": ["FROZEN", "QUALIFIED", "WIRED", "ACTIVE"],
   "components": {
     "program_governance": {
-      "state": "ACTIVE",
+      "state": "FROZEN",
       "protocol": "governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.1.json",
-      "qualification_or_audit_run_id": 33329524910,
-      "production_commit": "c5adb4517605dc7f61b50d57548e2f76502eb0b5",
+      "qualification_or_audit_run_id": null,
+      "production_commit": null,
       "production_workflow": ".github/workflows/program-governance-audit.yml",
-      "claim_allowed": "Program governance is active and CI-enforced."
+      "production_active": false,
+      "claim_allowed": "Governance v1.1 is frozen but must be rewired and re-audited before ACTIVE may be claimed."
     },
     "qe_native_checkpoint_restart": {
       "state": "FROZEN",
