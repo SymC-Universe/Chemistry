@@ -3,7 +3,7 @@
   "status": "FROZEN_BEFORE_SYSTEM3_NONKINETIC_RESULTS",
   "effective_date": "2026-08-30",
   "system": "H/Ru(0001)",
-  "purpose": "Transfer the strongest epistemic controls from the polyimide/siloxane investigation into System 3 without transferring its chemistry: readiness before interpretation, nested evidence promotion, independent gates, raw-record precedence, and fail-closed disagreement handling.",
+  "purpose": "Transfer the strongest epistemic controls from the polyimide/siloxane investigation into System 3 without transferring its chemistry: readiness before interpretation, nested evidence promotion, independent gates, raw-record precedence, surrogate calibration, and fail-closed disagreement handling.",
   "state_record": {
     "required_execution_states": ["PLANNED", "EXECUTED", "MEASURED", "VALID", "ADJUDICATED"],
     "states_are_not_synonyms": true,
@@ -54,6 +54,24 @@
     "failed_simpler_gate_cannot_be_rescued_by_richer_model": true,
     "observationally_or_numerically_indistinguishable_models_keep_simpler_interpretation": true,
     "unidentifiable_parameters_are_reported_undefined": true
+  },
+  "surrogate_calibration_rule": {
+    "principle": "A cheaper observable or approximation may screen or prioritize cases but may not inherit the decision authority of a primary calculation merely because it appears correlated.",
+    "potential_system3_surrogates": [
+      "reduced slab or k-mesh",
+      "lower ring-polymer bead count",
+      "harmonic or classical rate estimate",
+      "cheaper electronic-structure candidate",
+      "reduced reaction-coordinate model"
+    ],
+    "promotion_requires": [
+      "same-system bridging comparison against the primary calculation",
+      "prospectively frozen error or equivalence margin",
+      "independent check not used to learn the bridge",
+      "documented domain of validity"
+    ],
+    "holdout_may_not_define_surrogate_threshold": true,
+    "surrogate_failure_cannot_be_averaged_with_primary_pass_or_failure": true
   },
   "independent_gate_rule": {
     "numerical_convergence": "independent gate",
