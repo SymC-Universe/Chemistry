@@ -20,8 +20,9 @@ env:
   METHOD_PROTOCOL: systems/co_cu111/SYSTEM2_METHOD_SELECTION_PROTOCOL_v0.1.json
   STAGE_A_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
   STAGE_A_EXTENSION: systems/co_cu111/SYSTEM2_PBE_STAGE_A_NUMERICAL_EXTENSION_v0.1.json
-  CURRENT_AUDIT_RUN_ID: '33289747543'
-  CURRENT_GATE_ARTIFACT: co-cu111-pbe-clean-surface-continuation-extension-v2-closure-recovery-gate
+  CURRENT_AUDIT_RUN_ID: '33390385236'
+  CURRENT_GATE_ARTIFACT: co-cu111-l15-native-postrelax-gate-v1
+  CURRENT_GATE_FILE: SURFACE_CONVERGENCE_EXTENSION_GATE.json
   STAGE_A_RUN_ID: '31887006685'
   STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
   ENGINE_RUN_ID: '31371043888'
@@ -60,16 +61,19 @@ jobs:
           import json
           h=json.load(open('systems/co_cu111/SYSTEM2_PBE_SITE_ORDERING_HANDOFF_v0.1.json'))
           assert h['status']=='FROZEN_BEFORE_CURRENT_AUDIT_FINAL_GATE'
-          assert h['authoritative_current_audit']['workflow_run_id']==33289747543
-          assert h['authoritative_current_audit']['required_clean_gate_artifact']=='co-cu111-pbe-clean-surface-continuation-extension-v2-closure-recovery-gate'
+          assert h['authoritative_current_audit']['workflow_run_id']==33390385236
+          assert h['authoritative_current_audit']['required_clean_gate_artifact']=='co-cu111-l15-native-postrelax-gate-v1'
+          assert h['authoritative_current_audit']['required_clean_gate_file']=='SURFACE_CONVERGENCE_EXTENSION_GATE.json'
           assert h['authoritative_current_audit']['required_clean_gate_status']=='CLEAN_SURFACE_PASS'
           assert h['provenance']['kinetic_inputs_used'] is False
           assert h['provenance']['scientific_settings_changed'] is False
           assert h['provenance']['clean_surface_recomputation_authorized'] is False
+          assert h['provenance']['prior_failed_recovery_run_preserved'] is True
+          assert h['provenance']['current_audit_pointer_updated_before_final_L15_adjudication_result'] is True
           print('HANDOFF_CONTRACT_VERIFIED')
           PY
 
-      - name: Download authoritative recovered clean gate
+      - name: Download authoritative L15 clean gate
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.CURRENT_GATE_ARTIFACT }}
@@ -84,13 +88,15 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
-          r=json.load(open('clean_gate/CLEAN_SURFACE_GATE.json'))
+          import json, os
+          path='clean_gate/'+os.environ['CURRENT_GATE_FILE']
+          r=json.load(open(path))
           status=r['status']
           selected=(r.get('selected') or {}).get('case_id','')
           assert status=='CLEAN_SURFACE_PASS', f'authoritative clean gate is {status}, not CLEAN_SURFACE_PASS'
           assert selected, 'clean gate PASS did not provide selected case'
           assert r['provenance']['kinetic_inputs_used'] is False
+          assert r['provenance']['prior_failure_preserved_as_failure'] is True
           print('status='+status)
           print('selected_case='+selected)
           PY
@@ -191,7 +197,7 @@ jobs:
           python3 "$RUNNER" site-run \
             --protocol "$SURFACE_PROTOCOL" \
             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
-            --clean-gate handoff_inputs/clean_gate/CLEAN_SURFACE_GATE.json \
+            --clean-gate handoff_inputs/clean_gate/$CURRENT_GATE_FILE \
             --clean-root handoff_inputs/clean_candidates \
             --bundle "$BUNDLE" \
             --pseudo-dir handoff_inputs/engine/pseudos \
@@ -286,7 +292,7 @@ jobs:
           python3 "$RUNNER" finalize \
             --protocol "$SURFACE_PROTOCOL" \
             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
-            --clean-gate handoff_inputs/clean_gate/CLEAN_SURFACE_GATE.json \
+            --clean-gate handoff_inputs/clean_gate/$CURRENT_GATE_FILE \
             --site-root site_collected \
             --out final/PBE_SURFACE_SITE_ORDERING_RESULT.json \
             > final/PBE_SURFACE_SITE_ORDERING_STDOUT.txt
@@ -295,7 +301,7 @@ jobs:
             "$HANDOFF" "$METHOD_PROTOCOL" "$STAGE_A_PROTOCOL" "$STAGE_A_EXTENSION" "$BUNDLE" \
             "$SURFACE_PROTOCOL" "$RUNNER" \
             stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
-            handoff_inputs/clean_gate/CLEAN_SURFACE_GATE.json \
+            handoff_inputs/clean_gate/$CURRENT_GATE_FILE \
             final/PBE_SURFACE_SITE_ORDERING_RESULT.json \
             > final/SITE_ORDERING_HANDOFF_INPUTS_AND_RESULT.sha256
       - uses: actions/upload-artifact@v4
