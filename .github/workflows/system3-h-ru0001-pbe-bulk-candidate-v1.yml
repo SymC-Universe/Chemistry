@@ -1,0 +1,91 @@
+name: System3 H Ru0001 PBE bulk candidate audit v1
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/system3-h-ru0001-pbe-bulk-candidate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PROTOCOL: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json
+  RUNNER: systems/h_ru0001/system3_ru_bulk_stage_a.py
+  SOURCE_RUN_ID: '30949901790'
+  SOURCE_ARTIFACT: na-cu001-c7-qe
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  pbe-bulk-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify prospective System 3 contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$PROTOCOL" >/dev/null
+          python3 -m py_compile "$RUNNER"
+          echo '914617b43844dd603b610c1208b01cd6649cae9943b5d6f972a93110dbf21d32  '$PROTOCOL | sha256sum -c -
+          echo '34c020bf2386bdfa2bfd186191e748af42308ab353d4270932c6fcc6b2adca1d  '$RUNNER | sha256sum -c -
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['PROTOCOL']))
+          assert p['status']=='FROZEN_BEFORE_SYSTEM3_PBE_BULK_RESULTS'
+          assert p['parallel_authorization']['system3_nonkinetic_qualification_may_run_before_system2_closure'] is True
+          assert p['parallel_authorization']['cross_system_inference_before_system2_closure'] is False
+          assert p['evidence_firewall']['published_H_Ru_kinetic_values_may_select_settings'] is False
+          assert p['evidence_firewall']['published_H_Ru_barriers_may_select_settings'] is False
+          assert p['evidence_firewall']['published_H_Ru_site_energy_ordering_may_select_settings'] is False
+          assert p['evidence_firewall']['chi_may_select_settings'] is False
+          assert p['decision']['automatic_method_promotion'] is False
+          print('SYSTEM3_PROSPECTIVE_CONTRACT_VERIFIED')
+          PY
+      - name: Install unchanged runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-numpy libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Extract and verify exact H/Ru PBE engine inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855  engine/bin/pw.x' | sha256sum -c -
+          echo '67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2  engine/meta/SSSP-lib-pbe-eff-v2.tar.gz' | sha256sum -c -
+          mkdir -p hr_pseudos
+          tar -xOf engine/meta/SSSP-lib-pbe-eff-v2.tar.gz mix-sssp-pbe-eff-lib-v2/library/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf > hr_pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf
+          tar -xOf engine/meta/SSSP-lib-pbe-eff-v2.tar.gz mix-sssp-pbe-eff-lib-v2/library/H.us.pbe.z_1.uspp.gbrv.v1.4.upf > hr_pseudos/H.us.pbe.z_1.uspp.gbrv.v1.4.upf
+          echo 'ed637e8481a2fddda6a93863a92f8b0b857379b9db23325a4664e3df0a6f45bd  hr_pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf' | sha256sum -c -
+          echo 'f4e1cad6afe24cfaa879aed5d8f4ce716102b626a4e3a622a303419624960036  hr_pseudos/H.us.pbe.z_1.uspp.gbrv.v1.4.upf' | sha256sum -c -
+          chmod +x engine/bin/pw.x
+          mkdir -p system3_out/engine_provenance
+          cp hr_pseudos/*.upf system3_out/engine_provenance/
+          cp "$PROTOCOL" system3_out/
+          printf '%s  %s\n' \
+            2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855 engine/bin/pw.x \
+            ed637e8481a2fddda6a93863a92f8b0b857379b9db23325a4664e3df0a6f45bd hr_pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf \
+            f4e1cad6afe24cfaa879aed5d8f4ce716102b626a4e3a622a303419624960036 hr_pseudos/H.us.pbe.z_1.uspp.gbrv.v1.4.upf \
+            67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2 engine/meta/SSSP-lib-pbe-eff-v2.tar.gz \
+            > system3_out/engine_provenance/SOURCE_HASHES.sha256
+      - name: Run frozen non-kinetic Ru bulk qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" --protocol "$PROTOCOL" --pw engine/bin/pw.x --pseudo-dir hr_pseudos --out system3_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system3-h-ru0001-pbe-bulk-candidate-v1
+          path: system3_out
+          retention-days: 90
+          if-no-files-found: error
