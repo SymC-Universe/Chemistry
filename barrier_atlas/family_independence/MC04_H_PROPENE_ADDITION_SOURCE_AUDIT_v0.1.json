@@ -29,6 +29,7 @@
   "classification_gate": "PASS_MC04_ADDITION",
   "classification_basis": "Both resolved entrance channels add H across the propene C=C bond to form propyl radicals. This intermolecular alkene-addition family is physically distinct from the frozen intramolecular 5-hexenyl-radical cyclization family.",
   "source_gate": "PASS",
+  "barrier_gate": "PASS_EXACTLY_TYPED_PARALLEL_DELTA_H_DAGGER_0K_PROFILE",
   "theory_source": {
     "authors": ["Jennifer Power", "Kieran P. Somers", "Shashank S. Nagaraja", "Henry J. Curran"],
     "title": "Hierarchical Study of the Reactions of Hydrogen Atoms with Alkenes: A Theoretical Study of the Reactions of Hydrogen Atoms with C2-C4 Alkenes",
