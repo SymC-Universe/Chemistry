@@ -82,6 +82,18 @@
     "rate_expression": "log10(k2 / (cm^3 mol^-1 s^-1)) = 11.70 - (44 kJ mol^-1)/(2.3 R T)",
     "rate_derived_activation_term_status": "DESCRIPTIVE_ONLY_NOT_AN_INDEPENDENT_BARRIER_VALIDATOR"
   },
+  "independent_kinetic_cross_check": {
+    "authors": "W. Moller, E. Mozzhukhin, H. Gg. Wagner",
+    "title": "High Temperature Reactions of CH3. 1. The Reaction CH3 + H2 -> CH4 + H",
+    "journal": "Berichte der Bunsengesellschaft fuer physikalische Chemie",
+    "year": 1986,
+    "volume": 90,
+    "pages": "854-861",
+    "doi": "10.1002/bbpc.19860901006",
+    "method": "time-resolved methyl-radical absorption at 216.5 nm behind incident shock waves",
+    "rate_expression": "k = 10^(13.3 +/- 0.1) exp[-(7200 +/- 400) K/T] cm^3 mol^-1 s^-1",
+    "role": "INDEPENDENT_SUPPORTING_KINETIC_CROSS_CHECK_NOT_USED_TO_SELECT_THE_BARRIER_OR_PROMOTE_BY_RESIDUAL"
+  },
   "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_GAS_PHASE_RATE_CHAIN",
   "condition_gate": "PASS_SAME_GAS_PHASE_ELEMENTARY_EVENT_WITH_EXPLICIT_KINETIC_TEMPERATURE_AND_PRESSURE_WINDOW",
   "condition_mapping_basis": [
@@ -94,6 +106,7 @@
   "independence_basis": [
     "The selected barrier is the W2-F12 reference value of the pre-existing GMTKN55/BH76 benchmark set; it is not a reaction-specific functional chosen for closeness to the Marshall-Shahkar kinetics.",
     "The selected observed comparator is a primary experimental rate measurement and is not derived from the W2-F12 barrier.",
+    "A separate later shock-wave methyl-absorption experiment is retained only as a supporting kinetic cross-check and does not vote on method selection.",
     "No predicted-versus-observed residual, chi value, or expected ChemSA agreement was calculated or used to select or promote the candidate.",
     "The family is mechanistically and chemically distinct from FAM-OH-HO2-RADICAL-TERMINATION."
   ],
