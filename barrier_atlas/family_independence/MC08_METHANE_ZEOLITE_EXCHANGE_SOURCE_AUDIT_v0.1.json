@@ -1,0 +1,117 @@
+{
+  "schema": "barrier-atlas-mc08-methane-zeolite-exchange-source-audit-v0.1",
+  "status": "ADDITIVE_BARRIER_QUALIFIED_MECHANISM_AND_COMPARATOR_HOLD",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "rate_derived_activation_energy_may_validate_same_rate": false,
+    "figure_only_rate_may_close_comparator_gate": false
+  },
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "trail_id": "FI-MC08-METHANE-ZEOLITE-HD-EXCHANGE",
+  "target_class": "MC08",
+  "target_class_name": "exchange_metathesis",
+  "candidate_family": "methane hydrogen-deuterium exchange with Bronsted acid zeolites",
+  "net_event": "CH4 plus deuterated Bronsted zeolite acid site <-> partially deuterated methane plus protonated zeolite site",
+  "classification_gate": "PASS_PROVISIONAL_MC08_EXCHANGE_EVENT",
+  "classification_basis": "The observed chemical event is hydrogen/deuterium exchange between methane and a zeolitic Bronsted site and is physically distinct from the frozen gas-phase H3 exchange family. The isotopic label is the experimental tracer of a different substrate/catalyst family, not an isotopologue replicate of the frozen H3 family.",
+  "primary_experiment": {
+    "authors": "Bart Schoofs, Johan A. Martens, Pierre A. Jacobs, Robert A. Schoonheydt",
+    "title": "Kinetics of Hydrogen-Deuterium Exchange Reactions of Methane and Deuterated Acid FAU- and MFI-Type Zeolites",
+    "journal": "Journal of Catalysis",
+    "year": 1999,
+    "volume": 183,
+    "pages": "355-367",
+    "doi": "10.1006/jcat.1999.2401",
+    "measurement": "recirculation batch reactor with online mass-spectrometric methane-isotopomer analysis",
+    "temperature_range_C": [450.0, 550.0],
+    "temperature_range_K": [723.15, 823.15],
+    "total_pressure_mbar": 1000.0,
+    "methane_fraction_percent_range": [0.5, 2.0],
+    "carrier": "helium",
+    "zeolite_families": ["MFI", "FAU"],
+    "table_2_apparent_activation_energies_kJ_per_mol": {
+      "MFI": {
+        "Si_Al_16.5": 129.0,
+        "Si_Al_25": 133.0,
+        "Si_Al_39": 137.0,
+        "Si_Al_78": 148.0
+      },
+      "FAU": {
+        "Si_Al_2.7": 136.0,
+        "Si_Al_5.5": 150.0,
+        "Si_Al_13.5": 140.0,
+        "Si_Al_36.9": 122.0
+      }
+    },
+    "table_3_kinetic_isotope_effect_kH_over_kD_MFI": {
+      "Si_Al_16.5": 1.6,
+      "Si_Al_25": 1.7,
+      "Si_Al_39": 1.7
+    },
+    "raw_rate_status": "EXPERIMENTALLY_MEASURED_BUT_ACCESSIBLE_NUMERIC_VALUES_ARE_FIGURE_ONLY",
+    "activation_energy_quarantine": "The tabulated apparent activation energies are derived from the measured rate-temperature series and cannot independently validate those same rates.",
+    "comparator_gate": "FAIL_NO_TEXT_OR_TABLE_NUMERIC_RAW_RATE_AT_MATCHED_STATE_POINT"
+  },
+  "theory_source": {
+    "authors": "Ann M. Vos, Frank De Proft, Robert A. Schoonheydt, Paul Geerlings",
+    "title": "Calculation of reaction rate constants for hydrogen-deuterium exchange reactions of methane catalysed by acid zeolites",
+    "journal": "Chemical Communications",
+    "year": 2001,
+    "pages": "1108-1109",
+    "doi": "10.1039/B102249K",
+    "model": "fully relaxed three-T-atom AlSi2O4H9 cluster",
+    "method": "B3LYP/6-31G*",
+    "barrier_gate": "PASS_EXACT_ZPE_CORRECTED_ENERGY_BARRIER",
+    "barrier_quantity": {
+      "value": 159.71,
+      "unit": "kJ/mol",
+      "type": "E(TS)-E(cluster)-E(CH4) including zero-point-energy correction",
+      "free_energy": false,
+      "thermal_activation_energy": false,
+      "source_table": "Table 1"
+    },
+    "calculated_rate_record": {
+      "observable": "k_OH/CD",
+      "value": 1.97e-7,
+      "unit": "s^-1",
+      "temperature_K": 750.0,
+      "role": "theoretical output only, not the independent observed comparator"
+    },
+    "model_composition_note": "The three-T-atom cluster has Si/Al=2, whereas the primary experiments span discrete MFI and FAU samples with different Si/Al ratios. The theory paper itself notes structural, long-range, and composition limitations of the cluster approximation.",
+    "target_fit_audit": "No explicit fitting of electronic-structure parameters to the target rate was identified, but the paper is explicitly a validation comparison against the pre-existing 1999 kinetics, so agreement cannot be used post hoc to alter method, cluster, or corrections."
+  },
+  "mechanism_audit": {
+    "theoretical_representation": "single symmetric concerted hydrogen-exchange transition state",
+    "experimental_result": "The 1999 experiment measured kH/kD about 1.6-1.7 and stated that this disagrees with the earlier concerted-reaction interpretation, suggesting O-D/O-H bond dissociation as rate-determining or a non-concerted mechanism.",
+    "theory_self_check": "The 2001 calculation gives k_OH/CD divided by k_OD/CH approximately 1.02 and explicitly notes that the experimental isotope effect is larger than the theoretical value.",
+    "mechanism_gate": "HARD_HOLD_EXPERIMENTAL_KIE_DOES_NOT_LICENSE_SINGLE_CONCERTED_TS_AS_OBSERVED_EVENT",
+    "representation_mode": "SINGLE_EXCHANGE_TS_PROPOSED_NOT_LICENSED_FOR_ATLAS_COORDINATE"
+  },
+  "condition_gate": "HOLD_EXACT_ZEOLITE_COMPOSITION_AND_RAW_RATE_STATE_POINT_NOT_MATCHED",
+  "independence_gate": "NOT_REACHED_AFTER_COMPARATOR_AND_MECHANISM_HOLDS",
+  "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+  "terminal_state": "MECHANISM_AND_RAW_COMPARATOR_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "next_gate": "Recover a primary text/table numerical raw exchange-rate value for a fully specified zeolite composition and state point, then identify an independently specified barrier model for that same composition whose elementary mechanism is compatible with the measured isotope-effect evidence. Do not use rate-derived activation energies or figure-extracted rates to close the comparator gate."
+}
