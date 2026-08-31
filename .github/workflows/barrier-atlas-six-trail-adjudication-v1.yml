@@ -1,0 +1,61 @@
+name: Barrier Atlas six trail adjudication audit v1
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/barrier-atlas-six-trail-adjudication-v1.yml'
+      - 'barrier_atlas/family_independence/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  six-trail-adjudication-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify parent family-independence contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 barrier_atlas/family_independence/validate_family_independence_campaign.py \
+            --campaign barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json \
+            --trails barrier_atlas/family_independence/candidate_trails_v0.1.json
+
+      - name: Verify exact six-trail adjudication and conglomerate firewall
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd barrier_atlas/family_independence
+          python3 -m py_compile validate_six_trail_adjudication.py test_six_trail_adjudication.py
+          python3 validate_six_trail_adjudication.py \
+            --adjudication SIX_TRAIL_ADJUDICATION_v0.1.json \
+            --campaign FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json \
+            --readout CONGLOMERATE_EVIDENCE_READOUT_v0.1.md
+          python3 -m unittest test_six_trail_adjudication.py -v
+
+      - name: Record no-admission audit summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json')
+          x=json.loads(p.read_text())
+          assert x['coordinates_admitted']==0
+          assert x['grades_changed']==0
+          assert x['parent_release']['immutable'] is True
+          print(json.dumps({
+            'status':'PASS',
+            'trails':x['trail_count'],
+            'ready_for_adjudication':x['aggregate_gate_counts']['ready_for_adjudication'],
+            'coordinates_admitted':x['coordinates_admitted'],
+            'grades_changed':x['grades_changed'],
+            'parent_mutated':False
+          },indent=2))
+PY
