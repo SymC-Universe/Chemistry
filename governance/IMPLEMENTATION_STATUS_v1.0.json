@@ -1,0 +1,35 @@
+{
+  "schema": "symc-implementation-status-v1.0",
+  "status": "ACTIVE_IMPLEMENTATION_REGISTRY",
+  "effective_date": "2026-08-30",
+  "state_vocabulary": ["FROZEN", "QUALIFIED", "WIRED", "ACTIVE"],
+  "components": {
+    "program_governance": {
+      "state": "ACTIVE",
+      "protocol": "governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.1.json",
+      "qualification_or_audit_run_id": 33329524910,
+      "production_commit": "c5adb4517605dc7f61b50d57548e2f76502eb0b5",
+      "production_workflow": ".github/workflows/program-governance-audit.yml",
+      "claim_allowed": "Program governance is active and CI-enforced."
+    },
+    "qe_native_checkpoint_restart": {
+      "state": "FROZEN",
+      "protocol": "systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json",
+      "qualification_required": true,
+      "qualification_run_id": null,
+      "production_commit": null,
+      "production_workflow": null,
+      "production_active": false,
+      "claim_allowed": "Native QE checkpoint/restart protocol is frozen prospectively but is not yet qualified, wired, or active in production."
+    },
+    "l15_runtime_recovery_run_33329096616": {
+      "state": "WIRED",
+      "architecture": "LEGACY_EXTERNAL_WRAPPER_NO_NATIVE_ELECTRONIC_CHECKPOINT",
+      "run_id": 33329096616,
+      "head_commit": "08d0051ca127f09fd4aba43cfdc77caa1a1e23a6",
+      "native_checkpoint_protected": false,
+      "successor_identical_unsalvageable_retry_allowed": false,
+      "claim_allowed": "This already-running legacy recovery may finish, but it is not protected by the native QE checkpoint protocol and may not be followed by another identical unsalvageable retry."
+    }
+  }
+}
