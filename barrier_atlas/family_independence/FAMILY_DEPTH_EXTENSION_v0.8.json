@@ -1,0 +1,98 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v0.8",
+  "status": "ADDITIVE_FAMILY_DEPTH_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_six_trail_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.7.json",
+  "source_audit": "barrier_atlas/family_independence/MC05_ETHYL_ACETATE_BETA_ELIMINATION_SOURCE_AUDIT_v0.1.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "MC05 elimination class-gap search; selection based on reaction identity, independent kinetics, exact quantity typing, condition overlap, and mechanistic representation only"
+  },
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC05-ETHYL-ACETATE-BETA-ELIMINATION",
+      "target_class": "MC05",
+      "candidate_family": "ethyl acetate concerted gas-phase beta-elimination",
+      "reaction": "CH3COOC2H5 -> C2H4 + CH3COOH",
+      "classification_gate": "PASS_MC05_CONCERTED_BETA_ELIMINATION",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_REPRODUCIBLY_CALCULATED_ACTIVATION_ENTHALPY",
+      "barrier_quantity": {
+        "value": 199.5416732268,
+        "unit": "kJ/mol",
+        "temperature_K": 773.15,
+        "type": "gas-phase activation enthalpy DeltaH_dagger = H_TS - H_react, reproducibly calculated from the source-supplied Ea=205.97 kJ/mol using Ea=DeltaH_dagger+RT",
+        "source_doi": "10.1016/j.cherd.2020.03.001",
+        "quantity_origin": "REPRODUCIBLY_CALCULATED_FROM_SOURCE_SUPPLIED_QUANTITY_AND_EQUATION",
+        "gibbs_free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+        "experimental_arrhenius_activation_energy_status": "NOT_AN_EXPERIMENTAL_ARRHENIUS_ACTIVATION_ENERGY"
+      },
+      "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_GAS_PHASE_RATE_CHAIN",
+      "observed_comparator": {
+        "primary_source_doi": "10.1139/v60-196",
+        "temperature_range_K": [773.15, 876.15],
+        "matched_temperature_K": 773.15,
+        "type": "historical high-pressure-limit first-order gas-phase ethyl-acetate pyrolysis rate",
+        "preferred_expression": "log10(k_inf / s^-1) = 12.59 - (48.0 kcal mol^-1)/(2.303 R T)",
+        "reproducibly_evaluated_k_inf_s_inverse": 0.1057637437,
+        "rate_derived_arrhenius_activation_energy_role": "QUARANTINED_NOT_AN_INDEPENDENT_BARRIER_VALIDATOR",
+        "high_pressure_crosscheck_doi": "10.1002/kin.550040303"
+      },
+      "condition_gate": "PASS_GAS_PHASE_HIGH_PRESSURE_LIMIT_WITH_EXACT_773_15_K_OVERLAP",
+      "independence_gate": "PASS_DISTINCT_FAMILY_AND_TARGET_RATE_NOT_USED_AS_DISCLOSED_METHOD_FIT",
+      "representation_mode": "SINGLE_BARRIER_CONCERTED_SIX_MEMBERED_BETA_ELIMINATION_HIGH_PRESSURE_LIMIT",
+      "representation_gate": "PASS_SINGLE_ELEMENTARY_SADDLE_WITH_HIGH_PRESSURE_LIMIT_COMPARATOR",
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "selection_role_of_residual_chi_or_chemsa": "NONE"
+    }
+  ],
+  "preserved_nonpromotion_states": {
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+    "FI-MC08-METHANE-ZEOLITE-HD-EXCHANGE": "MECHANISM_AND_RAW_COMPARATOR_HOLD",
+    "FI-MC08-CHLORIDE-METHYL-CHLORIDE-IDENTITY-SN2": "COMPARATOR_REGIME_CONFLICT_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-MC15-RH-ACAC-MEI-OXIDATIVE-ADDITION": "CONDITION_AND_MODEL_SELECTION_PROVENANCE_HOLD",
+    "FI-MC15-VASKA-H2-OXIDATIVE-ADDITION": "CONDITION_AND_QUANTITY_MAPPING_HOLD",
+    "FI-MC16-METHYLPEROXY-SELF-REACTION": "PES_TOPOLOGY_NETWORK_AND_MODEL_PROVENANCE_HOLD"
+  },
+  "supersession_note": "v0.8 adds an independent MC05 ethyl-acetate beta-elimination trail. It does not relabel or promote the held ethyl-chloride MC05 trail, any frozen six-trail outcome, any v0.9 coordinate, or any v0.9 grade.",
+  "aggregate": {
+    "new_ready_for_adjudication": 1,
+    "new_ready_class": "MC05",
+    "new_ready_trail": "FI-MC05-ETHYL-ACETATE-BETA-ELIMINATION",
+    "family_depth_classes_with_additive_ready_second_family": ["MC02", "MC04", "MC05", "MC06", "MC11", "MC14", "MC16"],
+    "ready_second_family_count": 7,
+    "target_class_count": 11,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

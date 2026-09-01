@@ -1,0 +1,142 @@
+{
+  "schema": "barrier-atlas-mc05-ethyl-acetate-beta-elimination-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_QUALIFICATION_WITHOUT_PARENT_MUTATION",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.7.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "same_study_experimental_data_may_validate_theory": false,
+    "candidate_origin": "MC05 elimination class-gap search; theory and historical kinetics were paired by reaction identity, quantity typing, and condition overlap before any residual, chi, or ChemSA calculation"
+  },
+  "trail_id": "FI-MC05-ETHYL-ACETATE-BETA-ELIMINATION",
+  "target_class": "MC05",
+  "candidate_family": "ethyl acetate concerted gas-phase beta-elimination",
+  "reaction": "CH3COOC2H5 -> C2H4 + CH3COOH",
+  "classification_gate": "PASS_MC05_CONCERTED_BETA_ELIMINATION",
+  "classification_basis": [
+    "The computational source identifies a concerted mechanism through a six-membered transition state connecting ethyl acetate to ethylene and acetic acid.",
+    "The historical isotope-effect kinetic lineage independently supports beta C-H bond rupture in the transition state.",
+    "This physical family is distinct from the frozen FAM-ETHOXYHETEROCYCLE-ETHYLENE-ELIMINATION family and from the separately held ethyl-chloride HCl-elimination trail."
+  ],
+  "source_gate": "PASS",
+  "theory_source": {
+    "authors": "Diana C. Vargas, Sebastian Salazar, Jose R. Mora, Kevin M. Van Geem, Daniela Almeida Streitwieser",
+    "title": "Experimental and theoretical study of the thermal decomposition of ethyl acetate during fast pyrolysis",
+    "journal": "Chemical Engineering Research and Design",
+    "year": 2020,
+    "volume": 157,
+    "pages": "153-161",
+    "doi": "10.1016/j.cherd.2020.03.001",
+    "method": "omegaB97XD/6-311++G(d,p)",
+    "method_selection_provenance": "The paper states that omegaB97XD had previously shown useful transition-state geometry performance for other hydrogen-abstraction and radical-recombination reactions. No selection among same-reaction method variants by agreement with the selected 1960 target rate is disclosed.",
+    "stationary_point_validation": {
+      "imaginary_frequency_count": 1,
+      "irc_connectivity": "transition state connected by intrinsic reaction coordinate calculations to ethyl acetate reactant and ethylene plus acetic acid products"
+    }
+  },
+  "barrier_gate": "PASS_EXACTLY_TYPED_REPRODUCIBLY_CALCULATED_ACTIVATION_ENTHALPY",
+  "supplied_theory_quantity": {
+    "value": 205.97,
+    "unit": "kJ/mol",
+    "temperature_C": 500.0,
+    "temperature_K": 773.15,
+    "type": "theoretical activation energy Ea defined by the source as Ea = DeltaH_dagger + R*T",
+    "source_equation": "Ea = DeltaH_dagger + R*T",
+    "gibbs_free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+    "electronic_barrier_status": "NOT_A_BARE_ELECTRONIC_BARRIER"
+  },
+  "barrier_quantity": {
+    "value": 199.5416732268,
+    "unit": "kJ/mol",
+    "temperature_C": 500.0,
+    "temperature_K": 773.15,
+    "type": "gas-phase activation enthalpy DeltaH_dagger = H_TS - H_react, reproducibly calculated from the source-supplied Ea using the source-defined relation Ea = DeltaH_dagger + R*T",
+    "calculation": "205.97 kJ/mol - (0.00831446261815324 kJ mol^-1 K^-1 * 773.15 K)",
+    "R_kJ_mol_K": 0.00831446261815324,
+    "source_doi": "10.1016/j.cherd.2020.03.001",
+    "quantity_origin": "REPRODUCIBLY_CALCULATED_FROM_SOURCE_SUPPLIED_QUANTITY_AND_EQUATION",
+    "gibbs_free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+    "experimental_arrhenius_activation_energy_status": "NOT_AN_EXPERIMENTAL_ARRHENIUS_ACTIVATION_ENERGY"
+  },
+  "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_GAS_PHASE_RATE_CHAIN",
+  "observed_comparator": {
+    "primary_source": {
+      "authors": "Arthur T. Blades and P. W. Gilderson",
+      "title": "The secondary hydrogen isotope effects in the pyrolysis of ethyl-d5 acetate and ethyl acetate-d3",
+      "journal": "Canadian Journal of Chemistry",
+      "year": 1960,
+      "volume": 38,
+      "pages": "1407-1411",
+      "doi": "10.1139/v60-196",
+      "temperature_range_C": [500.0, 603.0],
+      "temperature_range_K": [773.15, 876.15],
+      "system": "gas-phase flow pyrolysis",
+      "rate_observable": "first-order unimolecular ethyl-acetate disappearance / acetic-acid formation kinetic expression"
+    },
+    "independent_nbs_evaluation": {
+      "source": "NBS NSRDS 21, Kinetic Data on Gas Phase Unimolecular Reactions",
+      "year": 1970,
+      "reaction": "ethyl ethanoate -> ethene + acetic acid",
+      "preferred_expression": "log10(k_inf / s^-1) = 12.59 - (48.0 kcal mol^-1)/(2.303 R T)",
+      "primary_row_temperature_range_K": [773.0, 876.0],
+      "system": "flow",
+      "rate_derived_activation_energy_kcal_per_mol": 48.0,
+      "rate_derived_activation_energy_role": "QUARANTINED_NOT_AN_INDEPENDENT_BARRIER_VALIDATOR"
+    },
+    "independent_high_pressure_crosscheck": {
+      "authors": "Peter C. Beadle, David M. Golden, S. W. Benson",
+      "year": 1972,
+      "doi": "10.1002/kin.550040303",
+      "statement": "very-low-pressure pyrolysis results agree with previously determined high-pressure Arrhenius parameters log k_inf = 12.6 - 48.0/theta"
+    },
+    "matched_temperature_K": 773.15,
+    "reproducibly_evaluated_k_inf_s_inverse": 0.1057637437,
+    "reproducibly_evaluated_log10_k_inf": -0.9756631850,
+    "evaluation_note": "The numerical k_inf is evaluated from the independently tabulated historical Arrhenius expression at the predeclared exact overlap temperature; residual magnitude was not used to select or promote the candidate."
+  },
+  "condition_gate": "PASS_GAS_PHASE_HIGH_PRESSURE_LIMIT_WITH_EXACT_773_15_K_OVERLAP",
+  "condition_mapping": {
+    "theory_temperature_K": 773.15,
+    "comparator_temperature_K": 773.15,
+    "phase": "gas",
+    "kinetic_regime": "historical high-pressure-limit first-order unimolecular rate",
+    "pressure_mapping_basis": "The 1972 VLPP paper explicitly labels the earlier Arrhenius parameters as high-pressure parameters; the Atlas comparator therefore uses k_inf rather than a falloff-specific finite-pressure rate."
+  },
+  "independence_gate": "PASS_DISTINCT_FAMILY_AND_TARGET_RATE_NOT_USED_AS_DISCLOSED_METHOD_FIT",
+  "independence_basis": [
+    "The selected primary rate experiment predates the 2020 calculation by sixty years and is from a separate research lineage.",
+    "The 2020 paper contains its own experimental pyrolysis dataset, but those same-study data are quarantined from comparator use in this trail.",
+    "The selected theory method is retained as reported; no method variant is chosen by smallest residual against the 1960 target.",
+    "The selected physical family is distinct from the frozen MC05 family and from the held ethyl-chloride trail."
+  ],
+  "representation_mode": "SINGLE_BARRIER_CONCERTED_SIX_MEMBERED_BETA_ELIMINATION_HIGH_PRESSURE_LIMIT",
+  "representation_gate": "PASS_SINGLE_ELEMENTARY_SADDLE_WITH_HIGH_PRESSURE_LIMIT_COMPARATOR",
+  "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+  "terminal_state": "READY_FOR_ADJUDICATION",
+  "ready_for_adjudication": true,
+  "automatic_admission": false,
+  "selection_role_of_residual_chi_or_chemsa": "NONE",
+  "quarantined_evidence": [
+    "The 2020 paper's own experimental activation energy and rate model cannot serve as the independent comparator for its own theory.",
+    "The 1960/1970 rate-derived 48.0 kcal/mol Arrhenius activation energy cannot independently validate the observed rate from which it was derived.",
+    "No predicted/observed residual, chi value, or expected ChemSA agreement may vote on candidate selection or promotion."
+  ],
+  "preserved_hold": {
+    "trail_id": "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION",
+    "terminal_state": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+    "superseded": false
+  }
+}
