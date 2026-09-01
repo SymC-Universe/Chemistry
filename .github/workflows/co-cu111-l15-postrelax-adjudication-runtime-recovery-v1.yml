@@ -1,4 +1,4 @@
-name: CO Cu111 L15 post-relax adjudication runtime recovery v1
+name: CO Cu111 L15 post-relax adjudication 5x5.5h recovery v2
 
 on:
   push:
@@ -13,13 +13,14 @@ permissions:
   actions: read
 
 concurrency:
-  group: co-cu111-l15-postrelax-adjudication-runtime-recovery-v1
+  group: co-cu111-l15-postrelax-adjudication-5x5p5h-recovery-v2
   cancel-in-progress: false
 
 env:
+  CONT_POLICY: .github/COMPUTE_CONTINUATION_POLICY_v0.1.json
+  CONT_HELPER: systems/co_cu111/pbe_l15_scf_continuation_v1.py
   EXT_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json
   EXT_RUNNER: systems/co_cu111/pbe_surface_convergence_extension_v1.py
-  EXT_TEST: systems/co_cu111/test_pbe_surface_convergence_extension_v1.py
   SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
   BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
   L15_PRODUCTION_RUN_ID: '33351747179'
@@ -37,59 +38,44 @@ env:
   STAGE_A_RUN_ID: '31887006685'
   STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
   SOURCE_SURFACE_RUN_ID: '31922544540'
-  ORIGINAL_REPRO_RUNTIME_CAP_S: '19200'
-  RECOVERY_REPRO_RUNTIME_CAP_S: '21000'
+  TOTAL_CELLS: '5'
+  CELL_RUNTIME_S: '19800'
   OMP_NUM_THREADS: '1'
   OPENBLAS_NUM_THREADS: '1'
   MKL_NUM_THREADS: '1'
 
 jobs:
-  reproduce_recovery:
-    name: mechanically recover independent L15 reproduction
+  repro_cell_1:
+    name: L15 reproduction continuation cell 1 of 5
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify unchanged frozen science and bounded mechanical recovery
+      - name: Verify five-cell 5.5-hour mechanical policy and frozen science
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile "$EXT_RUNNER" "$EXT_TEST"
-          test "$(git hash-object "$EXT_PROTOCOL")" = '0cf59a7974b769f619b2684ea10966e6789dd546'
-          test "$(git hash-object "$EXT_RUNNER")" = 'bf5526692f2ce55311e71516f1cf336ce9250b87'
-          test "$(git hash-object "$EXT_TEST")" = '7c4830b590fb8b851dcab37c093e6533823c569c'
-          echo '518583a18ec5a26b442523601e325b2b525fd5a374f37c255eb9c5fff163ebd7  '$EXT_PROTOCOL | sha256sum -c -
-          echo '00f32beaa072ca474125e2296ad610215457f936faab2e03b5675ccf21453fbb  '$EXT_RUNNER | sha256sum -c -
-          echo '83145d7f50b1597801426ea647115e94c2467250a1f5ea907d201d0ad9053871  '$EXT_TEST | sha256sum -c -
-          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '$SURFACE_PROTOCOL | sha256sum -c -
-          echo '6a2216a776cbe3bf8a08e1f7215bcf0ff77caf96a2f2529875a0157f4bbfed3f  '$BUNDLE | sha256sum -c -
-          python3 "$EXT_RUNNER" self-test --protocol "$EXT_PROTOCOL"
-          python3 "$EXT_TEST" -v
+          python3 -m py_compile "$CONT_HELPER" "$EXT_RUNNER"
           python3 - <<'PY'
           import json
-          p=json.load(open('systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json'))
-          ex=p['execution']
-          assert ex['reproduction_runtime_cap_seconds']==19200
-          assert ex['execution_mode']=='DIRECT_ONE_RANK'
-          assert ex['mpi_ranks']==1
-          fm=p['frozen_method']
-          assert fm['exchange_correlation']=='PBE'
-          assert fm['ecutwfc_ry']==90
-          assert fm['ecutrho_ry']==900
-          assert fm['electron_conv_thr']==1e-10
-          assert fm['mixing_beta']==0.3
-          assert fm['electron_maxstep']==200
-          assert fm['force_gate_ev_per_angstrom']==0.02
-          assert fm['independent_scf_reproduction_gate_ev']==0.001
-          assert fm['surface_excess_convergence_max_ev_per_surface_atom']==0.001
-          assert int('21000') > int('19200')
-          print('MECHANICAL_RUNTIME_RECOVERY_ONLY=true')
-          print('ORIGINAL_RUNTIME_CAP_S=19200')
-          print('RECOVERY_RUNTIME_CAP_S=21000')
+          p=json.load(open('.github/COMPUTE_CONTINUATION_POLICY_v0.1.json'))
+          assert p['minimum_continuation_cells'] >= 5
+          assert p['cell_compute_runtime_seconds'] >= 19800
+          assert p['minimum_provisioned_compute_runway_seconds'] >= 99000
+          assert p['scientific_effect']['scientific_settings_changed'] is False
+          assert p['scientific_effect']['thresholds_changed'] is False
+          q=json.load(open('systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json'))
+          assert q['frozen_method']['force_gate_ev_per_angstrom'] == 0.02
+          assert q['frozen_method']['independent_scf_reproduction_gate_ev'] == 0.001
+          assert q['frozen_method']['surface_excess_convergence_max_ev_per_surface_atom'] == 0.001
+          assert q['execution']['execution_mode'] == 'DIRECT_ONE_RANK'
+          assert q['execution']['mpi_ranks'] == 1
+          print('CONTINUATION_CELLS=5')
+          print('CELL_RUNTIME_SECONDS=19800')
+          print('MINIMUM_RUNWAY_HOURS=27.5')
           print('SCIENTIFIC_SETTINGS_CHANGED=false')
           print('THRESHOLDS_CHANGED=false')
-          print('KINETIC_INPUTS_USED=false')
           PY
 
       - uses: actions/download-artifact@v4
@@ -100,7 +86,7 @@ jobs:
           run-id: ${{ env.FAILED_ADJUDICATION_RUN_ID }}
           github-token: ${{ github.token }}
 
-      - name: Bind recovery to demonstrated runtime exhaustion
+      - name: Bind recovery to preserved runtime exhaustion
         shell: bash
         run: |
           set -euo pipefail
@@ -110,40 +96,7 @@ jobs:
           echo 'c893c435f742fd3abbf71795dfaaf8018079cdbb7f4a67bfd7e2d5d759243337  failed_repro/reproduce/clean_reproduce.out' | sha256sum -c -
           grep -q 'iteration # 28' failed_repro/reproduce/clean_reproduce.out
           grep -q 'estimated scf accuracy    <          2.0E-09 Ry' failed_repro/reproduce/clean_reproduce.out
-          if grep -q 'JOB DONE' failed_repro/reproduce/clean_reproduce.out; then
-            echo 'MECHANICAL_HOLD: source failure artifact unexpectedly contains JOB DONE'
-            exit 1
-          fi
-          mkdir -p recovery_provenance
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          row={
-            'schema':'co-cu111-l15-postrelax-runtime-recovery-v0.1',
-            'status':'AUTHORIZED_MECHANICAL_RUNTIME_RECOVERY',
-            'source_failed_run_id':33390385236,
-            'source_failed_artifact':'co-cu111-l15-native-postrelax-reproduced-v1',
-            'source_failed_artifact_zip_sha256':'2927a1fc2e02c45a5025f1981511446f80f47e30d068fce550021e4fa563f3b1',
-            'source_failed_input_sha256':'96f840717e7664ca59d34bfe5c3a0f3e2d617249e520eadb23e2432f8a97e98e',
-            'source_failed_output_sha256':'c893c435f742fd3abbf71795dfaaf8018079cdbb7f4a67bfd7e2d5d759243337',
-            'source_failure_class':'MECHANICAL_RUNTIME_CAP_EXHAUSTION',
-            'last_completed_scf_iteration':27,
-            'next_iteration_started':28,
-            'last_reported_estimated_scf_accuracy_ry':2.0e-9,
-            'original_runtime_cap_s':19200,
-            'recovery_runtime_cap_s':21000,
-            'runtime_extension_s':1800,
-            'scientific_settings_changed':False,
-            'thresholds_changed':False,
-            'geometry_changed':False,
-            'method_changed':False,
-            'rank_changed':False,
-            'kinetic_inputs_used':False,
-            'scientific_interpretation_authorized':False,
-            'purpose':'Allow the identical frozen fixed-geometry one-rank reproduction SCF additional wall-clock runway after the original wrapper cap terminated a numerically progressing calculation.'
-          }
-          Path('recovery_provenance/MECHANICAL_RUNTIME_RECOVERY.json').write_text(json.dumps(row,indent=2,sort_keys=True)+'\n')
-          PY
+          ! grep -q 'JOB DONE' failed_repro/reproduce/clean_reproduce.out
 
       - uses: actions/download-artifact@v4
         with:
@@ -153,42 +106,13 @@ jobs:
           run-id: ${{ env.L15_PRODUCTION_RUN_ID }}
           github-token: ${{ github.token }}
 
-      - name: Normalize native artifact layout without changing contents
+      - name: Normalize completed native L15 artifact
         shell: bash
         run: |
           set -euo pipefail
           test -d prior/chunk_out
           cp -a prior/chunk_out/. prior/
           rm -rf prior/chunk_out
-
-      - name: Bind adjudication to completed native L15 result
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 "$EXT_RUNNER" inspect-prior --protocol "$EXT_PROTOCOL" --prior-root prior --segment 37 | tee prior_status.txt
-          grep -q '^CARRY=true$' prior_status.txt || { echo 'MECHANICAL_INCOMPLETE: native L15 artifact is not a completed frozen segment-36 state'; exit 1; }
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          seg=json.loads(Path('prior/SURFACE_CONVERGENCE_EXTENSION_SEGMENT.json').read_text())
-          native=json.loads(Path('prior/NATIVE_L15_CHUNK.json').read_text())
-          assert seg['status']=='RELAX_COMPLETE'
-          assert seg['case_id']=='L15-V32-K28-extension-audit'
-          assert seg['layers']==15 and seg['vacuum_angstrom']==32.0 and seg['kmesh']==28
-          assert seg['latest_authoritative_max_movable_force_ev_per_angstrom'] <= 0.02
-          assert seg['scientific_settings_changed'] is False
-          assert seg['thresholds_changed'] is False
-          assert seg['kinetic_inputs_used'] is False
-          assert native['status']=='RELAX_COMPLETE'
-          assert native['case_id']=='L15-V32-K28-extension-audit'
-          assert native['scientific_settings_changed'] is False
-          assert native['thresholds_changed'] is False
-          assert native['kinetic_inputs_used'] is False
-          print('L15_NATIVE_RESULT_BOUND')
-          print('RELAX_ENERGY_EV='+str(seg['energy_ev']))
-          print('FORCE_EV_A='+str(seg['latest_authoritative_max_movable_force_ev_per_angstrom']))
-          print('COMPLETION_SEGMENT='+str(seg['completion_segment']))
-          PY
 
       - name: Install unchanged QE runtime dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
@@ -217,44 +141,262 @@ jobs:
           run-id: ${{ env.SELECTION_RUN_ID }}
           github-token: ${{ github.token }}
 
-      - name: Reproduce identical L15 fixed geometry with mechanical runway recovery
+      - name: Run continuation cell 1
         shell: bash
         run: |
           set -euo pipefail
           chmod +x engine/bin/pw.x
-          python3 "$EXT_RUNNER" reproduce --protocol "$EXT_PROTOCOL" --prior-root prior \
+          python3 "$CONT_HELPER" cell \
+            --policy "$CONT_POLICY" \
+            --protocol "$EXT_PROTOCOL" \
+            --prior-root prior \
             --surface-protocol "$SURFACE_PROTOCOL" \
             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
-            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --bundle "$BUNDLE" \
+            --pseudo-dir engine/pseudos \
+            --pw engine/bin/pw.x \
             --selection selection/RANK_SELECTION_RESULT.json \
-            --runtime-cap-s "$RECOVERY_REPRO_RUNTIME_CAP_S" --out l15_audit
-          python3 - <<'PY'
-          import json
-          r=json.load(open('l15_audit/summary.json'))
-          print('L15_REPRO_STATUS='+r['status'])
-          print('REPRO_ENERGY_EV='+str(r['fixed_geometry_scf_energy_ev']))
-          print('REPRO_DELTA_EV='+str(r['energy_reproduction_delta_ev']))
-          print('SURFACE_EXCESS_EV_PER_SURFACE_ATOM='+str(r['surface_excess_ev_per_surface_atom']))
-          print('FORCE_EV_A='+str(r['max_movable_force_ev_per_angstrom']))
-          PY
+            --cell 1 --total-cells "$TOTAL_CELLS" --out state
 
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: co-cu111-l15-native-postrelax-reproduced-runtime-recovery-v1
-          path: |
-            l15_audit
-            recovery_provenance
+          name: co-cu111-l15-scf-continuation-cell-01
+          path: state
+          retention-days: 90
+          if-no-files-found: error
+
+  repro_cell_2:
+    name: L15 reproduction continuation cell 2 of 5
+    needs: repro_cell_1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-01
+          path: previous_state
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Run continuation cell 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$CONT_HELPER" cell --policy "$CONT_POLICY" --protocol "$EXT_PROTOCOL" --state-in previous_state \
+            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json \
+            --cell 2 --total-cells "$TOTAL_CELLS" --out state
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-02
+          path: state
+          retention-days: 90
+          if-no-files-found: error
+
+  repro_cell_3:
+    name: L15 reproduction continuation cell 3 of 5
+    needs: repro_cell_2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-02
+          path: previous_state
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Run continuation cell 3
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$CONT_HELPER" cell --policy "$CONT_POLICY" --protocol "$EXT_PROTOCOL" --state-in previous_state \
+            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json \
+            --cell 3 --total-cells "$TOTAL_CELLS" --out state
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-03
+          path: state
+          retention-days: 90
+          if-no-files-found: error
+
+  repro_cell_4:
+    name: L15 reproduction continuation cell 4 of 5
+    needs: repro_cell_3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-03
+          path: previous_state
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Run continuation cell 4
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$CONT_HELPER" cell --policy "$CONT_POLICY" --protocol "$EXT_PROTOCOL" --state-in previous_state \
+            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json \
+            --cell 4 --total-cells "$TOTAL_CELLS" --out state
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-04
+          path: state
+          retention-days: 90
+          if-no-files-found: error
+
+  repro_cell_5:
+    name: L15 reproduction continuation cell 5 of 5
+    needs: repro_cell_4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-04
+          path: previous_state
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Run continuation cell 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$CONT_HELPER" cell --policy "$CONT_POLICY" --protocol "$EXT_PROTOCOL" --state-in previous_state \
+            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json \
+            --cell 5 --total-cells "$TOTAL_CELLS" --out state
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-05
+          path: state
           retention-days: 90
           if-no-files-found: error
 
   extension_gate_recovery:
-    name: apply unchanged frozen L13-L15 gate after runtime recovery
-    needs: reproduce_recovery
+    name: finalize reproduction and apply unchanged frozen L13-L15 gate
+    needs: repro_cell_5
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-scf-continuation-cell-05
+          path: final_state
+
+      - name: Finalize completed independent reproduction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$CONT_HELPER" finalize --policy "$CONT_POLICY" --protocol "$EXT_PROTOCOL" --state-root final_state --out l15_audit
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-native-postrelax-reproduced-v1
+          path: |
+            l15_audit
+            final_state/SCF_CONTINUATION_STATE.json
+          retention-days: 90
+          if-no-files-found: error
 
       - uses: actions/download-artifact@v4
         with:
@@ -282,11 +424,6 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: co-cu111-l15-native-postrelax-reproduced-runtime-recovery-v1
-          path: recovered
-
-      - uses: actions/download-artifact@v4
-        with:
           pattern: co-cu111-pbe-clean-v1-*
           path: candidates
           merge-multiple: false
@@ -298,33 +435,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f recovered/recovery_provenance/MECHANICAL_RUNTIME_RECOVERY.json
           mkdir -p extension_gate
           python3 "$EXT_RUNNER" gate --protocol "$EXT_PROTOCOL" \
-            --hold-root source_hold --l13-root l13_reference --l15-root recovered/l15_audit \
+            --hold-root source_hold --l13-root l13_reference --l15-root l15_audit \
             --candidate-root candidates --surface-protocol "$SURFACE_PROTOCOL" \
             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
-            --out extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE.json \
-            > extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE_STDOUT.txt
-          cp recovered/recovery_provenance/MECHANICAL_RUNTIME_RECOVERY.json extension_gate/
-          cat extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE_STDOUT.txt
-          python3 - <<'PY'
-          import json
-          r=json.load(open('extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE.json'))
-          print('FINAL_STATUS='+r['status'])
-          print('L13_L15_DELTA_EV_PER_SURFACE_ATOM='+str(r['extension_reference_audit_delta_ev_per_surface_atom']))
-          print('THRESHOLD_EV_PER_SURFACE_ATOM='+str(r['extension_reference_audit_threshold_ev_per_surface_atom']))
-          print('L13_L15_PASS='+str(r['extension_reference_audit_pass']).lower())
-          print('CANDIDATES_ADJUDICATED='+str(r['candidates_adjudicated']).lower())
-          print('NEXT_GATE='+str(r['next_gate']))
-          if r.get('selected'):
-              print('SELECTED_CASE='+str(r['selected']['case_id']))
-          PY
+            --out extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE.json
 
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: co-cu111-l15-native-postrelax-gate-runtime-recovery-v1
+          name: co-cu111-l15-native-postrelax-gate-v1
           path: extension_gate
           retention-days: 90
           if-no-files-found: error
