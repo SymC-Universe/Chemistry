@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -26,6 +27,7 @@ CELL_RUNTIME_S = 19800
 MIN_CELLS = 5
 PREFIX = "co_cu111_clean_l15_extension_repro"
 STATE_SCHEMA = "co-cu111-l15-scf-continuation-state-v0.2"
+LEGACY_STATE_SCHEMA = "co-cu111-l15-scf-continuation-state-v0.1"
 FINAL_ENERGY_RE = re.compile(r"!\s+total energy\s+=\s+([-+0-9.Ee]+)\s+Ry")
 ITERATION_ENERGY_RE = re.compile(r"^\s*total energy\s+=\s+([-+0-9.Ee]+)\s+Ry", re.MULTILINE)
 REQUIRED_DENSITY_STATE_FILES = ("data-file-schema.xml", "paw.txt")
@@ -81,6 +83,59 @@ def state_path(root: Path) -> Path:
     if not path.is_file():
         raise SystemExit(f"MECHANICAL_HOLD: missing continuation state: {path}")
     return path
+
+
+def preserved_relaxation_seed(root: Path, protocol_path: Path, p: dict[str, Any]) -> dict[str, Any]:
+    """Recover only frozen L15 geometry/energy/force metadata from a pinned prior state."""
+    path = state_path(root)
+    state = load_json(path)
+    if state.get("schema") not in {LEGACY_STATE_SCHEMA, STATE_SCHEMA}:
+        raise SystemExit("MECHANICAL_HOLD: wrong preserved L15 seed-state schema")
+    if state.get("status") != "CONTINUE" or int(state.get("cell", -1)) != 1:
+        raise SystemExit("MECHANICAL_HOLD: preserved L15 seed is not the fresh-start cell-1 checkpoint")
+    if int(state.get("total_cells_provisioned", 0)) < MIN_CELLS:
+        raise SystemExit("MECHANICAL_HOLD: preserved L15 seed was not provisioned with five cells")
+    audit = p["extension_audit"]
+    expected_case = (
+        audit["case_id"],
+        int(audit["layers"]),
+        float(audit["vacuum_angstrom"]),
+        int(audit["kmesh"]),
+    )
+    actual_case = (
+        state.get("case_id"),
+        int(state.get("layers", -1)),
+        float(state.get("vacuum_angstrom", -1)),
+        int(state.get("kmesh", -1)),
+    )
+    if actual_case != expected_case:
+        raise SystemExit("SCIENTIFIC_HOLD: preserved L15 seed case drift")
+    for flag in ("scientific_settings_changed", "thresholds_changed", "geometry_changed", "method_changed", "rank_changed", "kinetic_inputs_used"):
+        if state.get(flag) is not False:
+            raise SystemExit(f"SCIENTIFIC_HOLD: preserved L15 seed flag drift: {flag}")
+    warm_started = state.get(
+        "warm_started_from_prior_density_state",
+        state.get("warm_started_from_prior_charge_density"),
+    )
+    if warm_started is not False or state.get("continuation_semantics") != "FROZEN_GEOMETRY_FRESH_START":
+        raise SystemExit("SCIENTIFIC_HOLD: preserved L15 seed did not originate from a fresh reproduction start")
+    if state.get("surface_convergence_extension_protocol_sha256") != sha256(protocol_path):
+        raise SystemExit("SCIENTIFIC_HOLD: preserved L15 seed protocol hash drift")
+    if state.get("pw_returncode") != 0 or state.get("wrapper_timeout") is not False:
+        raise SystemExit("MECHANICAL_HOLD: preserved L15 seed did not end at a clean QE stop")
+    atoms = state.get("final_atoms")
+    if not isinstance(atoms, list) or len(atoms) != 15:
+        raise SystemExit("MECHANICAL_HOLD: preserved L15 seed lacks the 15-atom relaxed geometry")
+    for key in ("relax_energy_ev", "max_movable_force_ev_per_angstrom"):
+        try:
+            value = float(state[key])
+        except (KeyError, TypeError, ValueError):
+            raise SystemExit(f"MECHANICAL_HOLD: preserved L15 seed lacks numeric {key}") from None
+        if not math.isfinite(value):
+            raise SystemExit(f"MECHANICAL_HOLD: preserved L15 seed has non-finite {key}")
+    if int(state.get("completion_segment", 0)) < 1:
+        raise SystemExit("MECHANICAL_HOLD: preserved L15 seed lacks a valid relaxation completion segment")
+    return state
 
 
 def density_state_files(save_dir: Path) -> list[Path]:
@@ -198,8 +253,12 @@ def command_cell(args: argparse.Namespace) -> None:
     root.mkdir(parents=True, exist_ok=True)
 
     prior_state: dict[str, Any] | None = None
+    relaxation_source_mode = "NATIVE_RELAXATION_ARTIFACT"
+    relaxation_seed_state_sha256: str | None = None
     carried_files: list[str] = []
     if args.state_in:
+        if args.prior_root or args.seed_state_root:
+            raise SystemExit("MECHANICAL_HOLD: continued cells may specify only --state-in")
         source = Path(args.state_in).resolve()
         prior_state = load_json(state_path(source))
         if prior_state.get("schema") != STATE_SCHEMA:
@@ -225,18 +284,32 @@ def command_cell(args: argparse.Namespace) -> None:
         relax_energy = float(prior_state["relax_energy_ev"])
         force = float(prior_state["max_movable_force_ev_per_angstrom"])
         completion_segment = int(prior_state["completion_segment"])
+        relaxation_source_mode = str(prior_state.get("relaxation_source_mode", "UNKNOWN_PRIOR_STATE_SOURCE"))
+        relaxation_seed_state_sha256 = prior_state.get("relaxation_seed_state_sha256")
     else:
-        prior_root = Path(args.prior_root).resolve()
-        seg, _seg_path = ext.verify_prior_segment(prior_root, p, max_seg)
-        if seg.get("status") != "RELAX_COMPLETE" or not seg.get("final_atoms"):
-            raise SystemExit("MECHANICAL_HOLD: source L15 relaxation is not complete")
-        atoms = json.loads(json.dumps(seg["final_atoms"]))
+        if bool(args.prior_root) == bool(args.seed_state_root):
+            raise SystemExit("MECHANICAL_HOLD: initial cell requires exactly one L15 relaxation source")
+        if args.seed_state_root:
+            seed_root = Path(args.seed_state_root).resolve()
+            seg = preserved_relaxation_seed(seed_root, pp, p)
+            atoms = json.loads(json.dumps(seg["final_atoms"]))
+            relax_energy = float(seg["relax_energy_ev"])
+            force = float(seg["max_movable_force_ev_per_angstrom"])
+            completion_segment = int(seg["completion_segment"])
+            relaxation_source_mode = "PINNED_DERIVED_STATE_METADATA_ONLY"
+            relaxation_seed_state_sha256 = sha256(state_path(seed_root))
+        else:
+            prior_root = Path(args.prior_root).resolve()
+            seg, _seg_path = ext.verify_prior_segment(prior_root, p, max_seg)
+            if seg.get("status") != "RELAX_COMPLETE" or not seg.get("final_atoms"):
+                raise SystemExit("MECHANICAL_HOLD: source L15 relaxation is not complete")
+            atoms = json.loads(json.dumps(seg["final_atoms"]))
+            relax_energy = float(seg["energy_ev"])
+            force = float(seg["latest_authoritative_max_movable_force_ev_per_angstrom"])
+            completion_segment = int(seg["completion_segment"])
         cell_matrix, _template = base.clean_geometry(
             float(surface["inherited_stage_a_settings"]["bulk_lattice_constant_angstrom"]), 15, 32.0
         )
-        relax_energy = float(seg["energy_ev"])
-        force = float(seg["latest_authoritative_max_movable_force_ev_per_angstrom"])
-        completion_segment = int(seg["completion_segment"])
 
     fixed = json.loads(json.dumps(atoms))
     for atom in fixed:
@@ -301,6 +374,8 @@ def command_cell(args: argparse.Namespace) -> None:
         "relax_energy_ev": relax_energy,
         "max_movable_force_ev_per_angstrom": force,
         "completion_segment": completion_segment,
+        "relaxation_source_mode": relaxation_source_mode,
+        "relaxation_seed_state_sha256": relaxation_seed_state_sha256,
         "fixed_geometry_scf_energy_ev": final_energy_ev,
         "last_reported_energy_ev": final_energy_ev if final_energy_ev is not None else last_iteration_energy_ev,
         "pw_returncode": rc,
@@ -418,6 +493,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--policy", required=True)
     sp.add_argument("--protocol", required=True)
     sp.add_argument("--prior-root")
+    sp.add_argument("--seed-state-root")
     sp.add_argument("--state-in")
     sp.add_argument("--surface-protocol", required=True)
     sp.add_argument("--stage-a-result", required=True)

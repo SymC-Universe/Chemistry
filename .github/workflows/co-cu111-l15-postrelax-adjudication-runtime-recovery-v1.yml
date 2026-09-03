@@ -1,4 +1,4 @@
-name: CO Cu111 L15 post-relax adjudication 5x5.5h PAW-safe recovery v3
+name: CO Cu111 L15 post-relax adjudication 5x5.5h PAW-safe recovery v4
 
 on:
   push:
@@ -16,7 +16,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: co-cu111-l15-postrelax-adjudication-5x5p5h-paw-safe-recovery-v3
+  group: co-cu111-l15-postrelax-adjudication-5x5p5h-paw-safe-recovery-v4
   cancel-in-progress: false
 
 env:
@@ -27,8 +27,9 @@ env:
   EXT_RUNNER: systems/co_cu111/pbe_surface_convergence_extension_v1.py
   SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
   BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
-  L15_PRODUCTION_RUN_ID: '33351747179'
-  L15_FINAL_ARTIFACT: co-cu111-l15-native-restart-v1-seg36
+  PRESERVED_L15_SEED_RUN_ID: '33478965731'
+  PRESERVED_L15_SEED_ARTIFACT: co-cu111-l15-scf-continuation-cell-01
+  PRESERVED_L15_SEED_STATE_SHA256: f4da37f782a685e07c8ed0faea22f16d9999869b1cea0056ebf09bfa4bd030ec
   FAILED_ADJUDICATION_RUN_ID: '33390385236'
   FAILED_REPRO_ARTIFACT: co-cu111-l15-native-postrelax-reproduced-v1
   SOURCE_HOLD_RUN_ID: '33306112961'
@@ -105,19 +106,35 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ env.L15_FINAL_ARTIFACT }}
-          path: prior
+          name: ${{ env.PRESERVED_L15_SEED_ARTIFACT }}
+          path: preserved_l15_seed
           repository: SymC-Universe/Chemistry
-          run-id: ${{ env.L15_PRODUCTION_RUN_ID }}
+          run-id: ${{ env.PRESERVED_L15_SEED_RUN_ID }}
           github-token: ${{ github.token }}
 
-      - name: Normalize completed native L15 artifact
+      - name: Verify preserved L15 relaxation metadata source
         shell: bash
         run: |
           set -euo pipefail
-          test -d prior/chunk_out
-          cp -a prior/chunk_out/. prior/
-          rm -rf prior/chunk_out
+          test -f preserved_l15_seed/SCF_CONTINUATION_STATE.json
+          echo "$PRESERVED_L15_SEED_STATE_SHA256  preserved_l15_seed/SCF_CONTINUATION_STATE.json" | sha256sum -c -
+          python3 - <<'PY'
+          import json
+          p='preserved_l15_seed/SCF_CONTINUATION_STATE.json'
+          s=json.load(open(p))
+          assert s['schema']=='co-cu111-l15-scf-continuation-state-v0.1'
+          assert s['status']=='CONTINUE' and s['cell']==1
+          assert s['case_id']=='L15-V32-K28-extension-audit'
+          assert (s['layers'],s['vacuum_angstrom'],s['kmesh'])==(15,32.0,28)
+          assert s['completion_segment']==2
+          assert s['pw_returncode']==0 and s['wrapper_timeout'] is False
+          assert s['continuation_semantics']=='FROZEN_GEOMETRY_FRESH_START'
+          assert s['warm_started_from_prior_charge_density'] is False
+          for k in ('scientific_settings_changed','thresholds_changed','geometry_changed','method_changed','rank_changed','kinetic_inputs_used'):
+              assert s[k] is False, k
+          print('PRESERVED_L15_RELAXATION_METADATA_VERIFIED')
+          print('ELECTRONIC_STATE_REUSED_FOR_NEW_CELL_1=false')
+          PY
 
       - name: Install unchanged QE runtime dependencies
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
@@ -154,7 +171,7 @@ jobs:
           python3 "$CONT_HELPER" cell \
             --policy "$CONT_POLICY" \
             --protocol "$EXT_PROTOCOL" \
-            --prior-root prior \
+            --seed-state-root preserved_l15_seed \
             --surface-protocol "$SURFACE_PROTOCOL" \
             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
             --bundle "$BUNDLE" \

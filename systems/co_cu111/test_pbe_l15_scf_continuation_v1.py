@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -50,6 +51,60 @@ class L15ScfContinuationTests(unittest.TestCase):
             self.make_save(tmp, include_paw=False)
             with self.assertRaisesRegex(SystemExit, "paw.txt"):
                 continuation.preserve_density_state(tmp, root / "state")
+
+    def make_preserved_seed(self, root: Path, protocol: Path) -> Path:
+        state = {
+            "schema": continuation.LEGACY_STATE_SCHEMA,
+            "status": "CONTINUE",
+            "cell": 1,
+            "total_cells_provisioned": 5,
+            "case_id": "L15-V32-K28-extension-audit",
+            "layers": 15,
+            "vacuum_angstrom": 32.0,
+            "kmesh": 28,
+            "final_atoms": [{}] * 15,
+            "relax_energy_ev": -10.0,
+            "max_movable_force_ev_per_angstrom": 0.01,
+            "completion_segment": 2,
+            "surface_convergence_extension_protocol_sha256": continuation.sha256(protocol),
+            "scientific_settings_changed": False,
+            "thresholds_changed": False,
+            "geometry_changed": False,
+            "method_changed": False,
+            "rank_changed": False,
+            "kinetic_inputs_used": False,
+            "warm_started_from_prior_charge_density": False,
+            "continuation_semantics": "FROZEN_GEOMETRY_FRESH_START",
+            "pw_returncode": 0,
+            "wrapper_timeout": False,
+        }
+        path = root / "SCF_CONTINUATION_STATE.json"
+        path.write_text(json.dumps(state))
+        return path
+
+    def test_pinned_legacy_seed_recovers_metadata_without_density_reuse(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            protocol = root / "protocol.json"
+            protocol.write_text("{}\n")
+            self.make_preserved_seed(root, protocol)
+            p = {"extension_audit": {"case_id": "L15-V32-K28-extension-audit", "layers": 15, "vacuum_angstrom": 32.0, "kmesh": 28}}
+            state = continuation.preserved_relaxation_seed(root, protocol, p)
+            self.assertEqual(state["completion_segment"], 2)
+            self.assertFalse(state["warm_started_from_prior_charge_density"])
+
+    def test_warm_started_state_cannot_seed_a_new_independent_reproduction(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            protocol = root / "protocol.json"
+            protocol.write_text("{}\n")
+            path = self.make_preserved_seed(root, protocol)
+            state = json.loads(path.read_text())
+            state["warm_started_from_prior_charge_density"] = True
+            path.write_text(json.dumps(state))
+            p = {"extension_audit": {"case_id": "L15-V32-K28-extension-audit", "layers": 15, "vacuum_angstrom": 32.0, "kmesh": 28}}
+            with self.assertRaisesRegex(SystemExit, "fresh reproduction start"):
+                continuation.preserved_relaxation_seed(root, protocol, p)
 
     def test_clean_max_seconds_stop_continues(self):
         output = """
