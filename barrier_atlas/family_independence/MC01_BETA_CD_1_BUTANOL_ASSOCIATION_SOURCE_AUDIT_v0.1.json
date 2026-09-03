@@ -1,0 +1,142 @@
+{
+  "schema": "barrier-atlas-mc01-beta-cyclodextrin-1-butanol-association-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_QUALIFICATION_WITHOUT_PARENT_MUTATION",
+  "trail_id": "FI-MC01-BETA-CD-1-BUTANOL-ASSOCIATION",
+  "target_class": "MC01",
+  "target_class_name": "association_complexation",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "rate_derived_activation_quantity_may_validate_same_observed_rate": false,
+    "single_scalar_barrier_may_replace_required_network_representation": false,
+    "candidate_origin": "MC01 class-gap search by exact host-guest association identity and independent kinetic/PMF availability before any residual, chi, or ChemSA calculation"
+  },
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "reaction": "beta-cyclodextrin + 1-butanol <=> beta-cyclodextrin:1-butanol inclusion complex",
+  "classification_gate": "PASS_MC01_ASSOCIATION_COMPLEXATION",
+  "source_gate": "PASS",
+  "theory_source": {
+    "authors": "Wanli You; Zhiye Tang; Chia-en A. Chang",
+    "title": "Potential Mean Force from Umbrella Sampling Simulations: What Can We Learn and What Is Missed?",
+    "journal": "Journal of Chemical Theory and Computation",
+    "year": 2019,
+    "volume": 15,
+    "pages": "2433-2443",
+    "doi": "10.1021/acs.jctc.8b01142",
+    "open_full_text": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6456367/",
+    "method": "umbrella sampling in AMBER14 with explicit TIP3P water; beta-CD/guest COM distance reaction coordinate; 260 windows at 0.1 A spacing; 2.5 ns production per window at 298 K; PMF reconstructed with WHAM/MBAR",
+    "method_selection_provenance": "Three beta-CD conformations were selected as high-population/low-computed-free-energy structures from prior simulations. The paper states conf1 and conf2 PMFs are highly similar and therefore discusses conf1 in detail. No conformation or force-field variant is selected here by the observed association-rate residual."
+  },
+  "barrier_gate": "PASS_EXACTLY_TYPED_CONFORMATION_CONDITIONED_PMF",
+  "barrier_quantity": {
+    "value_kcal_per_mol": 1.1,
+    "temperature_K": 298.0,
+    "host_conformation": "conf1",
+    "process": "1-butanol association into beta-cyclodextrin",
+    "reaction_coordinate": "host-guest center-of-mass distance",
+    "type": "finite-temperature potential-of-mean-force association barrier for the conf1 host conformation with the two cavity-direction paths represented in the PMF",
+    "standard_state_activation_free_energy_status": "NOT_CLAIMED_AS_STANDARD_STATE_DELTA_G_DAGGER",
+    "universal_scalar_status": "FORBIDDEN",
+    "conformational_dependence": "The source explicitly demonstrates that beta-CD conformation alters absolute PMF heights; conf1 and conf2 are similar but conf3 differs.",
+    "artifact_exclusion": "The source identifies the PMF barrier at the reaction-coordinate origin as a restraint artifact and instructs that it be ignored; the 1.1 kcal/mol association barrier is the physically interpreted outer association barrier, not the origin artifact."
+  },
+  "experimental_source": {
+    "primary_1997": {
+      "author": "Sadakatsu Nishikawa",
+      "title": "Kinetics of Complexation between Cyclodextrin and Alcohol by Ultrasonic Relaxation Method: beta-Cyclodextrin Solutions with 1-Butanol and 2-Methyl-2-propanol",
+      "journal": "Bulletin of the Chemical Society of Japan",
+      "year": 1997,
+      "volume": 70,
+      "pages": "1003-1007",
+      "doi": "10.1246/bcsj.70.1003",
+      "primary_abstract_evidence": "Aqueous beta-CD/1-butanol at 25 C; a single relaxation is assigned to host-guest complexation; rate and equilibrium constants were determined from concentration dependence of relaxation frequency."
+    },
+    "primary_series_2001": {
+      "authors": "Sadakatsu Nishikawa; Takaho Ugawa; Takanori Fukahori",
+      "title": "Molecular Recognition Kinetics of beta-Cyclodextrin for Several Alcohols by Ultrasonic Relaxation Method",
+      "journal": "Journal of Physical Chemistry B",
+      "year": 2001,
+      "volume": 105,
+      "pages": "7594-7597",
+      "doi": "10.1021/jp010535u",
+      "role": "primary experimental series and explicit comparison to previously measured beta-CD/alcohol systems"
+    },
+    "author_repository_table": {
+      "title": "Molecular Recognition Kinetics",
+      "author": "Takanori Fukahori",
+      "repository": "Saga University Institutional Repository",
+      "url": "https://saga-u.repo.nii.ac.jp/record/12371/files/Fukahori_thesis.pdf",
+      "table": "Table 5",
+      "role": "author-lineage archival numerical transcription of beta-CD/nor-butanol kinetic constants at 25 C"
+    }
+  },
+  "comparator_gate": "PASS_INDEPENDENT_OBSERVED_ULTRASONIC_ASSOCIATION_RATE",
+  "observed_comparator": {
+    "temperature_C": 25.0,
+    "temperature_K": 298.15,
+    "phase": "aqueous solution",
+    "measurement": "ultrasonic relaxation",
+    "association_rate_constant": 2.8e8,
+    "association_rate_uncertainty": 0.8e8,
+    "association_rate_unit": "M^-1 s^-1",
+    "dissociation_rate_constant_context": 3.8e7,
+    "dissociation_rate_uncertainty_context": 0.6e7,
+    "dissociation_rate_unit": "s^-1",
+    "equilibrium_constant_context": 7.2,
+    "equilibrium_constant_uncertainty_context": 2.0,
+    "equilibrium_constant_unit": "M^-1",
+    "rate_role": "DIRECT_OBSERVED_COMPARATOR",
+    "numeric_provenance_note": "The exact beta-CD/nor-butanol constants are reproduced in Table 5 of the Saga University author-lineage thesis and in later peer-reviewed experimental-comparison tables; the 1997 primary journal record independently confirms that this exact system was measured at 25 C and that rate constants were obtained from concentration-dependent ultrasonic relaxation."
+  },
+  "condition_gate": "PASS_TEMPERATURE_PHASE_SPECIES_AND_EVENT_MATCHED_WITH_PMF_TYPING_PRESERVED",
+  "condition_mapping": {
+    "species": "MATCHED beta-cyclodextrin and neutral 1-butanol",
+    "phase": "MATCHED aqueous explicit-water theory versus aqueous experiment",
+    "temperature": "298 K PMF versus 298.15 K experiment",
+    "event": "MATCHED bimolecular host-guest association; experimental k_on compared with the association-side PMF barrier",
+    "pressure": "NOT_A_REQUIRED_DISCRIMINATOR_FOR_THIS_CONDENSED_AQUEOUS_COMPARISON",
+    "standard_state": "The experimental comparator retains its M^-1 s^-1 concentration convention; the PMF value is not relabelled as a standard-state activation free energy."
+  },
+  "independence_gate": "PASS_DISTINCT_EXPERIMENTAL_AND_COMPUTATIONAL_LINEAGES_WITH_NO_TARGET_RATE_FIT",
+  "independence_basis": [
+    "The kinetic measurements predate the 2019 umbrella-sampling study by roughly two decades and come from an independent experimental group.",
+    "The theory study tests PMF sensitivity to conformation/path construction and does not fit the conf1 PMF to the beta-CD/1-butanol association rate.",
+    "The paper explicitly reports an ordering imperfection between aspirin and 1-butanol association barriers, which is inconsistent with selecting the PMF to force rate agreement.",
+    "No residual, chi value, expected ChemSA agreement, rate-derived activation quantity, or post hoc force-field choice is allowed to vote on promotion."
+  ],
+  "representation_mode": "CONFORMATION_AND_PATH_RESOLVED_PMF_ASSOCIATION",
+  "representation_gate": "PASS_CONFORMATION_AND_PATH_RESOLVED",
+  "representation_basis": "The 1.1 kcal/mol quantity is retained only for conf1 and may not be treated as the unique beta-CD/1-butanol barrier. The source contains two cavity-direction paths and demonstrates host-conformation dependence, so adjudication must preserve that structure.",
+  "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+  "terminal_state": "READY_FOR_ADJUDICATION",
+  "ready_for_adjudication": true,
+  "automatic_admission": false,
+  "preserved_holds": {
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD"
+  },
+  "quarantined_evidence": [
+    "Computed/experimental agreement in binding affinity is not a selection or promotion vote.",
+    "Relative agreement of computed barrier ordering with experimental rates is not a selection or promotion vote.",
+    "The 1.1 kcal/mol conf1 PMF barrier may not be promoted to a universal single-barrier coordinate without separate adjudication of conformational/path representation."
+  ]
+}
