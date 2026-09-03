@@ -1,4 +1,4 @@
-name: CO Cu111 L15 post-relax adjudication 5x5.5h recovery v2
+name: CO Cu111 L15 post-relax adjudication 5x5.5h PAW-safe recovery v3
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       - agent/na-cu001-integration
     paths:
       - '.github/workflows/co-cu111-l15-postrelax-adjudication-runtime-recovery-v1.yml'
+      - '.github/COMPUTE_CONTINUATION_POLICY_v0.1.json'
+      - 'systems/co_cu111/pbe_l15_scf_continuation_v1.py'
+      - 'systems/co_cu111/test_pbe_l15_scf_continuation_v1.py'
   workflow_dispatch:
 
 permissions:
@@ -13,12 +16,13 @@ permissions:
   actions: read
 
 concurrency:
-  group: co-cu111-l15-postrelax-adjudication-5x5p5h-recovery-v2
+  group: co-cu111-l15-postrelax-adjudication-5x5p5h-paw-safe-recovery-v3
   cancel-in-progress: false
 
 env:
   CONT_POLICY: .github/COMPUTE_CONTINUATION_POLICY_v0.1.json
   CONT_HELPER: systems/co_cu111/pbe_l15_scf_continuation_v1.py
+  CONT_TEST: systems/co_cu111/test_pbe_l15_scf_continuation_v1.py
   EXT_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json
   EXT_RUNNER: systems/co_cu111/pbe_surface_convergence_extension_v1.py
   SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
@@ -56,7 +60,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile "$CONT_HELPER" "$EXT_RUNNER"
+          python3 -m py_compile "$CONT_HELPER" "$CONT_TEST" "$EXT_RUNNER"
+          python3 "$CONT_TEST" -v
           python3 - <<'PY'
           import json
           p=json.load(open('.github/COMPUTE_CONTINUATION_POLICY_v0.1.json'))

@@ -3,9 +3,10 @@
 
 This helper changes no scientific setting or acceptance threshold. It provisions
 bounded 5.5 h SCF cells and, when a cell ends before JOB DONE, carries the last
-QE charge density into the next cell as a warm-start state. Exact QE restart is
-not claimed. A completed result is carried through later provisioned cells
-without recomputation.
+QE SCF density state into the next cell as a warm-start state. For the frozen
+PAW calculation that state necessarily includes ``paw.txt`` as well as the
+charge density and XML schema. Exact QE restart is not claimed. A completed
+result is carried through later provisioned cells without recomputation.
 """
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -23,7 +25,10 @@ from typing import Any
 CELL_RUNTIME_S = 19800
 MIN_CELLS = 5
 PREFIX = "co_cu111_clean_l15_extension_repro"
-STATE_SCHEMA = "co-cu111-l15-scf-continuation-state-v0.1"
+STATE_SCHEMA = "co-cu111-l15-scf-continuation-state-v0.2"
+FINAL_ENERGY_RE = re.compile(r"!\s+total energy\s+=\s+([-+0-9.Ee]+)\s+Ry")
+ITERATION_ENERGY_RE = re.compile(r"^\s*total energy\s+=\s+([-+0-9.Ee]+)\s+Ry", re.MULTILINE)
+REQUIRED_DENSITY_STATE_FILES = ("data-file-schema.xml", "paw.txt")
 
 
 def sha256(path: Path) -> str:
@@ -78,40 +83,78 @@ def state_path(root: Path) -> Path:
     return path
 
 
-def copy_charge_state(source_root: Path, target_tmp: Path) -> list[str]:
-    src_save = source_root / "charge_state" / f"{PREFIX}.save"
+def density_state_files(save_dir: Path) -> list[Path]:
+    """Return the minimal complete PAW density warm-start state, fail closed."""
+    if not save_dir.is_dir():
+        raise SystemExit("MECHANICAL_HOLD: missing QE density-state directory")
+    files: list[Path] = []
+    for name in REQUIRED_DENSITY_STATE_FILES:
+        path = save_dir / name
+        if not path.is_file() or path.stat().st_size == 0:
+            raise SystemExit(f"MECHANICAL_HOLD: QE density state lacks required {name}")
+        files.append(path)
+    charge = sorted(p for p in save_dir.glob("charge-density*") if p.is_file() and p.stat().st_size > 0)
+    if not charge:
+        raise SystemExit("MECHANICAL_HOLD: QE density state lacks charge density")
+    files.extend(charge)
+    return files
+
+
+def copy_density_state(source_root: Path, target_tmp: Path) -> list[str]:
+    src_save = source_root / "density_state" / f"{PREFIX}.save"
     if not src_save.is_dir():
-        raise SystemExit("MECHANICAL_HOLD: previous continuation state lacks QE charge-state directory")
-    targets = list(src_save.glob("charge-density*"))
-    schema = src_save / "data-file-schema.xml"
-    if not targets or not schema.is_file():
-        raise SystemExit("MECHANICAL_HOLD: previous continuation state lacks charge density or schema")
+        raise SystemExit("MECHANICAL_HOLD: previous continuation state lacks QE density-state directory")
+    targets = density_state_files(src_save)
     dst_save = target_tmp / f"{PREFIX}.save"
     dst_save.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(schema, dst_save / schema.name)
-    copied = [schema.name]
     for src in targets:
         shutil.copy2(src, dst_save / src.name)
-        copied.append(src.name)
-    return copied
+    return [src.name for src in targets]
 
 
-def preserve_charge_state(tmp: Path, root: Path) -> list[str]:
+def preserve_density_state(tmp: Path, root: Path) -> list[str]:
     src_save = tmp / f"{PREFIX}.save"
     if not src_save.is_dir():
         raise SystemExit("MECHANICAL_HOLD: QE continuation cell produced no save directory")
-    targets = list(src_save.glob("charge-density*"))
-    schema = src_save / "data-file-schema.xml"
-    if not targets or not schema.is_file():
-        raise SystemExit("MECHANICAL_HOLD: QE continuation cell produced no reusable charge density")
-    dst_save = root / "charge_state" / f"{PREFIX}.save"
+    targets = density_state_files(src_save)
+    dst_save = root / "density_state" / f"{PREFIX}.save"
     dst_save.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(schema, dst_save / schema.name)
-    copied = [schema.name]
     for src in targets:
         shutil.copy2(src, dst_save / src.name)
-        copied.append(src.name)
-    return copied
+    return [src.name for src in targets]
+
+
+def interpret_pw_output(output: str, returncode: int, wrapper_timeout: bool) -> dict[str, Any]:
+    """Classify only a converged result or a clean max_seconds checkpoint as valid."""
+    final_energies = [float(value) for value in FINAL_ENERGY_RE.findall(output)]
+    iteration_energies = [float(value) for value in ITERATION_ENERGY_RE.findall(output)]
+    job_done = "JOB DONE." in output
+    scf_converged = (
+        "convergence has been achieved" in output.lower()
+        or "end of self-consistent calculation" in output.lower()
+    )
+    clean_max_seconds_stop = "maximum cpu time exceeded" in output.lower()
+    fatal_marker = "error in routine" in output.lower() or "mpi_abort" in output.lower()
+
+    if wrapper_timeout:
+        raise SystemExit("MECHANICAL_HOLD: external wrapper timeout is not a valid QE checkpoint")
+    if returncode != 0 or fatal_marker:
+        raise SystemExit(f"MECHANICAL_HOLD: QE continuation cell failed with return code {returncode}")
+    if job_done and scf_converged and final_energies:
+        status = "COMPLETE"
+    elif job_done and clean_max_seconds_stop and not scf_converged:
+        status = "CONTINUE"
+    else:
+        raise SystemExit("MECHANICAL_HOLD: QE output is neither converged nor a clean max_seconds stop")
+
+    return {
+        "status": status,
+        "job_done": job_done,
+        "scf_converged": scf_converged,
+        "clean_max_seconds_stop": clean_max_seconds_stop,
+        "final_energy_ry": final_energies[-1] if final_energies else None,
+        "last_iteration_energy_ry": iteration_energies[-1] if iteration_energies else None,
+    }
 
 
 def run_pw(pw: Path, inp: Path, out: Path) -> tuple[int, bool, float]:
@@ -204,7 +247,7 @@ def command_cell(args: argparse.Namespace) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
     warm_started = prior_state is not None
     if warm_started:
-        carried_files = copy_charge_state(Path(args.state_in).resolve(), tmp)
+        carried_files = copy_density_state(Path(args.state_in).resolve(), tmp)
 
     inp = work / f"cell_{cell:02d}.in"
     out = work / f"cell_{cell:02d}.out"
@@ -226,16 +269,25 @@ def command_cell(args: argparse.Namespace) -> None:
 
     rc, wrapper_timeout, elapsed = run_pw(Path(args.pw).resolve(), inp, out)
     output = out.read_text(errors="replace") if out.is_file() else ""
-    energies = [float(x) * base.RY_TO_EV for x in base.ENERGY_RE.findall(output)]
-    job_done = "JOB DONE" in output and bool(energies)
+    outcome = interpret_pw_output(output, rc, wrapper_timeout)
+    final_energy_ev = (
+        float(outcome["final_energy_ry"]) * base.RY_TO_EV
+        if outcome["final_energy_ry"] is not None
+        else None
+    )
+    last_iteration_energy_ev = (
+        float(outcome["last_iteration_energy_ry"]) * base.RY_TO_EV
+        if outcome["last_iteration_energy_ry"] is not None
+        else None
+    )
 
-    charge_files: list[str] = []
-    if not job_done:
-        charge_files = preserve_charge_state(tmp, root)
+    density_state_files_preserved: list[str] = []
+    if outcome["status"] == "CONTINUE":
+        density_state_files_preserved = preserve_density_state(tmp, root)
 
     state = {
         "schema": STATE_SCHEMA,
-        "status": "COMPLETE" if job_done else "CONTINUE",
+        "status": outcome["status"],
         "cell": cell,
         "total_cells_provisioned": int(args.total_cells),
         "cell_runtime_budget_seconds": CELL_RUNTIME_S,
@@ -249,16 +301,19 @@ def command_cell(args: argparse.Namespace) -> None:
         "relax_energy_ev": relax_energy,
         "max_movable_force_ev_per_angstrom": force,
         "completion_segment": completion_segment,
-        "fixed_geometry_scf_energy_ev": energies[-1] if job_done else None,
-        "last_reported_energy_ev": energies[-1] if energies else None,
+        "fixed_geometry_scf_energy_ev": final_energy_ev,
+        "last_reported_energy_ev": final_energy_ev if final_energy_ev is not None else last_iteration_energy_ev,
         "pw_returncode": rc,
         "wrapper_timeout": wrapper_timeout,
+        "job_done": outcome["job_done"],
+        "scf_converged": outcome["scf_converged"],
+        "clean_max_seconds_stop": outcome["clean_max_seconds_stop"],
         "elapsed_s": elapsed,
-        "warm_started_from_prior_charge_density": warm_started,
-        "continuation_semantics": "CHARGE_DENSITY_CARRY_FORWARD" if warm_started else "FROZEN_GEOMETRY_FRESH_START",
+        "warm_started_from_prior_density_state": warm_started,
+        "continuation_semantics": "SCF_DENSITY_AND_PAW_STATE_CARRY_FORWARD" if warm_started else "FROZEN_GEOMETRY_FRESH_START",
         "exact_qe_restart_claimed": False,
-        "carried_charge_files": carried_files,
-        "preserved_charge_files": charge_files,
+        "carried_density_state_files": carried_files,
+        "preserved_density_state_files": density_state_files_preserved,
         "raw_input_sha256": sha256(inp),
         "raw_output_sha256": sha256(out),
         "surface_convergence_extension_protocol_sha256": sha256(pp),
