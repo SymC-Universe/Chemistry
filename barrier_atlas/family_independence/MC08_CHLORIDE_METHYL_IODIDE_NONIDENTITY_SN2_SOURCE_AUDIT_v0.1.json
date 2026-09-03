@@ -1,0 +1,146 @@
+{
+  "schema": "barrier-atlas-mc08-chloride-methyl-iodide-nonidentity-sn2-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_QUALIFICATION_WITHOUT_PARENT_MUTATION",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.8.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "rate_derived_activation_quantity_may_validate_same_observed_rate": false,
+    "single_scalar_barrier_may_replace_required_network_representation": false,
+    "candidate_origin": "MC08 exchange/metathesis class-gap search using kinetics-first to independent-barrier pairing by reaction identity and mechanistic representation before any residual, chi, or ChemSA calculation"
+  },
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "trail_id": "FI-MC08-CL-CH3I-NONIDENTITY-SN2",
+  "target_class": "MC08",
+  "target_class_name": "exchange_metathesis",
+  "candidate_family": "gas-phase chloride/methyl-iodide nonidentity nucleophilic substitution",
+  "reaction": "Cl- + CH3I -> CH3Cl + I-",
+  "classification_gate": "PASS_MC08_NONIDENTITY_HALIDE_EXCHANGE_SN2",
+  "classification_basis": [
+    "The elementary event exchanges the halide bound to methyl through bimolecular nucleophilic substitution and therefore belongs to the frozen MC08 exchange/metathesis class.",
+    "The physical family is distinct from the frozen gas-phase H3 exchange family and is not an isotopologue or same-family replicate.",
+    "This trail does not supersede the separately held chloride/methyl-chloride identity-SN2 trail."
+  ],
+  "source_gate": "PASS",
+  "theory_source": {
+    "authors": "Istvan Szabo and Gabor Czako",
+    "title": "Benchmark ab Initio Characterization of the Complex Potential Energy Surface of the Cl- + CH3I Reaction",
+    "journal": "The Journal of Physical Chemistry A",
+    "year": 2017,
+    "volume": 121,
+    "issue": 30,
+    "pages": "5748-5757",
+    "doi": "10.1021/acs.jpca.7b05503",
+    "purpose": "benchmark stationary-point structures and classical/adiabatic relative energies for the multi-path Cl- + CH3I potential-energy surface",
+    "method": "focal-point analysis: CCSD(T)/CBS + deltaCCSDT + deltaCCSDT(Q) + core correlation; adiabatic values add CCSD(T)-F12b/aug-cc-pVTZ zero-point-energy corrections",
+    "method_selection_provenance": "The paper specifies a benchmark coupled-cluster/focal-point hierarchy and reports a broad stationary-point map. It discusses prior crossed-beam dynamics literature but does not disclose fitting the benchmark stationary energies to the selected 2001 thermal rate coefficient. No energy or method variant is selected here by observed-rate residual."
+  },
+  "barrier_gate": "PASS_EXACTLY_TYPED_BENCHMARK_NETWORK_PES",
+  "barrier_quantity": {
+    "reference_state": "separated gas-phase Cl- + CH3I reactants",
+    "classical_relative_energies_kcal_per_mol": {
+      "PreMIN": -11.56,
+      "WaldenTS": -5.48,
+      "PostMIN": -23.66,
+      "products_I_minus_plus_CH3Cl": -14.88
+    },
+    "adiabatic_relative_energies_kcal_per_mol": {
+      "PreMIN": -11.42,
+      "WaldenTS": -5.54,
+      "PostMIN": -22.72,
+      "products_I_minus_plus_CH3Cl": -14.07
+    },
+    "derived_central_barrier_above_precomplex_kcal_per_mol": {
+      "classical": 6.08,
+      "adiabatic": 5.88,
+      "calculation": "WaldenTS minus PreMIN using the source-tabulated benchmark relative energies"
+    },
+    "type": "benchmark intrinsic potential-energy-surface stationary-point energies; classical values are electronic-energy focal-point results and adiabatic values add zero-point-energy corrections",
+    "temperature_status": "NOT_A_300_K_THERMAL_FREE_ENERGY_PROFILE",
+    "gibbs_free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+    "activation_enthalpy_status": "NOT_A_THERMAL_ACTIVATION_ENTHALPY",
+    "experimental_arrhenius_activation_energy_status": "NOT_AN_EXPERIMENTAL_ARRHENIUS_ACTIVATION_ENERGY",
+    "submerged_saddle_note": "WaldenTS is below the separated-reactant asymptote in both benchmark profiles, so its negative relative energy must not be treated as a negative single-step thermal activation free energy."
+  },
+  "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_THERMAL_GAS_PHASE_BIMOLECULAR_RATE",
+  "observed_comparator": {
+    "primary_source": {
+      "authors": "Shuji Kato, Gustavo E. Davico, Hack Sung Lee, Charles H. DePuy, Veronica M. Bierbaum",
+      "title": "Deuterium kinetic isotope effects in gas phase SN2 reactions",
+      "journal": "International Journal of Mass Spectrometry",
+      "year": 2001,
+      "volume": "210-211",
+      "pages": "223-229",
+      "doi": "10.1016/S1387-3806(01)00398-0"
+    },
+    "instrument": "flowing-afterglow selected-ion flow tube (FA-SIFT)",
+    "temperature_K": 300.0,
+    "carrier_gas": "helium",
+    "flow_tube_pressure_Torr": 0.5,
+    "reaction": "Cl- + CH3I -> CH3Cl + I-",
+    "observed_rate_coefficient": {
+      "value": 15.9e-11,
+      "unit": "cm^3 s^-1",
+      "reported_one_sigma_scatter": 0.5e-11,
+      "measurement_sets": 3,
+      "absolute_systematic_uncertainty_note": "approximately 20 percent according to the source table note"
+    },
+    "rate_role": "DIRECT_OBSERVED_COMPARATOR",
+    "kinetic_isotope_effect_role": "DESCRIPTIVE_ONLY_NOT_A_PROMOTION_VOTE",
+    "reaction_efficiency_role": "DESCRIPTIVE_ONLY_NOT_A_PROMOTION_VOTE",
+    "rate_derived_activation_quantity_role": "NONE_USED_AS_BARRIER_VALIDATOR"
+  },
+  "condition_gate": "PASS_SAME_GAS_PHASE_REACTION_WITH_EXPLICIT_THERMAL_COMPARATOR_AND_INTRINSIC_PES_TYPING_PRESERVED",
+  "condition_mapping": {
+    "species_and_charge_state": "MATCHED: Cl- + CH3I reactants and CH3Cl + I- products",
+    "phase": "gas",
+    "experimental_state_point": "300 K, helium carrier, approximately 0.5 Torr flow-tube pressure",
+    "theory_state_definition": "intrinsic classical and zero-point-corrected adiabatic PES energies, not assigned a 300 K thermal label",
+    "mapping_rule": "The observed thermal rate is compared only to the correctly typed network PES representation. The intrinsic energies are not relabelled as 300 K DeltaG_dagger or as a thermal activation enthalpy."
+  },
+  "independence_gate": "PASS_DISTINCT_FAMILY_AND_TARGET_RATE_NOT_USED_AS_DISCLOSED_THEORY_FIT",
+  "independence_basis": [
+    "The selected direct kinetic measurement was published in 2001, sixteen years before the 2017 benchmark PES study.",
+    "The selected experiment and benchmark computation come from independent research groups and experimental/theoretical lineages.",
+    "The 2017 benchmark protocol is a pre-specified coupled-cluster focal-point hierarchy across many stationary points; no same-target fitting to the selected 2001 thermal rate is disclosed.",
+    "No residual, chi value, reaction efficiency, isotope effect, or expected ChemSA agreement was used to choose this candidate or any theory variant."
+  ],
+  "representation_mode": "NETWORK_RESOLVED_COMPLEX_FORMING_NONIDENTITY_SN2",
+  "representation_gate": "PASS_NETWORK_RESOLVED_PRECOMPLEX_SUBMERGED_WALDEN_TS_POSTCOMPLEX",
+  "representation_basis": "The benchmark PES contains an entrance ion-dipole complex, submerged Walden saddle, exit complex, and additional higher-energy pathways. The thermal rate therefore cannot be represented honestly by a lone separated-reactant scalar barrier.",
+  "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+  "terminal_state": "READY_FOR_ADJUDICATION",
+  "ready_for_adjudication": true,
+  "automatic_admission": false,
+  "selection_role_of_residual_chi_or_chemsa": "NONE",
+  "preserved_holds": {
+    "FI-MC08-CL-CH3CL-IDENTITY-SN2": "COMPARATOR_REGIME_CONFLICT_HOLD",
+    "FI-MC08-METHANE-ZEOLITE-HD-EXCHANGE": "MECHANISM_AND_RAW_COMPARATOR_HOLD"
+  },
+  "quarantined_evidence": [
+    "The source-reported inverse kinetic isotope effect is not used to select or promote the candidate.",
+    "The source-reported reaction efficiency is not used to select or promote the candidate.",
+    "Any agreement between prior dynamics calculations and crossed-beam experiments discussed by the 2017 paper is not used to select the benchmark barrier profile.",
+    "No predicted/observed residual, chi value, or expected ChemSA agreement may vote on candidate selection or promotion."
+  ]
+}
