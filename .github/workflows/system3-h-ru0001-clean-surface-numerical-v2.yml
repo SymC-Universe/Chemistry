@@ -1,0 +1,161 @@
+name: System3 H Ru0001 clean surface numerical v2 mechanical recovery
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'systems/h_ru0001/TRIGGER_SYSTEM3_CLEAN_SURFACE_NUMERICAL_V2.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PROTOCOL: systems/h_ru0001/SYSTEM3_CLEAN_RU0001_SURFACE_PROTOCOL_v0.2.json
+  BASE_PROTOCOL: systems/h_ru0001/SYSTEM3_CLEAN_RU0001_SURFACE_PROTOCOL_v0.1.json
+  RELAX_PROTOCOL: systems/h_ru0001/SYSTEM3_CLEAN_RU0001_RELAXATION_PROTOCOL_v0.1.json
+  BULK_PROTOCOL: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json
+  BULK_ADJUDICATION: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json
+  RUNNER: systems/h_ru0001/system3_clean_ru0001_numerical_v1.py
+  TEST: systems/h_ru0001/test_system3_clean_ru0001_numerical_v1.py
+  SOURCE_RUN_ID: '30949901790'
+  SOURCE_ARTIFACT: na-cu001-c7-qe
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  clean-surface-numerical-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 600
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen System 3 science and mechanical-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$PROTOCOL" >/dev/null
+          python3 -m json.tool "$BASE_PROTOCOL" >/dev/null
+          python3 -m json.tool "$RELAX_PROTOCOL" >/dev/null
+          python3 -m json.tool "$BULK_PROTOCOL" >/dev/null
+          python3 -m json.tool "$BULK_ADJUDICATION" >/dev/null
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 - <<'PY'
+          import copy,json,os
+          new=json.load(open(os.environ['PROTOCOL']))
+          old=json.load(open(os.environ['BASE_PROTOCOL']))
+          assert old['status']=='FROZEN_BEFORE_SYSTEM3_CLEAN_SURFACE_RESULTS'
+          assert new['status']==old['status']
+          assert new['evidence_firewall']==old['evidence_firewall']
+          assert all(v is False for v in new['evidence_firewall'].values())
+          assert new['numerical_gate']==old['numerical_gate']
+          assert new['electronic_settings']==old['electronic_settings']
+          assert new['fresh_bulk_reference']==old['fresh_bulk_reference']
+          assert new['surface_model']==old['surface_model']
+          assert new['entry_gate']==old['entry_gate']
+          assert new['relaxation_gate']==old['relaxation_gate']
+          assert new['execution']['per_scf_timeout_seconds']==3600
+          a=copy.deepcopy(old)
+          b=copy.deepcopy(new)
+          a['execution']['per_scf_timeout_seconds']=3600
+          b.pop('mechanical_recovery')
+          assert a==b, 'v0.2 changes more than timeout plus mechanical recovery provenance'
+          mr=new['mechanical_recovery']
+          assert mr['source_run_id']==33356315835
+          assert mr['source_artifact_id']==9747438132
+          assert mr['source_failure_status']=='MECHANICAL_SURFACE_HOLD'
+          assert mr['scientific_settings_changed'] is False
+          assert mr['thresholds_changed'] is False
+          r=json.load(open(os.environ['RELAX_PROTOCOL']))
+          assert r['native_qe_checkpoint_restart']['qualification_run_id']==33343734581
+          assert r['native_qe_checkpoint_restart']['qualification_is_not_production_activation'] is True
+          print('SYSTEM3_MECHANICAL_RECOVERY_DELTA_VERIFIED')
+          PY
+
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Extract and verify exact Ru engine inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855  engine/bin/pw.x' | sha256sum -c -
+          echo '67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2  engine/meta/SSSP-lib-pbe-eff-v2.tar.gz' | sha256sum -c -
+          mkdir -p hr_pseudos
+          tar -xOf engine/meta/SSSP-lib-pbe-eff-v2.tar.gz mix-sssp-pbe-eff-lib-v2/library/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf > hr_pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf
+          echo 'ed637e8481a2fddda6a93863a92f8b0b857379b9db23325a4664e3df0a6f45bd  hr_pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf' | sha256sum -c -
+          chmod +x engine/bin/pw.x
+
+      - name: Run frozen fixed-grid clean Ru0001 qualification mechanical recovery
+        id: run_surface
+        shell: bash
+        run: |
+          set -u
+          mkdir -p system3_surface_out/source
+          cp "$PROTOCOL" "$BASE_PROTOCOL" "$RELAX_PROTOCOL" "$BULK_PROTOCOL" "$BULK_ADJUDICATION" "$RUNNER" "$TEST" system3_surface_out/source/
+          {
+            echo "repository_commit=$GITHUB_SHA"
+            echo "workflow_run_id=$GITHUB_RUN_ID"
+            echo "protocol_sha256=$(sha256sum "$PROTOCOL" | awk '{print $1}')"
+            echo "base_protocol_sha256=$(sha256sum "$BASE_PROTOCOL" | awk '{print $1}')"
+            echo "runner_sha256=$(sha256sum "$RUNNER" | awk '{print $1}')"
+            echo "bulk_adjudication_sha256=$(sha256sum "$BULK_ADJUDICATION" | awk '{print $1}')"
+            echo "pw_x_sha256=$(sha256sum engine/bin/pw.x | awk '{print $1}')"
+            echo "ru_pseudo_sha256=$(sha256sum hr_pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf | awk '{print $1}')"
+            echo "mechanical_recovery_source_run_id=33356315835"
+            echo "mechanical_recovery_source_artifact_id=9747438132"
+          } > system3_surface_out/source/SOURCE_IDENTITY.txt
+          set +e
+          python3 "$RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bulk-protocol "$BULK_PROTOCOL" \
+            --bulk-adjudication "$BULK_ADJUDICATION" \
+            --pw engine/bin/pw.x \
+            --pseudo-dir hr_pseudos \
+            --out system3_surface_out
+          rc=$?
+          set -e
+          echo "$rc" > system3_surface_out/RUNNER_EXIT_CODE.txt
+          echo "runner_rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload complete fixed-grid recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system3-h-ru0001-clean-surface-numerical-v2
+          path: system3_surface_out
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Enforce adjudication status
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f system3_surface_out/RUNNER_EXIT_CODE.txt
+          rc=$(cat system3_surface_out/RUNNER_EXIT_CODE.txt)
+          if [ "$rc" -ne 0 ]; then
+            if [ -f system3_surface_out/SYSTEM3_CLEAN_SURFACE_NUMERICAL_RESULT.json ]; then
+              cat system3_surface_out/SYSTEM3_CLEAN_SURFACE_NUMERICAL_RESULT.json
+            fi
+            if [ -f system3_surface_out/SYSTEM3_CLEAN_SURFACE_MECHANICAL_HOLD.json ]; then
+              cat system3_surface_out/SYSTEM3_CLEAN_SURFACE_MECHANICAL_HOLD.json
+            fi
+            exit "$rc"
+          fi
+          test -f system3_surface_out/SYSTEM3_CLEAN_SURFACE_NUMERICAL_RESULT.json
+          status=$(python3 -c "import json; print(json.load(open('system3_surface_out/SYSTEM3_CLEAN_SURFACE_NUMERICAL_RESULT.json'))['status'])")
+          test "$status" = 'CLEAN_SURFACE_FIXED_GRID_PASS'
+          echo "SYSTEM3_CLEAN_SURFACE_FIXED_GRID_PASS"

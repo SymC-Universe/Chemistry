@@ -1,0 +1,43 @@
+{
+  "schema": "h-ru0001-l15-equivalent-readiness-target-v0.1",
+  "status": "FROZEN_TARGET_BEFORE_DOWNSTREAM_SYSTEM3_RESULTS",
+  "effective_date": "2026-08-30",
+  "system": "H/Ru(0001)",
+  "purpose": "Define the point at which System 3 is mature enough that the remaining major uncertainty is an unrevealed prospectively governed physical/stability result rather than an unfrozen method choice.",
+  "analogy_only": "L15 is an internal maturity analogy to the CO/Cu prospective production gate, not a shared scientific mechanism or result.",
+  "required_upstream_readiness": [
+    "METHOD_READY",
+    "SURFACE_READY",
+    "ADSORPTION_READY",
+    "PATH_READY",
+    "QUANTUM_READY when a full rate comparison is attempted",
+    "DISSIPATION_READY before any chi or ChemSA stability interpretation"
+  ],
+  "required_tooling_freeze": [
+    "domain terminology takes precedence over project-specific language",
+    "scalar, modal/vector, and conglomeration/system-level outputs remain distinct",
+    "chi is computed only from a licensed derivation for the matched coordinate and state point",
+    "boundary/regime/phase terminology is inherited from the governing science",
+    "refusal states are executable",
+    "uncertainty and provenance accompany every promoted coordinate",
+    "held-out experimental or literature outcomes cannot select upstream settings"
+  ],
+  "required_manuscript_state": [
+    "methods and acceptance rules written before the result they govern",
+    "current evidence status explicitly separated from pending sections",
+    "result placeholders cannot be promoted by narrative alone",
+    "no universality claim is under adjudication",
+    "negative and HOLD outcomes have prewritten interpretation language"
+  ],
+  "required_package_state": [
+    "all protocols versioned and hashed",
+    "exact code and tests indexed",
+    "raw outputs preserved",
+    "PLANNED/EXECUTED/MEASURED/VALID/ADJUDICATED states recorded separately",
+    "clean-room package validation specified",
+    "parent ChemSA release remains inheritance-locked and System 3 is additive"
+  ],
+  "target_state": "SYSTEM3_PROSPECTIVE_STABILITY_RUN_READY",
+  "active_state": "SYSTEM3_PROSPECTIVE_STABILITY_RUN_ACTIVE",
+  "failure_policy": "Any failed independent prerequisite remains HOLD. Conflicting gates are investigated and never averaged to PASS."
+}

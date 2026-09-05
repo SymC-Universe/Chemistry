@@ -1,0 +1,130 @@
+{
+  "schema": "symc-scientific-change-control-protocol-v1.0",
+  "status": "FROZEN_PROGRAM_GOVERNANCE",
+  "effective_date": "2026-08-30",
+  "purpose": "Make scientific integrity, provenance, failure preservation, compute recovery, and change-control decisions machine-readable and fail-closed across the Chemistry program.",
+  "authority": {
+    "scientific_change_requires_explicit_user_authorization_before_execution": true,
+    "safe_mechanical_repairs_may_proceed_without_reauthorization": true,
+    "mechanical_repairs_must_preserve_scientific_contract": true
+  },
+  "hard_rules": [
+    {
+      "id": "GOV-001",
+      "name": "EVIDENCE_IMMUTABILITY",
+      "requirement": "Completed evidence, failures, HOLDs, raw outputs, and release results must never be silently rewritten or relabeled. Corrections and extensions must be new versioned records that retain the prior state and provenance."
+    },
+    {
+      "id": "GOV-002",
+      "name": "SCIENTIFIC_CHANGE_PREAUTHORIZATION",
+      "requirement": "Any change to physical model, system definition, functional, pseudopotential identity, cutoffs, k-mesh, geometry constraints, convergence threshold, acceptance rule, statistical rule, hypothesis, definition, interpretation, or evidentiary scope requires a versioned protocol frozen before the affected result is observed and explicit user authorization before execution."
+    },
+    {
+      "id": "GOV-003",
+      "name": "MECHANICAL_AUTONOMY_WITH_FIREWALL",
+      "requirement": "Mechanical orchestration, timeout, artifact-routing, parser, packaging, documentation, and reproducibility repairs may proceed automatically only when scientific_settings_changed=false, thresholds_changed=false, hypothesis_changed=false, interpretation_changed=false, kinetic_inputs_changed=false, and acceptance_rule_changed=false. Every such repair must be versioned and logged."
+    },
+    {
+      "id": "GOV-004",
+      "name": "NO_POST_RESULT_RETUNING",
+      "requirement": "A failed numerical, physical, statistical, or reproducibility threshold may not be loosened or redefined after observing the result. A new test may be added only prospectively and must preserve the original failure as failure."
+    },
+    {
+      "id": "GOV-005",
+      "name": "FAIL_CLOSED",
+      "requirement": "Missing provenance, malformed checkpoints, ambiguous parser state, hash mismatch, incomplete computation, or workflow deviation must produce a HOLD or mechanical failure rather than an inferred scientific PASS."
+    },
+    {
+      "id": "GOV-006",
+      "name": "NO_AUTOMATIC_NEW_SCIENTIFIC_RUNG",
+      "requirement": "Automation may continue only within a prospectively authorized scientific scope. A deeper numerical rung, new physical system, new model family, or new hypothesis may not be dispatched automatically unless the governing protocol explicitly preauthorizes it."
+    },
+    {
+      "id": "GOV-007",
+      "name": "PROVENANCE_MINIMUM",
+      "requirement": "Production evidence must retain enough provenance to reconstruct what ran: repository commit, workflow/run identity, protocol hash, executable hash, pseudopotential or model-input hashes, input/output hashes, source-evidence hashes, execution mode, and any restart/checkpoint manifest hashes."
+    },
+    {
+      "id": "GOV-008",
+      "name": "INDEPENDENT_REPRODUCTION_REMAINS_INDEPENDENT",
+      "requirement": "Optimization or production checkpoint state may be used to continue the same interrupted calculation, but a designated independent reproduction audit must start from the frozen final physical state without inheriting electronic optimizer scratch unless the protocol explicitly defines a different independent test prospectively."
+    },
+    {
+      "id": "GOV-009",
+      "name": "EXECUTION_RESOURCE_PARITY",
+      "requirement": "Changing rank count, parallelization decomposition, solver binary, numerical library path, accelerator mode, or other execution resource capable of changing numerical results requires a parity qualification before it may generate production evidence. Failed execution modes remain excluded unless a new prospective qualification protocol explicitly reopens them."
+    },
+    {
+      "id": "GOV-010",
+      "name": "NATIVE_CHECKPOINT_FIRST_FOR_LONG_RUNS",
+      "requirement": "When a single logical calculation can exceed the queue/job window and the scientific engine supports native restart, production orchestration must use the engine's clean checkpoint/restart mechanism rather than treating an external kill as a checkpoint. The checkpoint must be created by a documented clean-stop mechanism, persisted, hashed, verified before restart, and resumed with the execution invariants required by the engine."
+    },
+    {
+      "id": "GOV-011",
+      "name": "NO_UNSALVAGEABLE_REPEAT_AFTER_TIMEOUT_DIAGNOSIS",
+      "requirement": "After a run demonstrates that a logical calculation may exceed the available job window before reaching the current external checkpoint boundary, another identical unsalvageable production retry is forbidden unless no native or otherwise validated checkpoint path exists and the exception is explicitly authorized."
+    },
+    {
+      "id": "GOV-012",
+      "name": "COMPUTE_ACCOUNTING_HONESTY",
+      "requirement": "Report measured wall-clock time, configured runtime ceilings, CPU-hours, GPU-hours, and unknown/unreconstructed compute separately. Do not convert a partial ledger into a claimed project total. Failed and mechanically wasted compute remains part of the record."
+    },
+    {
+      "id": "GOV-013",
+      "name": "RETROSPECTIVE_PROSPECTIVE_FIREWALL",
+      "requirement": "A frozen retrospective release cannot be rewritten by later prospective calculations. New results may extend, challenge, or supersede prior claims only in a new version with explicit lineage."
+    },
+    {
+      "id": "GOV-014",
+      "name": "CHI_SEMANTIC_LICENSE",
+      "requirement": "Use of chi must record its generator or source equations, exact definition, dimensions, physical interpretation, meaning of chi=1 if any, licensed inferences, and forbidden cross-domain inferences. Algebraic resemblance alone does not transfer physical meaning between domains."
+    },
+    {
+      "id": "GOV-015",
+      "name": "SCALAR_MODAL_CONGLOMERATION_SEPARATION",
+      "requirement": "Scalar chi/stability coordinates, modal or subspace structure, and conglomeration/system-level coupling are complementary evidentiary layers. None may be treated as a substitute for the others, and disagreement among them is reportable evidence rather than something to tune away."
+    },
+    {
+      "id": "GOV-016",
+      "name": "INDEPENDENT_FAMILY_COUNTING",
+      "requirement": "For Barrier Atlas breadth, additional temperatures, pressures, or repeated conditions within one reaction family deepen that family but do not count as additional independent mechanistic families."
+    },
+    {
+      "id": "GOV-017",
+      "name": "LITERATURE_EVIDENCE_ACCESS_AND_STATUS",
+      "requirement": "Final literature evidence should come from published work with independently verified bibliographic identity. Freely accessible journal, institutional-repository, or author-hosted copies may be used. If required numerical evidence is unavailable, the entry must be caveated, refused, or replaced rather than inferred. Unpublished preprints are not final evidence."
+    }
+  ],
+  "required_status_fields_for_new_protocols": [
+    "scientific_settings_changed",
+    "thresholds_changed",
+    "acceptance_rule_changed",
+    "kinetic_inputs_used",
+    "prior_failure_preserved",
+    "prospective_before_results"
+  ],
+  "change_classes": {
+    "mechanical": [
+      "workflow syntax",
+      "artifact routing",
+      "runtime ceiling",
+      "clean checkpoint persistence",
+      "parser correction with raw-data revalidation",
+      "documentation",
+      "packaging"
+    ],
+    "scientific": [
+      "physical model",
+      "method or functional",
+      "pseudopotential identity",
+      "cutoff",
+      "k-mesh",
+      "geometry constraint",
+      "convergence or acceptance threshold",
+      "scientific rung",
+      "hypothesis",
+      "interpretation",
+      "evidentiary scope"
+    ]
+  }
+}

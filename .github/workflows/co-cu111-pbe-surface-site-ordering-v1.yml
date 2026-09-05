@@ -1,0 +1,422 @@
+name: CO Cu111 PBE clean surface and site ordering v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-pbe-surface-site-ordering-v1.yml'
+      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json'
+      - 'systems/co_cu111/pbe_surface_site_ordering_v1.py'
+      - 'systems/co_cu111/test_pbe_surface_site_ordering_v1.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-surface-site-ordering-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_STAGE_A_RUN_ID: '31887006685'
+  SOURCE_STAGE_A_COMMIT: 'c8270e18b46cd4487f4abfdef4ebe75363971f8c'
+  SOURCE_STAGE_A_ARTIFACT: 'co-cu111-pbe-stage-a-numerical-extension-decision-v1'
+  SOURCE_STAGE_A_ARTIFACT_ID: '9251232108'
+  SOURCE_STAGE_A_ARTIFACT_DIGEST: 'sha256:0d972e729f9b0edbaa31dfbf333d0871b6e2b28b7a73848a0c4b5f1c00921568'
+  SOURCE_STAGE_A_RESULT_SHA256: '2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3'
+
+  SOURCE_ENGINE_RUN_ID: '31371043888'
+  SOURCE_ENGINE_ARTIFACT: 'co-cu111-pbe-stage-a-engine-v2'
+  SOURCE_ENGINE_ARTIFACT_ID: '9056061436'
+  SOURCE_ENGINE_ARTIFACT_DIGEST: 'sha256:d08bdff49537bc987d741ab6c392a0226ebc71d3c0631f095ee9e1948926349e'
+
+  METHOD_PROTOCOL: 'systems/co_cu111/SYSTEM2_METHOD_SELECTION_PROTOCOL_v0.1.json'
+  STAGE_A_PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  STAGE_A_EXTENSION: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_NUMERICAL_EXTENSION_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  SURFACE_PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json'
+  RUNNER: 'systems/co_cu111/pbe_surface_site_ordering_v1.py'
+  TEST: 'systems/co_cu111/test_pbe_surface_site_ordering_v1.py'
+
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare-engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen repository contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$RUNNER" self-test --protocol "$SURFACE_PROTOCOL"
+          python3 "$TEST" -v
+
+          test "$(git hash-object "$METHOD_PROTOCOL")" = "44f0514a2c3421139d33ad4094fac541ee4bbd9f"
+          test "$(git hash-object "$STAGE_A_PROTOCOL")" = "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336"
+          test "$(git hash-object "$BUNDLE")" = "4a23d19bbd4374e250582fb1d02419828a06eb5d"
+          test "$(git hash-object "$STAGE_A_EXTENSION")" = "fb5bae726bb35bfaa10106714250d3e0ad458307"
+          test "$(git hash-object "$SURFACE_PROTOCOL")" = "95ced1096e4dbc3c0a75c5a4f7aa6b9693cdb924"
+          test "$(git hash-object "$RUNNER")" = "d65050b77527de8453d42a77c2c45a0629a07fd3"
+          test "$(git hash-object "$TEST")" = "b9c065af878713f128223b14b7b60ead97cae0f6"
+
+          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '"$SURFACE_PROTOCOL" | sha256sum -c -
+          echo 'f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b  '"$RUNNER" | sha256sum -c -
+          echo '0f15e3ad0ffcbb622273b9ea394a0c04336403ecdbbde54948698e4c036f76fe  '"$TEST" | sha256sum -c -
+          echo 'KINETIC_INPUTS_USED=false'
+          echo 'STAGE_A_SCIENTIFIC_SETTINGS_MODIFIED=false'
+
+      - name: Download authorizing Stage A PASS decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify authorizing Stage A PASS result
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${SOURCE_STAGE_A_RESULT_SHA256}  stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json" | sha256sum -c -
+          python3 - <<'PY'
+          import json
+          r=json.load(open('stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json'))
+          assert r['status']=='PASS'
+          assert r['next_gate']=='PBE_CU111_CLEAN_SURFACE_AND_SITE_ORDERING_SCREEN'
+          s=r['combined_selected_settings']
+          assert s['ecutwfc_ry']==90
+          assert s['ecutrho_ry']==900
+          assert s['bulk_kmesh']==12
+          assert s['gas_box_angstrom']==18.0
+          assert r['provenance']['kinetic_inputs_used'] is False
+          assert r['provenance']['scientific_settings_changed'] is False
+          print('AUTHORIZING_STAGE_A_PASS_VERIFIED')
+          PY
+
+      - name: Download exact Stage A QE engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify exact Stage A engine and pseudopotentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$STAGE_A_PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          chmod +x engine/bin/pw.x
+          test -x engine/bin/pw.x
+
+      - name: Publish exact engine for surface gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-site-engine-v1
+          path: engine
+          retention-days: 14
+          if-no-files-found: error
+
+  clean-surface:
+    needs: prepare-engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include:
+          - {layers: 7, vacuum: 16, kmesh: 12, role: candidate}
+          - {layers: 7, vacuum: 16, kmesh: 16, role: candidate}
+          - {layers: 7, vacuum: 20, kmesh: 12, role: candidate}
+          - {layers: 7, vacuum: 20, kmesh: 16, role: candidate}
+          - {layers: 9, vacuum: 16, kmesh: 12, role: candidate}
+          - {layers: 9, vacuum: 16, kmesh: 16, role: candidate}
+          - {layers: 9, vacuum: 20, kmesh: 12, role: candidate}
+          - {layers: 9, vacuum: 20, kmesh: 16, role: candidate}
+          - {layers: 11, vacuum: 24, kmesh: 20, role: reference}
+          - {layers: 13, vacuum: 28, kmesh: 24, role: audit}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install unchanged QE runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             libopenblas-dev             liblapack-dev             libfftw3-dev             libopenmpi-dev             openmpi-bin
+
+      - name: Download exact surface engine
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-site-engine-v1
+          path: engine
+
+      - name: Download authorizing Stage A decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Run frozen clean Cu111 case
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          case_id="L${{ matrix.layers }}-V${{ matrix.vacuum }}-K${{ matrix.kmesh }}-${{ matrix.role }}"
+          python3 "$RUNNER" clean-run             --protocol "$SURFACE_PROTOCOL"             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json             --bundle "$BUNDLE"             --pseudo-dir engine/pseudos             --pw engine/bin/pw.x             --layers '${{ matrix.layers }}'             --vacuum '${{ matrix.vacuum }}'             --kmesh '${{ matrix.kmesh }}'             --role '${{ matrix.role }}'             --out "clean_cases/${case_id}"
+
+      - name: Upload immutable clean Cu111 case
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-v1-L${{ matrix.layers }}-V${{ matrix.vacuum }}-K${{ matrix.kmesh }}-${{ matrix.role }}
+          path: clean_cases/L${{ matrix.layers }}-V${{ matrix.vacuum }}-K${{ matrix.kmesh }}-${{ matrix.role }}
+          retention-days: 90
+          if-no-files-found: error
+
+  clean-gate:
+    needs: clean-surface
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      status: ${{ steps.export.outputs.status }}
+      selected_case: ${{ steps.export.outputs.selected_case }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all clean Cu111 cases
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: clean_collected
+          merge-multiple: false
+
+      - name: Download authorizing Stage A decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Apply frozen clean-surface convergence gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p clean_gate
+          python3 "$RUNNER" clean-gate             --protocol "$SURFACE_PROTOCOL"             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json             --root clean_collected             --out clean_gate/CLEAN_SURFACE_GATE.json             > clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          cat clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+
+      - name: Export clean gate
+        id: export
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r=json.load(open('clean_gate/CLEAN_SURFACE_GATE.json'))
+          print('status='+r['status'])
+          print('selected_case='+(r.get('selected') or {}).get('case_id',''))
+          PY
+
+      - name: Upload clean-surface gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-gate-v1
+          path: clean_gate
+          retention-days: 90
+          if-no-files-found: error
+
+  site-relax:
+    needs: [prepare-engine, clean-gate]
+    if: ${{ needs.clean-gate.outputs.status == 'CLEAN_SURFACE_PASS' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install unchanged QE runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             libopenblas-dev             liblapack-dev             libfftw3-dev             libopenmpi-dev             openmpi-bin
+
+      - name: Download exact surface engine
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-site-engine-v1
+          path: engine
+
+      - name: Download authorizing Stage A decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download clean-surface gate
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-gate-v1
+          path: clean_gate
+
+      - name: Download all clean Cu111 cases
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: clean_collected
+          merge-multiple: false
+
+      - name: Relax frozen 4x4 adsorption site
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RUNNER" site-run             --protocol "$SURFACE_PROTOCOL"             --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json             --clean-gate clean_gate/CLEAN_SURFACE_GATE.json             --clean-root clean_collected             --bundle "$BUNDLE"             --pseudo-dir engine/pseudos             --pw engine/bin/pw.x             --site '${{ matrix.site }}'             --out 'site_primary/${{ matrix.site }}'
+
+      - name: Upload primary site result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-site-primary-v1-${{ matrix.site }}
+          path: site_primary/${{ matrix.site }}
+          retention-days: 90
+          if-no-files-found: error
+
+  site-audit:
+    needs: [prepare-engine, clean-gate, site-relax]
+    if: ${{ needs.clean-gate.outputs.status == 'CLEAN_SURFACE_PASS' && needs.site-relax.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install unchanged QE runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             libopenblas-dev             liblapack-dev             libfftw3-dev             libopenmpi-dev             openmpi-bin
+
+      - name: Download exact surface engine
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-site-engine-v1
+          path: engine
+
+      - name: Download primary site result
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-site-primary-v1-${{ matrix.site }}
+          path: primary
+
+      - name: Run independent k6 site-energy audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RUNNER" site-audit             --protocol "$SURFACE_PROTOCOL"             --bundle "$BUNDLE"             --pseudo-dir engine/pseudos             --pw engine/bin/pw.x             --primary primary/summary.json             --out 'site_audit/${{ matrix.site }}'
+
+      - name: Upload independent site audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-site-audit-v1-${{ matrix.site }}
+          path: site_audit/${{ matrix.site }}
+          retention-days: 90
+          if-no-files-found: error
+
+  finalize:
+    needs: [clean-gate, site-relax, site-audit]
+    if: ${{ always() && needs.clean-gate.result == 'success' && (needs.clean-gate.outputs.status != 'CLEAN_SURFACE_PASS' || (needs.site-relax.result == 'success' && needs.site-audit.result == 'success')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download authorizing Stage A decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download clean-surface gate
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-gate-v1
+          path: clean_gate
+
+      - name: Download primary site results
+        if: ${{ needs.clean-gate.outputs.status == 'CLEAN_SURFACE_PASS' }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-site-primary-v1-*
+          path: site_collected/primary
+          merge-multiple: false
+
+      - name: Download independent site audits
+        if: ${{ needs.clean-gate.outputs.status == 'CLEAN_SURFACE_PASS' }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-site-audit-v1-*
+          path: site_collected/audit
+          merge-multiple: false
+
+      - name: Finalize frozen surface and site-ordering decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p final
+          args=(
+            --protocol "$SURFACE_PROTOCOL"
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json
+            --clean-gate clean_gate/CLEAN_SURFACE_GATE.json
+            --out final/PBE_SURFACE_SITE_ORDERING_RESULT.json
+          )
+          if [ '${{ needs.clean-gate.outputs.status }}' = 'CLEAN_SURFACE_PASS' ]; then
+            args+=(--site-root site_collected)
+          fi
+          python3 "$RUNNER" finalize "${args[@]}"             > final/PBE_SURFACE_SITE_ORDERING_STDOUT.txt
+          cat final/PBE_SURFACE_SITE_ORDERING_STDOUT.txt
+
+      - name: Record exact decision hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum             "$METHOD_PROTOCOL"             "$STAGE_A_PROTOCOL"             "$STAGE_A_EXTENSION"             "$BUNDLE"             "$SURFACE_PROTOCOL"             "$RUNNER"             stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json             clean_gate/CLEAN_SURFACE_GATE.json             final/PBE_SURFACE_SITE_ORDERING_RESULT.json             > final/SURFACE_SITE_DECISION_INPUTS_AND_RESULT.sha256
+
+      - name: Upload final PBE surface/site decision
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-site-ordering-decision-v1
+          path: final
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,168 @@
+{
+  "schema": "na-cu001-integration-closure-v0.1",
+  "status": "executable_route_frozen_before_downstream_numerical_results",
+  "principle": "Each stage consumes hashed PASS artifacts; no stage may infer a missing value, bypass a HOLD, or substitute experimental evidence for a computational quantity.",
+  "execution": {
+    "workflow": ".github/workflows/na-cu001-computational-route.yml",
+    "engine": "na_cu001_ci/closure_engine.py",
+    "tests": "na_cu001_ci/test_closure_engine.py",
+    "bulk_source": "compact PASS artifact from the exact registered bulk workflow run",
+    "mode": "automatic sequential and matrix GitHub Actions route"
+  },
+  "stages": [
+    {
+      "id": 1,
+      "name": "bulk_convergence",
+      "pass_artifact": "BULK_HANDOFF.json",
+      "required_checks": [
+        "all 120 registered SCFs complete",
+        "abs(delta_a0_angstrom) <= 0.005",
+        "abs(delta_e0_ev_per_atom) <= 0.001",
+        "quadratic fit convex"
+      ],
+      "route_state": "EXTERNAL_ACTIVE_COMPUTATION"
+    },
+    {
+      "id": 2,
+      "name": "clean_slab_convergence",
+      "pass_artifact": "SLAB_HANDOFF.json",
+      "required_checks": [
+        "all 64 registered clean-slab SCFs complete",
+        "surface excess domination tolerance <= 1.0 meV per surface atom",
+        "selected layer, vacuum, and k-mesh dimensions recorded",
+        "bulk provenance revalidated"
+      ],
+      "route_state": "IMPLEMENTED_WAITING_FOR_STAGE_1"
+    },
+    {
+      "id": 3,
+      "name": "clean_surface_relaxation",
+      "pass_artifact": "RELAXED_CLEAN_SURFACE_HANDOFF.json",
+      "required_checks": [
+        "symmetric constrained relaxation",
+        "maximum unconstrained force <= 0.02 eV/A",
+        "mirror-pair z deviation <= 0.01 A",
+        "final SCF energy reproduction"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 4,
+      "name": "na_pseudopotential_validation",
+      "pass_artifact": "NA_PSEUDO_HANDOFF.json",
+      "required_checks": [
+        "unique Na UPF from pinned SSSP archive",
+        "archive and UPF SHA-256 recorded",
+        "mixed cutoffs are the componentwise Cu-Na maximum",
+        "spin-polarized isolated Na reference converges"
+      ],
+      "route_state": "IMPLEMENTED_INDEPENDENT"
+    },
+    {
+      "id": 5,
+      "name": "adsorption_site_screening",
+      "pass_artifact": "ADSORPTION_SITE_HANDOFF.json",
+      "required_checks": [
+        "nine registered relaxations complete",
+        "same 4x4 cell, 0.0625 ML coverage, cutoffs, and electrostatics used",
+        "site collapse retained",
+        "global minimum classifies as fourfold hollow"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 6,
+      "name": "endpoint_geometry_verification",
+      "pass_artifact": "ENDPOINTS_HANDOFF.json",
+      "required_checks": [
+        "nearest-neighbor hollow endpoints are distinct and symmetry-equivalent",
+        "endpoint energies reproduce within 0.001 eV",
+        "forces <= 0.02 eV/A",
+        "coordinate and output hashes recorded"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 7,
+      "name": "path_and_image_convergence",
+      "pass_artifact": "PATH_CONVERGENCE_HANDOFF.json",
+      "required_checks": [
+        "ordinary NEB runs use 5, 7, and 9 images",
+        "barrier spread meets the 0.005 eV rule",
+        "smallest dominating converged image count selected",
+        "endpoints remain verified"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 8,
+      "name": "climbing_image_neb",
+      "pass_artifact": "CI_NEB_HANDOFF.json",
+      "required_checks": [
+        "CI enabled only after stage 7 PASS",
+        "maximum-energy image is internal",
+        "maximum path error <= 0.03 eV/A",
+        "endpoint energies reproduce within 0.001 eV"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 9,
+      "name": "saddle_verification",
+      "pass_artifact": "SADDLE_HANDOFF.json",
+      "required_checks": [
+        "minimum Na partial Hessian is positive",
+        "saddle Na partial Hessian has exactly one negative mode",
+        "unstable mode aligns with the registered path by >= 0.70",
+        "0.02 and 0.04 A finite-difference results agree within 20 percent",
+        "plus and minus downhill relaxations reach distinct endpoint basins",
+        "saddle Na force <= 0.03 eV/A"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 10,
+      "name": "barrier_coordinate_extraction",
+      "pass_artifact": "BARRIER_COORDINATE.json",
+      "required_checks": [
+        "electronic forward and reverse barriers reported",
+        "conservative numerical uncertainty reported",
+        "Na-only partial-Hessian Vineyard prefactor labeled",
+        "computed rates reported at 100, 150, 200, 250, and 300 K",
+        "unsupported ZPE, thermal, friction, and linewidth fields remain null"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 11,
+      "name": "computational_atlas_admission",
+      "pass_artifact": "ATLAS_ADMISSION_RECORD.json",
+      "required_checks": [
+        "computed rows contain system, phase, coverage, temperature, barrier, uncertainty, rate, and method",
+        "verification tier is COMPUTATIONAL_FULL",
+        "experimental columns remain distinct and null",
+        "public experimental candidate remains HOLD until exact state-point qualification"
+      ],
+      "route_state": "IMPLEMENTED"
+    },
+    {
+      "id": 12,
+      "name": "integration_readiness",
+      "pass_artifact": "INTEGRATION_READINESS.json",
+      "required_checks": [
+        "stages 1 through 11 pass schema, state, dependency, and handoff-hash validation",
+        "Stage 12 is generated by the validator without self-referential hash claims",
+        "the raw-output manifest is independently checked against every retained raw file",
+        "the closure manifest hashes every retained handoff and decision file",
+        "experimental-only gaps remain explicit"
+      ],
+      "route_state": "IMPLEMENTED"
+    }
+  ],
+  "experimental_only_gaps": [
+    "direct experimental diffusion-rate table at the exact registered coverage and temperatures if no qualified public numeric table exists",
+    "system-specific friction or linewidth not computed by this route",
+    "full substrate vibrational determinant beyond the registered Na-only partial Hessian",
+    "independent physical replication outside the computational workflow"
+  ]
+}

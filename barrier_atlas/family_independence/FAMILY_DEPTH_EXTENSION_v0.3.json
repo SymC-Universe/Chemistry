@@ -1,0 +1,127 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v0.3",
+  "status": "ADDITIVE_FAMILY_DEPTH_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_six_trail_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_targeted_hold_update": "barrier_atlas/family_independence/TARGETED_HOLD_CLOSURE_UPDATE_v0.2.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "mechanistic-class gap search; no predicted-versus-observed residual was calculated before gate adjudication"
+  },
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC14-CL-CH4-HAT",
+      "target_class": "MC14",
+      "target_class_name": "atom_or_group_transfer",
+      "candidate_family": "gas-phase chlorine-atom abstraction of hydrogen from methane",
+      "reaction": "Cl(2P3/2) + CH4 -> HCl + CH3",
+      "classification_gate": "PASS_MC14_HYDROGEN_ATOM_TRANSFER",
+      "classification_basis": "The primary theory source explicitly treats abstraction of one hydrogen atom from methane by atomic chlorine; this is an atom-transfer event and is mechanistically distinct from the frozen SO2+ + CO oxygen-atom-transfer family.",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_ZERO_POINT_CORRECTED_AB_INITIO_BARRIER",
+      "barrier_quantity": {
+        "value": 4.87,
+        "unit": "kcal/mol",
+        "type": "QCISD(T) zero-point-energy-corrected barrier height relative to separated Cl + CH4 reactants",
+        "classical_electronic_barrier_value": 8.90,
+        "classical_electronic_barrier_unit": "kcal/mol",
+        "ccsd_t_crosscheck": "CCSD(T) barrier results reported within 0.1 kcal/mol of the QCISD(T) results",
+        "geometry_level": "MP2 with a large TZ+2P basis for the transition-state geometry",
+        "source": {
+          "authors": "Kerwin D. Dobbs and David A. Dixon",
+          "title": "Ab Initio Prediction of the Activation Energy for the Abstraction of a Hydrogen Atom from Methane by Chlorine Atom",
+          "journal": "Journal of Physical Chemistry",
+          "year": 1994,
+          "volume": 98,
+          "pages": "12584-12589",
+          "doi": "10.1021/j100099a021"
+        },
+        "typing_caveat": "This is an adiabatic/ZPE-corrected barrier height, not a 298 K Gibbs activation free energy and not an Arrhenius activation energy derived from the comparator rate."
+      },
+      "comparator_gate": "PASS_INDEPENDENT_PRIMARY_DIRECT_KINETICS",
+      "observed_comparator": {
+        "type": "direct experimental gas-phase second-order rate coefficient represented by the primary measured temperature fit",
+        "source": {
+          "authors": "Mikhail G. Bryukov, Irene R. Slagle, and Vadim D. Knyazev",
+          "title": "Kinetics of Reactions of Cl Atoms with Methane and Chlorinated Methanes",
+          "journal": "Journal of Physical Chemistry A",
+          "year": 2002,
+          "volume": 106,
+          "pages": "10532-10542",
+          "doi": "10.1021/jp0257909"
+        },
+        "measured_temperature_range_K": [295.0, 1104.0],
+        "measured_pressure_range_Torr": [1.4, 8.8],
+        "technique": "discharge flow / resonance fluorescence",
+        "rate_expression": "k(T)=1.30e-19*T^2.69*exp(-497 K/T) cm^3 molecule^-1 s^-1",
+        "representative_temperature_K": 298.15,
+        "representative_rate_cm3_molecule_inverse_s_inverse": 1.1123141927405241e-13,
+        "representative_rate_origin": "evaluated from the primary experimental fit only after source, barrier, classification, condition, and independence gates were specified; numerical residual is non-voting"
+      },
+      "condition_gate": "PASS_GAS_PHASE_ELEMENTARY_BIMOLECULAR_MAPPING",
+      "condition_mapping": {
+        "composition": "Cl + CH4 on both barrier and kinetic sides",
+        "electronic_state": "The kinetic comparator measures the chlorine-atom reaction; the coordinate is restricted to the ground-state H-abstraction channel rather than Cl* quenching chemistry.",
+        "temperature": "The barrier is a temperature-independent ZPE-corrected PES threshold, while the observed rate is explicitly evaluated inside the directly measured 295-1104 K range at 298.15 K. The barrier is not relabeled as a 298.15 K free energy.",
+        "pressure": "The theoretical barrier is an isolated bimolecular potential-energy quantity. The comparator is a direct second-order elementary-reaction coefficient measured at 1.4-8.8 Torr; no third-body association/falloff channel is being mapped onto this coordinate.",
+        "medium": "gas phase on both sides",
+        "standard_state": "number-density second-order kinetics retained in cm^3 molecule^-1 s^-1; no solution-standard-state conversion is applied"
+      },
+      "independence_gate": "PASS_DISTINCT_FAMILY_AND_TARGET_RATE_NOT_USED_TO_FIT_BARRIER",
+      "independence_basis": [
+        "The barrier calculation was published in 1994; the selected direct kinetic comparator was published in 2002, so the 2002 target rate could not have been used to fit the 1994 barrier calculation.",
+        "The 1994 barrier is an ab initio electronic-structure result, not a rate-derived activation quantity.",
+        "The family is hydrogen-atom abstraction from methane by neutral atomic chlorine, distinct from the frozen MC14 SO2+ + CO oxygen-atom-transfer family.",
+        "No method variant was selected using the size or sign of a predicted-versus-observed residual."
+      ],
+      "representation_mode": "SINGLE_BARRIER_ATOM_TRANSFER",
+      "representation_basis": "The coordinate is the direct H-atom abstraction channel through the reported transition-state barrier; no competing product network is collapsed into an effective scalar rate. Electronic-state/quenching chemistry is explicitly excluded from this coordinate.",
+      "post_gate_diagnostic": {
+        "selection_role": "NONE",
+        "residual_calculation_required_for_promotion": false,
+        "chi_calculation_required_for_promotion": false,
+        "expected_chemsa_agreement_required_for_promotion": false
+      },
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "notes": [
+        "READY_FOR_ADJUDICATION is not coordinate admission and does not assign or change a Barrier Atlas grade.",
+        "The 2002 paper also constructs a separate transition-state-theory model using experimental information; that fitted model is not used here. Only its direct experimental kinetic measurements are used as the comparator.",
+        "The barrier quantity and observed rate remain physically different quantity types and are not converted into one another to create artificial independence."
+      ]
+    }
+  ],
+  "aggregate": {
+    "new_ready_for_adjudication": 1,
+    "new_ready_class": "MC14",
+    "family_depth_classes_with_additive_ready_second_family": ["MC06", "MC11", "MC14"],
+    "ready_second_family_count": 3,
+    "target_class_count": 11,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

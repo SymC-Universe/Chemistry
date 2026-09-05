@@ -1,0 +1,76 @@
+{
+  "schema": "barrier-atlas-family-independence-campaign-v0.1",
+  "status": "FROZEN_BEFORE_SECOND_FAMILY_ADMISSION_RESULTS",
+  "purpose": "Increase independent reaction-family depth inside the frozen 18-class Barrier Atlas ontology without mutating Barrier Atlas v0.9 or using agreement quality to select candidates.",
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "coordinate_count": 61,
+    "family_count": 26,
+    "source_count": 67,
+    "held_or_refused_candidate_count": 27,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "scope": {
+    "campaign_is_additive": true,
+    "automatic_parent_mutation": false,
+    "automatic_coordinate_admission": false,
+    "automatic_grade_promotion": false,
+    "residual_may_select_candidate": false,
+    "chi_or_expected_chemsa_result_may_select_candidate": false,
+    "goal": "Move every currently single-family mechanistic class toward at least two genuinely independent reaction families, where evidence permits."
+  },
+  "target_classes": [
+    {"class_id": "MC01", "name": "association_complexation", "current_families": ["FAM-BETA-CD-HOST-GUEST-ASSOCIATION"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC02", "name": "dissociation_fragmentation", "current_families": ["FAM-GAS-CYCLOBUTANE-RING-OPENING"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC04", "name": "addition", "current_families": ["FAM-5-HEXENYL-RADICAL-CYCLIZATION"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC05", "name": "elimination", "current_families": ["FAM-ETHOXYHETEROCYCLE-ETHYLENE-ELIMINATION"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC06", "name": "rearrangement_isomerization", "current_families": ["FAM-GAS-CH3NC-ISOMERIZATION"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC08", "name": "exchange_metathesis", "current_families": ["FAM-GAS-H3-EXCHANGE"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC11", "name": "hydride_transfer", "current_families": ["FAM-MORPHINONE-REDUCTASE-HYDRIDE-TRANSFER"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC13", "name": "coupled_proton_electron_transfer", "current_families": ["FAM-POV-PCET-CROSS-REACTIONS"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC14", "name": "atom_or_group_transfer", "current_families": ["FAM-SO2PLUS-CO-OXYGEN-ATOM-TRANSFER"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC15", "name": "organometallic_bond_activation_migration", "current_families": ["FAM-PD-PCY3-PHBR-OXIDATIVE-ADDITION"], "current_independent_family_count": 1, "target_minimum": 2},
+    {"class_id": "MC16", "name": "chain_propagation_termination", "current_families": ["FAM-OH-HO2-RADICAL-TERMINATION"], "current_independent_family_count": 1, "target_minimum": 2}
+  ],
+  "independent_family_rule": {
+    "required": [
+      "distinct physical reaction family rather than another temperature point or isotopologue of an existing family",
+      "operational mechanistic-class assignment adjudicated independently of predicted-versus-observed agreement",
+      "barrier or free-energy quantity typed exactly as supplied or reproducibly calculated",
+      "rate order, units, standard state, temperature, pressure, medium and composition matched or explicitly mapped",
+      "prediction/model inputs not fit to the same target rate used as validation unless the target is quarantined as calibration",
+      "rate-derived activation quantities cannot independently validate the rate from which they were derived",
+      "method variants and replicate calculations remain replicates rather than new physical families"
+    ],
+    "same_family_by_default": [
+      "temperature series",
+      "isotopologue series",
+      "solvent or catalyst variants that preserve the same declared elementary family unless a separately adjudicated mechanism change establishes otherwise",
+      "electronic-structure method variants"
+    ]
+  },
+  "promotion_ladder": [
+    "CANDIDATE",
+    "SOURCE_QUALIFIED",
+    "BARRIER_QUALIFIED",
+    "COMPARATOR_QUALIFIED",
+    "CONDITION_MATCHED",
+    "INDEPENDENCE_PASS",
+    "READY_FOR_ADJUDICATION"
+  ],
+  "terminal_nonpromotion_states": [
+    "HOLD",
+    "REFUSED",
+    "CLASSIFICATION_HOLD",
+    "BARRIER_HALF_TRAIL",
+    "COMPARATOR_MISSING"
+  ],
+  "adjudication": {
+    "ready_for_adjudication_is_not_admission": true,
+    "new_coordinates_require_new_release_version": true,
+    "v0_9_rows_and_grades_may_not_change": true,
+    "negative_and_failed_candidates_remain_in_candidate_register": true
+  }
+}

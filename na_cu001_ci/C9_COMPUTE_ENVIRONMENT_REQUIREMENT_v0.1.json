@@ -1,0 +1,54 @@
+{
+  "schema": "na-cu001-c9-compute-environment-requirement-v0.1",
+  "status": "MECHANICAL_INFRASTRUCTURE_HOLD_STANDARD_HOSTED_RUNNER",
+  "scientific_settings_changed": false,
+  "frozen_case_used_for_diagnostics": {
+    "mobility": "primary",
+    "site": "hollow",
+    "height_angstrom": 2.0,
+    "np": 1,
+    "production_admissibility": "NONE"
+  },
+  "diagnostic_v1": {
+    "workflow_run": 31354205243,
+    "job": 93350664566,
+    "control_commit": "498e67b1518cd704dec72545c9ba4dbb94e52cd9",
+    "thread_caps": false,
+    "observed_pw_x_rss_peak_gb_approx": 15.56,
+    "result": "HOSTED_RUNNER_SHUTDOWN_EXIT_143_AFTER_RAM_EXHAUSTION"
+  },
+  "diagnostic_v2": {
+    "workflow_run": 31354460865,
+    "job": 93351405200,
+    "control_commit": "c6bd489590048c139b981f45d633635ffc6bdc7b",
+    "thread_caps": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1,
+      "BLIS_NUM_THREADS": 1,
+      "VECLIB_MAXIMUM_THREADS": 1,
+      "NUMEXPR_NUM_THREADS": 1
+    },
+    "observed_pw_x_rss_peak_gb_approx": 15.46,
+    "result": "HOSTED_RUNNER_SHUTDOWN_EXIT_143_AFTER_RAM_EXHAUSTION",
+    "inference": "Thread oversubscription is not the dominant cause of the C9 memory requirement."
+  },
+  "decision": {
+    "standard_approximately_16GB_environment": "REJECTED_FOR_C9_PRODUCTION",
+    "minimum_next_diagnostic_memory_gb": 32,
+    "minimum_is_not_a_production_guarantee": true,
+    "reason": "The observed process alone reached roughly 15.5 GB RSS before host shutdown, leaving no adequate operating-system or solver headroom. A materially larger memory environment is required before further production execution is scientifically auditable.",
+    "acceptable_environment_classes": [
+      "GitHub larger runner with at least 32 GB RAM if the repository/account has verified access",
+      "self-hosted GitHub Actions runner with at least 32 GB RAM",
+      "independent HPC/cluster environment with at least 32 GB RAM and a reproducibly pinned QE/pseudopotential bundle"
+    ]
+  },
+  "restart_rule": [
+    "Do not rerun C9 production on the rejected standard hosted environment.",
+    "Do not reduce the frozen 4x4 supercell, cutoffs, k-mesh, force threshold, ESM convention, adsorption matrix, mobility models or any other physical setting to fit the runner.",
+    "When a qualifying environment becomes available, first execute one explicitly non-admissible frozen-case resource/provenance diagnostic.",
+    "Only after the diagnostic demonstrates adequate memory headroom may the full 18-case production matrix resume with unchanged science."
+  ],
+  "next_gate": "QUALIFY_LARGER_COMPUTE_ENVIRONMENT"
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "co-cu111-pbe-pseudopotential-bundle-v0.1",
+  "status": "PINNED_FOR_NON_KINETIC_METHOD_SCREEN",
+  "system": "CO/Cu(111)",
+  "method": "PBE",
+  "source_archive": {
+    "name": "SSSP-lib-pbe-eff-v2.tar.gz",
+    "sha256": "67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2",
+    "provenance": "frozen Na/Cu C7 QE artifact na-cu001-c7-qe, source run 30949901790"
+  },
+  "pseudopotentials": {
+    "Cu": {
+      "filename": "Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf",
+      "sha256": "b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d",
+      "sssp_efficiency_recommended_cutoffs_ry": {"ecutwfc": 55, "ecutrho": 165}
+    },
+    "C": {
+      "filename": "C.us.pbe.z_4.uspp.gbrv.v1.2.upf",
+      "sha256": "1795e3fa54d4c3ccf06592136dfebf7aaede82ed223863c30d55ceefb6a787ce",
+      "sssp_efficiency_recommended_cutoffs_ry": {"ecutwfc": 30, "ecutrho": 105}
+    },
+    "O": {
+      "filename": "O.paw.pbe.z_6.ld1.psl.v0.1.upf",
+      "sha256": "ac247dc7426e692ce59a64110f04eb4d17f3645ee4f2e907d08ff0e444886730",
+      "sssp_efficiency_recommended_cutoffs_ry": {"ecutwfc": 45, "ecutrho": 540}
+    }
+  },
+  "combined_recommended_floor_ry": {"ecutwfc": 55, "ecutrho": 540},
+  "solver_bundle": {
+    "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "neb_x_sha256": "37f7917c49f86183a2183cf45fc27ffbeb7ac8b3455fc8365e78b506602be507",
+    "source_artifact": "na-cu001-c7-qe",
+    "source_run": "30949901790"
+  },
+  "rules": [
+    "All file hashes must match before calculation.",
+    "Library cutoffs are a starting floor and must be prospectively converged.",
+    "No CO/Cu(111) kinetic observable may select the bundle or method.",
+    "PBE failure of the frozen top-site ordering gate remains a valid method rejection."
+  ],
+  "next_gate": "PBE_NON_KINETIC_SCREEN"
+}

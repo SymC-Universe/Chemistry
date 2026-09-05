@@ -1,0 +1,323 @@
+name: Na Cu001 C7 L13 strict holdout extension
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/slab_l13_extension_v1.py'
+      - 'na_cu001_ci/test_slab_l13_extension_v1.py'
+      - '.github/workflows/na-cu001-c7-l13-extension.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c7-l13-extension-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  SOURCE_C7_RUN_ID: '30949901790'
+  SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'
+  SOURCE_BASE_DIGEST: 'sha256:122e89a9b79d21cc1ba7c4fe5b87f271b709bc51457015db17582960ebe8f045'
+  SOURCE_BASE_SIZE: '102658'
+  SOURCE_QE_DIGEST: 'sha256:65f0f0e8a2f7b9a3528e2d78734fa114f6703401ac0aeaac02cf31d7853a66ae'
+  SOURCE_QE_SIZE: '101484780'
+  OMP_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit immutable source run and extension contract
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gh python3-numpy
+          mkdir -p l13_provenance
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_C7_RUN_ID}" > l13_provenance/source_run.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_C7_RUN_ID}/jobs?filter=all&per_page=100" > l13_provenance/source_jobs.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_C7_RUN_ID}/artifacts?per_page=100" > l13_provenance/source_artifacts.json
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          run=json.loads(Path('l13_provenance/source_run.json').read_text())
+          jobs=json.loads(Path('l13_provenance/source_jobs.json').read_text()).get('jobs',[])
+          artifacts=json.loads(Path('l13_provenance/source_artifacts.json').read_text()).get('artifacts',[])
+          source_run=int(os.environ['SOURCE_C7_RUN_ID'])
+          source_commit=os.environ['SOURCE_C7_COMMIT']
+          if int(run.get('id',-1)) != source_run or run.get('head_sha') != source_commit:
+              raise SystemExit('HOLD: source run identity or commit changed')
+          if run.get('status') != 'completed':
+              raise SystemExit('HOLD: source run is not completed')
+
+          expected={(layer,vacuum,kmesh) for layer in (5,7,9,11) for vacuum in (12,16,20,24) for kmesh in (16,18,20,22)}
+          pattern=re.compile(r'^slab-cases \((5|7|9|11), (12|16|20|24), (16|18|20|22)\)$')
+          successful=set()
+          failed=[]
+          for job in jobs:
+              match=pattern.match(str(job.get('name','')))
+              if not match:
+                  continue
+              key=tuple(map(int,match.groups()))
+              if job.get('status')=='completed' and job.get('conclusion')=='success':
+                  successful.add(key)
+              elif job.get('status')=='completed':
+                  failed.append({'name':job.get('name'),'conclusion':job.get('conclusion')})
+          if failed or successful != expected:
+              raise SystemExit(f'HOLD: source 64-job audit failed: success={len(successful)} failed={failed}')
+          if not any(job.get('name')=='prepare' and job.get('conclusion')=='success' for job in jobs):
+              raise SystemExit('HOLD: source prepare job is not successful')
+          if not any(job.get('name')=='slab-gate' and job.get('conclusion')=='failure' for job in jobs):
+              raise SystemExit('HOLD: expected scientific source gate HOLD was not found')
+
+          by_name={row.get('name'):row for row in artifacts}
+          raw_expected={f'na-cu001-c7-raw-slab-l{layer}_v{vacuum}_k{kmesh}' for layer,vacuum,kmesh in expected}
+          raw_actual={name for name in by_name if str(name).startswith('na-cu001-c7-raw-slab-')}
+          if raw_actual != raw_expected:
+              raise SystemExit(f'HOLD: source raw artifact set differs from frozen 64 cases: {len(raw_actual)}')
+          for name in raw_expected:
+              row=by_name[name]
+              if row.get('expired') or not row.get('digest') or int(row.get('size_in_bytes',0)) <= 0:
+                  raise SystemExit(f'HOLD: invalid or expired source artifact {name}')
+          fixed={
+              'na-cu001-c7-base':(os.environ['SOURCE_BASE_DIGEST'],int(os.environ['SOURCE_BASE_SIZE'])),
+              'na-cu001-c7-qe':(os.environ['SOURCE_QE_DIGEST'],int(os.environ['SOURCE_QE_SIZE'])),
+          }
+          for name,(digest,size) in fixed.items():
+              row=by_name.get(name)
+              if not row or row.get('expired') or row.get('digest')!=digest or int(row.get('size_in_bytes',-1))!=size:
+                  raise SystemExit(f'HOLD: pinned source artifact identity changed for {name}')
+          record={
+              'schema':'na-cu001-c7-l13-source-provenance-v0.1',
+              'status':'PASS',
+              'source_run_id':source_run,
+              'source_commit':source_commit,
+              'source_run_conclusion':run.get('conclusion'),
+              'source_prepare_success':True,
+              'source_slab_job_count':64,
+              'source_slab_jobs_all_success':True,
+              'source_gate_scientific_hold_observed':True,
+              'source_raw_artifact_count':64,
+              'source_base_artifact':{k:by_name['na-cu001-c7-base'].get(k) for k in ('id','name','digest','size_in_bytes','created_at','expires_at')},
+              'source_qe_artifact':{k:by_name['na-cu001-c7-qe'].get(k) for k in ('id','name','digest','size_in_bytes','created_at','expires_at')},
+              'frozen_source_grid':{
+                  'layers':[5,7,9,11],
+                  'vacuum_angstrom':[12.0,16.0,20.0,24.0],
+                  'kmesh_inplane':[16,18,20,22],
+                  'calculation_count':64,
+              },
+              'extension_grid':{
+                  'layers':[13],
+                  'vacuum_angstrom':[12.0,16.0,20.0,24.0],
+                  'kmesh_inplane':[16,18,20,22],
+                  'calculation_count':16,
+                  'eligible_for_selection':False,
+              },
+              'energy_tolerance_mev_per_surface_atom':1.0,
+              'downstream_layer_floor':7,
+              'electrostatic_convention':{'assume_isolated':'esm','esm_bc':'bc1','coordinate_origin':'cartesian_z_zero'},
+          }
+          Path('l13_provenance/SOURCE_C7_L13_PROVENANCE.json').write_text(json.dumps(record,indent=2)+'\n')
+          PY
+          python3 -m py_compile na_cu001_ci/slab_l13_extension_v1.py na_cu001_ci/test_slab_l13_extension_v1.py
+          (cd na_cu001_ci && python3 test_slab_l13_extension_v1.py)
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-base
+          path: base
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify source files, engine, pseudopotential, and bulk identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat base/COMPUTATIONAL_SOURCE_COMMIT.txt)" = "$SOURCE_C7_COMMIT"
+          sha256sum -c base/SLAB_ENTRYPOINT_SOURCE_MANIFEST.sha256
+          sha256sum -c qe_bundle/meta/engine_binaries.sha256
+          echo 'b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d  qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' | sha256sum -c -
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          handoff=json.loads(Path('base/BULK_HANDOFF.json').read_text())
+          result=json.loads(Path('base/BULK_CONVERGENCE_RESULT.json').read_text())
+          if handoff.get('scientific_status')!='bulk_convergence_passed_slab_not_yet_run' or result.get('gate')!='PASS':
+              raise SystemExit('HOLD: frozen bulk source is not PASS')
+          if (handoff.get('source_result') or {}).get('sha256') != sha('base/BULK_CONVERGENCE_RESULT.json'):
+              raise SystemExit('HOLD: bulk result hash differs from handoff')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-l13-base
+          path: |
+            base
+            l13_provenance
+          retention-days: 90
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-l13-qe
+          path: qe_bundle
+          retention-days: 30
+          if-no-files-found: error
+
+  l13-cases:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        vacuum: [12, 16, 20, 24]
+        kmesh: [16, 18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-base
+          path: source_bundle
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-qe
+          path: qe_bundle
+
+      - name: Run one independently checkpointed L13 holdout SCF
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
+          chmod +x qe_bundle/bin/pw.x
+          tag="l13_v${{ matrix.vacuum }}_k${{ matrix.kmesh }}"
+          case_root="l13_outputs/$tag"
+          mkdir -p "$case_root"
+          set +e
+          python3 na_cu001_ci/slab_l13_extension_v1.py run \
+            --layers 13 \
+            --vacuum '${{ matrix.vacuum }}' \
+            --kmesh '${{ matrix.kmesh }}' \
+            --handoff source_bundle/base/BULK_HANDOFF.json \
+            --bulk-result source_bundle/base/BULK_CONVERGENCE_RESULT.json \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --out "$case_root" \
+            --np 2
+          rc=$?
+          set -e
+          find "$case_root" -type d \( -name tmp -o -name '*.save' \) -prune -exec rm -rf {} + 2>/dev/null || true
+          find "$case_root" -type f \( -name '*.wfc*' -o -name charge-density.dat -o -name data-file-schema.xml \) -delete 2>/dev/null || true
+          mapfile -d '' compact_files < <(find "$case_root" -type f \( -name run_record.json -o -name 'cu001_*.in' -o -name 'cu001_*.out' \) -print0 | sort -z)
+          if (( ${#compact_files[@]} > 0 )); then
+            printf '%s\0' "${compact_files[@]}" | xargs -0 sha256sum > "$case_root/COMPACT_EVIDENCE.sha256"
+          fi
+          exit "$rc"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-c7-l13-raw-v${{ matrix.vacuum }}_k${{ matrix.kmesh }}
+          path: |
+            l13_outputs/**/run_record.json
+            l13_outputs/**/*.in
+            l13_outputs/**/*.out
+            l13_outputs/**/COMPACT_EVIDENCE.sha256
+          retention-days: 30
+          if-no-files-found: error
+
+  l13-gate:
+    needs: [prepare, l13-cases]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-base
+          path: source_bundle
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: na-cu001-c7-raw-slab-*
+          path: source_records
+          merge-multiple: true
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: na-cu001-c7-l13-raw-*
+          path: l13_records
+          merge-multiple: true
+
+      - name: Independently resolve the strict layer holdout
+        id: analyze
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y python3-numpy
+          test "$(find source_records -type f -name run_record.json | wc -l)" -eq 64
+          test "$(find source_records -type f -name 'cu001_*.in' | wc -l)" -eq 64
+          test "$(find source_records -type f -name 'cu001_*.out' | wc -l)" -eq 64
+          test "$(find l13_records -type f -name run_record.json | wc -l)" -eq 16
+          test "$(find l13_records -type f -name 'cu001_*.in' | wc -l)" -eq 16
+          test "$(find l13_records -type f -name 'cu001_*.out' | wc -l)" -eq 16
+          mkdir -p l13_decision
+          set +e
+          python3 na_cu001_ci/slab_l13_extension_v1.py analyze \
+            --source-records source_records \
+            --extension-records l13_records \
+            --source-result-out l13_decision/SOURCE_64_CLEAN_SLAB_RESULT.json \
+            --out l13_decision/CLEAN_SLAB_L13_EXTENSION_RESULT.json \
+            | tee l13_decision/CLEAN_SLAB_L13_EXTENSION_STDOUT.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+
+      - name: Bind decision provenance and manifests
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp source_bundle/l13_provenance/SOURCE_C7_L13_PROVENANCE.json l13_decision/
+          find source_records -type f \( -name run_record.json -o -name 'cu001_*.in' -o -name 'cu001_*.out' -o -name COMPACT_EVIDENCE.sha256 \) -print0 \
+            | sort -z | xargs -0 sha256sum > l13_decision/SOURCE_64_COMPACT_MANIFEST.sha256
+          find l13_records -type f \( -name run_record.json -o -name 'cu001_*.in' -o -name 'cu001_*.out' -o -name COMPACT_EVIDENCE.sha256 \) -print0 \
+            | sort -z | xargs -0 sha256sum > l13_decision/L13_COMPACT_MANIFEST.sha256
+          find l13_decision -type f -print0 | sort -z | xargs -0 sha256sum > l13_decision/DECISION_MANIFEST.sha256
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-c7-l13-extension-decision
+          path: l13_decision
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Enforce scientific decision
+        if: always()
+        shell: bash
+        run: |
+          test '${{ steps.analyze.outputs.rc }}' = '0'

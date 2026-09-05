@@ -1,0 +1,108 @@
+{
+  "schema": "barrier-atlas-targeted-hold-closure-update-v0.2",
+  "status": "ADDITIVE_EVIDENCE_UPDATE_WITHOUT_PARENT_MUTATION",
+  "supersedes_for_new_evidence_only": "TARGETED_HOLD_CLOSURE_UPDATE_v0.1.json",
+  "parent_commit_baseline": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "agreement_quality_may_select_method_variant": false,
+    "ready_for_adjudication_is_not_admission": true
+  },
+  "new_ready_for_adjudication": [
+    {
+      "trail_id": "FI-MC11-ECDHFR-HYDRIDE",
+      "target_class": "MC11",
+      "candidate_family": "Escherichia coli dihydrofolate reductase hydride transfer",
+      "representation_mode": "SINGLE_CHEMICAL_STEP_WITH_DYNAMICAL_TRANSMISSION_CORRECTIONS",
+      "classification_gate": "PASS_MC11_HYDRIDE_TRANSFER",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS",
+      "barrier_quantity": {
+        "value_kcal_per_mol": 13.1,
+        "type": "EA-VTST/MT effective phenomenological free energy of activation for the enzyme hydride-transfer step after quantized-vibration, recrossing, and multidimensional-tunneling treatment",
+        "source_doi": "10.1021/bi034824f",
+        "temperature_K": 298.0,
+        "pH_description": "neutral pH",
+        "chemical_event": "hydride transfer from NADPH to 5-protonated 7,8-dihydrofolate forming tetrahydrofolate",
+        "model_note": "QM/MM potential with AM1/simple-valence-bond QM treatment, CHARMM22/TIP3P MM environment, periodic boundary conditions"
+      },
+      "comparator_gate": "PASS",
+      "observed_comparator": {
+        "value_s_inverse": 203.7,
+        "uncertainty_s_inverse": 7.4,
+        "type": "experimental first-order single-turnover hydride-transfer rate constant",
+        "temperature_K": 298.15,
+        "pH": 7.0,
+        "buffer": "potassium phosphate",
+        "source": "Biochem. J. 394, 259-265 (2006)",
+        "event_note": "rapid fluorescence phase assigned to hydride transfer; slower approximately 6.5 s^-1 phase assigned to cofactor/product release"
+      },
+      "condition_gate": "PASS_298K_NEUTRAL_PH_AND_MATCHED_CHEMICAL_EVENT",
+      "independence_gate": "PASS_PROSPECTIVE_COMPARATOR_RELATIVE_TO_THEORY",
+      "independence_basis": [
+        "the computational paper was published in 2003",
+        "the selected raw-rate comparator was published in 2006 and therefore could not have been used to fit the 2003 model",
+        "the comparator is the raw single-turnover chemical-step rate, not a rate-derived activation quantity reused as independent validation"
+      ],
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "notes": [
+        "The 13.1 kcal/mol value is retained as a phenomenological dynamical activation free energy, not silently relabeled as an electronic barrier.",
+        "The 298 versus 298.15 K difference is below 0.2 K and is treated as the same experimental state point for this gate; no residual-based selection was used.",
+        "This family is mechanistically distinct from the frozen FAM-MORPHINONE-REDUCTASE-HYDRIDE-TRANSFER family."
+      ]
+    }
+  ],
+  "retained_holds": [
+    {
+      "trail_id": "FI-MC01-TRYPSIN-BENZAMIDINE",
+      "state": "CONDITION_MISMATCH_HOLD",
+      "evidence_update": "Primary 1970 benzamidine experiment is pH 7.7, 0.07 M Tris chloride, 0.020 M CaCl2, 17 C; the 2018 simulation protocol is 297 K with pH-7.5 protonation in explicit TIP3P water neutralized by chloride. The primary condition is now known but not matched.",
+      "ready_for_adjudication": false
+    },
+    {
+      "trail_id": "FI-ENZYME-DB-INVENTORY-1B25-FOR",
+      "state": "CONDITION_AND_EVENT_MAPPING_HOLD",
+      "evidence_update": "The open 2007 pre-steady-state study explicitly retains two interpretations for the 4.7 and 1.9 s^-1 phases: oxidation then rearrangement, or binding then oxidation. This ambiguity prevents mapping one observed scalar directly onto the computed proton/two-electron step.",
+      "ready_for_adjudication": false
+    },
+    {
+      "trail_id": "FI-MC02-DIMETHYLOXETANE-FRAGMENTATION",
+      "state": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+      "evidence_update": "The candidate is a genuine parallel unimolecular fragmentation family with experimental Arrhenius expressions and computed MPW1PW91 barriers of 53.757526 and 61.777104 kcal/mol, but the theory paper explicitly selected MPW1PW91 after comparison with experiment. Agreement therefore cannot select that method under the frozen firewall.",
+      "ready_for_adjudication": false
+    },
+    {
+      "trail_id": "FI-MC16-HO2-HO2-SELF-REACTION",
+      "state": "CALIBRATION_QUARANTINE_HOLD",
+      "evidence_update": "The high-level network model states that agreement with measured pressure dependence arises from adjustment of collision, energy-transfer, and state-density parameters; those same pressure-dependence data are quarantined from independent validation.",
+      "ready_for_adjudication": false
+    }
+  ],
+  "baseline_outcomes_preserved": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_ONLY_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING"
+  },
+  "aggregate": {
+    "new_ready_for_adjudication": 1,
+    "new_ready_class": "MC11",
+    "total_ready_in_additive_campaign_including_frozen_six_trail_result": 2,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

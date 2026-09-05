@@ -1,0 +1,27 @@
+name: Barrier Atlas MC08 exchange audit v0.1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - 'barrier_atlas/family_independence/MC08_METHANE_ZEOLITE_EXCHANGE_SOURCE_AUDIT_v0.1.json'
+      - 'barrier_atlas/family_independence/validate_mc08_methane_zeolite_exchange_v0_1.py'
+      - 'barrier_atlas/family_independence/test_mc08_methane_zeolite_exchange_v0_1.py'
+      - '.github/workflows/barrier-atlas-mc08-exchange-audit-v01.yml'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate additive MC08 exchange audit
+        run: python barrier_atlas/family_independence/validate_mc08_methane_zeolite_exchange_v0_1.py
+      - name: Run MC08 regression tests
+        run: |
+          python -m pip install pytest
+          python -m pytest -q barrier_atlas/family_independence/test_mc08_methane_zeolite_exchange_v0_1.py

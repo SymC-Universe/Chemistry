@@ -1,0 +1,61 @@
+name: System3 H Ru0001 PBE bulk recovery v1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/system3-h-ru0001-pbe-bulk-recovery-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PROTOCOL: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json
+  RECOVERY: systems/h_ru0001/system3_ru_bulk_recover_v1.py
+  SOURCE_RUN_ID: '33345475633'
+  SOURCE_ARTIFACT: system3-h-ru0001-pbe-bulk-candidate-v1
+
+jobs:
+  recover-adjudication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify zero-recompute recovery contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$PROTOCOL" >/dev/null
+          python3 -m py_compile "$RECOVERY"
+          python3 - <<'PY'
+          import json,os
+          p=json.load(open(os.environ['PROTOCOL']))
+          assert p['status']=='FROZEN_BEFORE_SYSTEM3_PBE_BULK_RESULTS'
+          assert p['parallel_authorization']['system3_nonkinetic_qualification_may_run_before_system2_closure'] is True
+          assert p['evidence_firewall']['published_H_Ru_kinetic_values_may_select_settings'] is False
+          print('SYSTEM3_ZERO_RECOMPUTE_RECOVERY_VERIFIED')
+          PY
+      - name: Install postprocessing dependency only
+        run: sudo apt-get update && sudo apt-get install -y python3-numpy
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ARTIFACT }}
+          path: preserved
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Recover and adjudicate preserved 34-SCF result
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p recovered
+          python3 "$RECOVERY" --protocol "$PROTOCOL" --preserved-root preserved --out recovered
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system3-h-ru0001-pbe-bulk-recovered-v1
+          path: recovered
+          retention-days: 90
+          if-no-files-found: error

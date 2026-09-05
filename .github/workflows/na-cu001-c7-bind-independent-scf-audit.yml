@@ -1,0 +1,36 @@
+name: Na Cu001 C7 bind independent-SCF audit
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths: ['.github/workflows/na-cu001-c7-bind-independent-scf-audit.yml']
+permissions:
+  contents: write
+jobs:
+  bind:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bind definitive audit to independent-SCF source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('.github/workflows/na-cu001-c7-definitive-audit.yml')
+          text=path.read_text()
+          replacements={
+              "SOURCE_C7_RUN_ID: '30884387608'":"SOURCE_C7_RUN_ID: '30949901790'",
+              "SOURCE_C7_COMMIT: '73c0fdfe411d30bab9135fe2e76aafef1eebf820'":"SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'",
+              "if len(slabs)==16 and all(j.get('status')=='completed' and j.get('conclusion')=='success' for j in slabs):":"if len(slabs)==64 and all(j.get('status')=='completed' and j.get('conclusion')=='success' for j in slabs):",
+          }
+          for old,new in replacements.items():
+              count=text.count(old)
+              if count!=1:
+                  raise SystemExit(f'exact audit binding anchor count is {count}, expected 1: {old}')
+              text=text.replace(old,new,1)
+          path.write_text(text)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/na-cu001-c7-definitive-audit.yml
+          git commit -m 'ci(na-cu001): bind definitive audit to 64 independent SCFs'
+          git push

@@ -1,0 +1,216 @@
+name: CO Cu111 PBE Stage A C2 L22 recovery v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/co-cu111-pbe-stage-a-c2l22-recovery-v2.yml'
+      - 'systems/co_cu111/pbe_stage_a_recovery_v2.py'
+      - 'systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_C2L22_v0.2.json'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-stage-a-c2l22-recovery-v2
+  cancel-in-progress: false
+
+env:
+  SOURCE_STAGE_A_RUN_ID: '31371043888'
+  SOURCE_ENGINE_ARTIFACT: 'co-cu111-pbe-stage-a-engine-v2'
+  PRIOR_RECOVERY_RUN_ID: '31445411702'
+  PRIOR_RECOVERY_STATE_ARTIFACT: 'co-cu111-stage-a-mechanical-recovery-v1-state'
+  PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  FROZEN_RUNNER: 'systems/co_cu111/pbe_stage_a_runner_v1.py'
+  RECOVERY_RUNNER: 'systems/co_cu111/pbe_stage_a_recovery_v2.py'
+  RECOVERY_CONTRACT: 'systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_C2L22_v0.2.json'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen science and v0.2 recovery contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$FROZEN_RUNNER" systems/co_cu111/pbe_stage_a_recovery_v1.py "$RECOVERY_RUNNER"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          c=json.loads(Path('systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_C2L22_v0.2.json').read_text())
+          assert c['schema']=='co-cu111-stage-a-mechanical-recovery-v0.2'
+          assert c['status']=='FROZEN_BEFORE_RECOVERY_RESULTS'
+          assert c['prior_recovery']['run_id']==31445411702
+          assert c['prior_recovery']['scientific_result_consulted'] is False
+          assert c['recovery_targets']==[{'cutoff_id':'C2','box_angstrom':22,'source_failure_class':'recovery_v1_walltime_timeout'}]
+          assert [(x['start_index'],x['end_index']) for x in c['bond_point_chunks']]==[(i,i) for i in range(8,23)]
+          for path_key,sha_key in (('protocol','protocol_git_blob_sha'),('bundle','bundle_git_blob_sha'),('runner','runner_git_blob_sha')):
+              p=c['frozen_inputs'][path_key]
+              got=subprocess.check_output(['git','hash-object',p],text=True).strip()
+              assert got==c['frozen_inputs'][sha_key], (p,got,c['frozen_inputs'][sha_key])
+          assert c['frozen_inputs']['mpi_ranks']==1
+          assert c['frozen_inputs']['thread_environment']=={'OMP_NUM_THREADS':1,'OPENBLAS_NUM_THREADS':1}
+          assert c['provenance']['scientific_settings_changed'] is False
+          PY
+      - name: Download exact source-run Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify source-run engine and frozen files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          cmp "$FROZEN_RUNNER" engine/meta/pbe_stage_a_runner_v1.py
+          chmod +x engine/bin/pw.x
+          test -x engine/bin/pw.x
+
+  recover-c2l22:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        index: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin python3-numpy
+      - name: Download exact source-run Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify exact frozen engine and science files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          cmp "$FROZEN_RUNNER" engine/meta/pbe_stage_a_runner_v1.py
+          chmod +x engine/bin/pw.x
+          test -x engine/bin/pw.x
+      - name: Download v0.1 recovery state as hash-checked seed pool
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PRIOR_RECOVERY_STATE_ARTIFACT }}
+          path: seed-v1
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.PRIOR_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Recover one frozen C2 L22 bond point
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p stageA
+          python3 "$RECOVERY_RUNNER" co-chunk \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --pseudo-dir engine/pseudos \
+            --pw engine/bin/pw.x \
+            --cutoff-id C2 \
+            --box 22 \
+            --start-index '${{ matrix.index }}' \
+            --end-index '${{ matrix.index }}' \
+            --seed-root seed-v1 \
+            --out stageA/co_C2_L22
+      - name: Upload recoverable single-point chunk
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-stage-a-recovery-v2-C2-L22-i${{ matrix.index }}
+          path: stageA
+          retention-days: 90
+          if-no-files-found: warn
+
+  assemble-c2l22:
+    needs: [prepare, recover-c2l22]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install analysis runtime
+        run: sudo apt-get update && sudo apt-get install -y python3-numpy
+      - name: Download v0.1 recovery state
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PRIOR_RECOVERY_STATE_ARTIFACT }}
+          path: prior
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.PRIOR_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Seed consolidated recovery tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p recovered
+          cp -a prior/recovered/. recovered/
+      - name: Overlay all v0.2 single-point chunks that exist
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-stage-a-recovery-v2-C2-L22-i*
+          path: recovered/stageA
+          merge-multiple: true
+      - name: Assemble C2 L22 or emit mechanical state
+        id: assemble
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p state
+          set +e
+          python3 "$RECOVERY_RUNNER" assemble-all \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --root recovered \
+            --state-out state/C2L22_MECHANICAL_RECOVERY_STATE.json
+          rc=$?
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$rc" > state/ASSEMBLY_EXIT_CODE.txt
+      - name: Upload consolidated C2 L22 recovery state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-stage-a-c2l22-recovery-v2-state
+          path: |
+            state
+            recovered/stageA/co_C2_L22
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Enforce C2 L22 mechanical completeness
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ '${{ steps.assemble.outputs.rc }}' != '0' ]; then
+            echo 'MECHANICAL_INCOMPLETE: C2/L22 still requires recovery; no scientific inference permitted.'
+            exit 3
+          fi
+          echo 'C2_L22_MECHANICAL_COMPLETE'

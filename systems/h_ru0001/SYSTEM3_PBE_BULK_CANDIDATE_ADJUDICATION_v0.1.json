@@ -1,0 +1,65 @@
+{
+  "schema": "h-ru0001-pbe-bulk-candidate-adjudication-v0.1",
+  "status": "PBE_CANDIDATE_BULK_PASS",
+  "system": "H/Ru(0001)",
+  "scope": "NON_KINETIC_METHOD_CANDIDATE_AUDIT",
+  "execution_state": "ADJUDICATED",
+  "source": {
+    "original_run_id": 33345475633,
+    "original_head_commit": "46c14cf534dd2ff54e7bbd9ee8d972dac091c704",
+    "original_completed_scf_count": 34,
+    "original_artifact_id": 9742623887,
+    "original_artifact_digest": "sha256:1e06abd3f5563aa24d316f5dac311039154c0f0a8dc67d2bf3b35d589e0a0cf5",
+    "recovery_run_id": 33351800093,
+    "recovery_head_commit": "3a6a476f608901796f5540ef56475e08a5c43a55",
+    "recovered_artifact_id": 9743875448,
+    "recovered_artifact_digest": "sha256:2b145d348d6fffb7cb6f8e08c18d70f4ff20f797bfb24e45a8e16f896c74de72",
+    "recovered_result_file_sha256": "a32e77655ff814a178d824223921b9c7b9e326d8d75ad8b2e19a7c0a8bd3e976",
+    "recomputed_qe_cases": 0,
+    "mechanical_recovery_reason": "Original run completed all frozen QE SCFs and failed only because numpy.bool_ was not JSON serializable."
+  },
+  "frozen_protocol": {
+    "path": "systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json",
+    "sha256": "914617b43844dd603b610c1208b01cd6649cae9943b5d6f972a93110dbf21d32"
+  },
+  "selected_numerical_settings": {
+    "ecutwfc_ry": 70,
+    "ecutrho_ry": 280,
+    "kmesh": [16, 16, 10]
+  },
+  "numerical_gates": {
+    "energy_convergence_ev_per_atom": 0.001,
+    "cutoff_delta_to_highest_ev_per_atom": 0.0000952398522713338,
+    "kmesh_delta_to_highest_ev_per_atom": 0.0004830021061934531,
+    "numerical_pass": true
+  },
+  "structural_fit": {
+    "a_angstrom": 2.7252915734660723,
+    "c_angstrom": 4.294686728521268,
+    "a_relative_error": 0.007166404326128873,
+    "c_relative_error": 0.003079931921351735,
+    "relative_error_max": 0.01,
+    "positive_definite_hessian": true,
+    "stationary_point_inside_grid": true,
+    "structural_pass": true
+  },
+  "observed_source_compute_phase_wall_seconds": 2771.9,
+  "readiness": {
+    "METHOD_READY": true,
+    "SURFACE_READY": false,
+    "ADSORPTION_READY": false,
+    "PATH_READY": false,
+    "QUANTUM_READY": false,
+    "DISSIPATION_READY": false,
+    "CHEMSA_ELIGIBLE": false
+  },
+  "firewall": {
+    "kinetic_inputs_used": false,
+    "published_H_Ru_barriers_used": false,
+    "published_H_Ru_site_ordering_used": false,
+    "chi_used": false,
+    "expected_ChemSA_result_used": false,
+    "System2_result_used_to_select_settings": false
+  },
+  "next_gate": "H_RU0001_CLEAN_SURFACE_PROTOCOL_FREEZE"
+}

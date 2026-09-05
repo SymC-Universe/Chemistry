@@ -1,0 +1,106 @@
+{
+  "schema": "barrier-atlas-mc16-methylperoxy-scientific-topology-audit-v0.2",
+  "status": "ADDITIVE_SCIENTIFIC_HOLD_WITHOUT_PROMOTION",
+  "parent_source_audit": "barrier_atlas/family_independence/MC16_METHYLPEROXY_SELF_REACTION_SOURCE_AUDIT_v0.1.json",
+  "parent_provenance_audit": "barrier_atlas/family_independence/MC16_METHYLPEROXY_MODEL_PROVENANCE_AUDIT_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.5.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "later_observed_rate_may_not_select_between_competing_PES_topologies": true
+  },
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "trail_id": "FI-MC16-METHYLPEROXY-SELF-REACTION",
+  "target_class": "MC16",
+  "candidate_family": "methylperoxy radical self-reaction through dimethyltetroxide",
+  "representation_mode": "NETWORK_RESOLVED_TETROXIDE_SELF_REACTION_REQUIRED",
+  "new_higher_level_source": {
+    "authors": "Vili-Taneli Salo, Jing Chen, Nino Runeberg, Henrik G. Kjaergaard, Theo Kurten",
+    "title": "Multireference and Coupled-Cluster Study of Dimethyltetroxide (MeO4Me) Formation and Decomposition",
+    "journal": "Journal of Physical Chemistry A",
+    "year": 2024,
+    "volume": 128,
+    "pages": "1825-1836",
+    "doi": "10.1021/acs.jpca.3c08043",
+    "published_online": "2024-02-28",
+    "open_data_doi": "10.5281/zenodo.10277012",
+    "license": "CC BY 4.0"
+  },
+  "scientific_update": {
+    "result": "HIGHER_LEVEL_PES_DOES_NOT_SUPPORT_A_FORMATION_OR_DECOMPOSITION_SADDLE_POINT_FOR_MeO4Me",
+    "method": "CASPT2(22e,14o)-IPEA(0.20)/cc-pVTZ with multireference methodology benchmarked against CCSD(T)/CBS, W2X, and W3X-L relative energies",
+    "source_statement": "The 2024 study reports that at its preferred CASPT2(22e,14o)-IPEA/cc-pVTZ description, both dimethyltetroxide formation and decomposition follow minimum-energy pathways without saddle points; possible transition states and pre/postreaction complexes are strongly method dependent.",
+    "quantity_typing": {
+      "CC_CBS_relative_electronic_energy_MeO2_plus_MeO2_vs_tetroxide_kcal_per_mol": 15.05,
+      "W3X_L_relative_electronic_energy_MeO2_plus_MeO2_vs_tetroxide_kcal_per_mol": 14.42,
+      "CASPT2_IPEA_relative_electronic_energy_MeO2_plus_MeO2_vs_tetroxide_kcal_per_mol": 14.99,
+      "CASPT2_IPEA_relative_electronic_energy_products_vs_tetroxide_kcal_per_mol": 22.88,
+      "typing_note": "These are relative electronic energies between separated species and the tetroxide minimum. They are reaction energetics, not activation barriers, not DeltaG-dagger values, and not Arrhenius activation energies."
+    },
+    "relation_to_2022_profile": "The 2022 CASSCF profile contained small formation/decomposition saddle points, while the 2024 higher-level follow-up finds that those stationary-point features are not robust to the improved multireference treatment. The earlier numerical CASSCF barriers remain valid provenance records for that method but are not licensed as a unique physical single-barrier coordinate for the MeO2 self-reaction.",
+    "selection_independence_note": "The 2024 preferred multireference method is selected by agreement with coupled-cluster theoretical benchmarks of relative energies, not by residual agreement with the Onel experimental target. This makes the topology result scientifically relevant without using experimental-rate agreement as a selector."
+  },
+  "barrier_gate": "HOLD_NO_ROBUST_SINGLE_SADDLE_POINT_BARRIER_AT_PREFERRED_HIGHER_LEVEL_PES",
+  "barrier_gate_basis": [
+    "A single barrier height cannot be assigned merely by choosing one of the 2022 CASSCF/XMC-QDPT2 saddle-point values after the higher-level 2024 surface removes those saddle points.",
+    "The 14.99 kcal/mol reactant-to-tetroxide relative electronic energy is an exothermicity magnitude relative to the tetroxide reference, not an activation barrier.",
+    "The 22.88 kcal/mol tetroxide-to-separated-product relative electronic energy is reaction energetics and cannot be relabeled as a decomposition activation barrier when the preferred minimum-energy pathway has no saddle point.",
+    "Any future kinetic coordinate must be defined through an explicitly registered network bottleneck, capture/association free-energy bottleneck, variational transition state, or other rate-controlling quantity whose physical mapping is independently justified."
+  ],
+  "model_provenance_gate": "HOLD_EXPERIMENT_AVAILABLE_DURING_2022_MESMER_MODEL_BUILD_REQUIRES_PARAMETER_AUDIT",
+  "calibration_status": "UNKNOWN_NOT_LICENSED_AS_INDEPENDENT_VALIDATION",
+  "comparator_gate": "PASS_INDEPENDENT_LATER_DIRECT_KINETICS_AND_PRODUCT_BRANCHING",
+  "independent_comparator_preserved": {
+    "source_doi": "10.1021/acs.jpca.2c04968",
+    "temperature_K": 295.0,
+    "pressure_mbar": 1000.0,
+    "bath_gas": "air",
+    "overall_rate_coefficient_cm3_molecule-1_s-1": 2.0e-13,
+    "uncertainty_cm3_molecule-1_s-1": 0.9e-13,
+    "CH3O_branching_ratio": 0.34,
+    "branching_ratio_uncertainty_2sigma": 0.05
+  },
+  "condition_gate": "HOLD_EXACT_NETWORK_RATE_STATE_POINT_AND_CAPTURE_MODEL_MAPPING_NOT_RECONSTRUCTED",
+  "representation_gate": "HOLD_NETWORK_RATE_AND_BRANCHING_MAPPING_INCOMPLETE",
+  "independence_gate": "HOLD_2022_MESMER_MODEL_PROVENANCE_UNTIL_SI_S5_PARAMETER_SELECTION_AUDIT",
+  "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+  "terminal_state": "PES_TOPOLOGY_NETWORK_AND_MODEL_PROVENANCE_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "decision_required": "Do not choose between the 2022 saddle-point profile and the 2024 barrierless preferred topology by observed-rate agreement. The campaign must either reconstruct an independently specified network/capture-rate model consistent with the higher-level topology or locate a different MC16 family with a robust independently typed kinetic bottleneck.",
+  "next_gate": [
+    "Continue attempting to recover and audit 2022 SI Section S5/Table S5 solely to classify the published MESMER result as independent prediction versus calibration; that audit cannot restore a single-saddle-point barrier if the preferred higher-level PES is barrierless.",
+    "Search for a prospectively or methodologically independent variational/capture/master-equation treatment of MeO2 + MeO2 that reports the exact 295 K and pressure/bath-gas mapping without selecting model parameters by the Onel target.",
+    "In parallel, continue MC16 family search outward so methylperoxy need not be forced through the Atlas if its physically correct representation cannot satisfy the barrier-rate coordinate requirements.",
+    "Keep quantitative branching as a separate unresolved network gate."
+  ],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 4,
+    "ready_classes_unchanged": ["MC04", "MC06", "MC11", "MC14"],
+    "new_hard_scientific_hold": 1,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

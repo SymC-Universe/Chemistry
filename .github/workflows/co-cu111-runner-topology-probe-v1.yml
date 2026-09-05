@@ -1,0 +1,149 @@
+name: CO Cu111 runner topology probe v1
+
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: co-cu111-runner-topology-probe-v1
+  cancel-in-progress: false
+
+env:
+  PROBE_SECONDS: '15'
+
+jobs:
+  probe:
+    name: probe-${{ matrix.slug }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - slug: standard
+            runner: ubuntu-24.04
+          - slug: larger
+            runner: ubuntu-24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PROBE_DIR: probe_${{ matrix.slug }}
+      RUNNER_CLASS: ${{ matrix.runner }}
+
+    steps:
+      - name: Declare diagnostic-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'DIAGNOSTIC_ONLY_NON_SCIENTIFIC'
+          echo 'No QE calculation, surface energy, force, adsorption result, or scientific gate is executed.'
+
+      - name: Capture CPU and cgroup topology
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PROBE_DIR"
+          {
+            echo "runner_class=$RUNNER_CLASS"
+            echo "runner_name=${RUNNER_NAME:-unknown}"
+            echo "runner_os=${RUNNER_OS:-unknown}"
+            echo "runner_arch=${RUNNER_ARCH:-unknown}"
+            echo "nproc=$(nproc)"
+            echo "nproc_all=$(nproc --all)"
+            echo "getconf_online=$(getconf _NPROCESSORS_ONLN)"
+            echo "proc_cpuinfo_count=$(grep -c '^processor' /proc/cpuinfo)"
+            echo "taskset_shell=$(taskset -pc $$ 2>&1)"
+            echo "cpu_max=$(cat /sys/fs/cgroup/cpu.max 2>/dev/null || echo unavailable)"
+            echo "cpuset_effective=$(cat /sys/fs/cgroup/cpuset.cpus.effective 2>/dev/null || echo unavailable)"
+            echo "cpuset=$(cat /sys/fs/cgroup/cpuset.cpus 2>/dev/null || echo unavailable)"
+            echo "memtotal_kib=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
+          } | tee "$PROBE_DIR/TOPOLOGY.txt"
+          lscpu | tee "$PROBE_DIR/LSCPU.txt"
+          lscpu -p=CPU,ONLINE | tee "$PROBE_DIR/LSCPU_PARSE.txt"
+          cat /proc/self/status | tee "$PROBE_DIR/SELF_STATUS.txt"
+          cat /proc/self/cgroup | tee "$PROBE_DIR/SELF_CGROUP.txt"
+
+      - name: Install OpenMPI probe runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y openmpi-bin
+          mpirun --version | tee "$PROBE_DIR/MPIRUN_VERSION.txt"
+
+      - name: Launch four ranks without oversubscription and measure effective CPU
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/cpu_probe.py <<'PY'
+          import json, os, time
+          seconds = float(os.environ['PROBE_SECONDS'])
+          rank = int(os.environ.get('OMPI_COMM_WORLD_RANK', '-1'))
+          size = int(os.environ.get('OMPI_COMM_WORLD_SIZE', '-1'))
+          start_wall = time.monotonic()
+          start_cpu = time.process_time()
+          x = 1.000001
+          while time.monotonic() - start_wall < seconds:
+              for _ in range(20000):
+                  x = (x * 1.000000119 + 0.000000073) % 19.0
+          print(json.dumps({
+              'rank': rank,
+              'size': size,
+              'wall_seconds': time.monotonic() - start_wall,
+              'cpu_seconds': time.process_time() - start_cpu,
+              'pid': os.getpid()
+          }), flush=True)
+          PY
+
+          set +e
+          mpirun -np 4 --display-map --report-bindings python3 /tmp/cpu_probe.py \
+            > "$PROBE_DIR/MPI_STDOUT.txt" 2> "$PROBE_DIR/MPI_STDERR.txt"
+          mpi_rc=$?
+          set -e
+          echo "$mpi_rc" > "$PROBE_DIR/MPI_EXIT_CODE.txt"
+
+          python3 - <<'PY'
+          import json, os, pathlib
+          root=pathlib.Path(os.environ['PROBE_DIR'])
+          rc=int((root/'MPI_EXIT_CODE.txt').read_text().strip())
+          records=[]
+          for line in (root/'MPI_STDOUT.txt').read_text(errors='replace').splitlines():
+              line=line.strip()
+              if line.startswith('{') and '"cpu_seconds"' in line:
+                  try: records.append(json.loads(line))
+                  except Exception: pass
+          topo={}
+          for line in (root/'TOPOLOGY.txt').read_text().splitlines():
+              if '=' in line:
+                  k,v=line.split('=',1); topo[k]=v
+          total_cpu=sum(float(r['cpu_seconds']) for r in records)
+          max_wall=max([float(r['wall_seconds']) for r in records], default=0.0)
+          effective=total_cpu/max_wall if max_wall > 0 else 0.0
+          four_rank = rc == 0 and len(records) == 4 and sorted(r['rank'] for r in records)==[0,1,2,3]
+          result={
+              'schema':'co-cu111-runner-topology-probe-v1',
+              'runner_class':os.environ['RUNNER_CLASS'],
+              'diagnostic_only':True,
+              'mpi_exit_code':rc,
+              'four_rank_launch':four_rank,
+              'rank_records':records,
+              'aggregate_cpu_seconds':total_cpu,
+              'max_rank_wall_seconds':max_wall,
+              'effective_cpu_capacity_estimate':effective,
+              'four_cpu_capacity_supported':bool(four_rank and effective >= 3.0),
+              'topology':topo,
+          }
+          (root/'RESOURCE_PROBE.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2,sort_keys=True))
+          PY
+
+      - name: Upload topology probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-runner-topology-probe-${{ matrix.slug }}-v1
+          path: ${{ env.PROBE_DIR }}
+          retention-days: 30
+          if-no-files-found: error

@@ -1,0 +1,622 @@
+name: CO Cu111 PBE surface audit rank fallback recovery v1
+
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-surface-audit-rank-fallback-recovery-v1
+  cancel-in-progress: false
+
+env:
+  FALLBACK_PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_RANK_FALLBACK_RECOVERY_v0.1.json'
+  FALLBACK_RUNNER: 'systems/co_cu111/pbe_surface_audit_rank_fallback_recovery_v1.py'
+  FALLBACK_TEST: 'systems/co_cu111/test_pbe_surface_audit_rank_fallback_recovery_v1.py'
+  SURFACE_PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json'
+  SURFACE_RUNNER: 'systems/co_cu111/pbe_surface_site_ordering_v1.py'
+  RELAY_PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_PROPOSAL_RELAY_v0.1.json'
+  RELAY_RUNNER: 'systems/co_cu111/pbe_surface_audit_proposal_relay_v1.py'
+  FOUR_RANK_PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_MPI_RECOVERY_v0.1.json'
+  FOUR_RANK_RUNNER: 'systems/co_cu111/pbe_surface_audit_mpi_recovery_v1.py'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+
+  PARENT_RELAY_RUN_ID: '32545223290'
+  SEG8_ARTIFACT: 'co-cu111-pbe-clean-audit-proposal-relay-L13-V28-K24-seg8'
+  FOUR_RANK_RUN_ID: '32857157316'
+  FOUR_RANK_ARTIFACT: 'co-cu111-pbe-surface-audit-mpi-parity-v1'
+
+  PARENT_RECOVERY_RUN_ID: '32435777875'
+  COMPLETED_REFERENCE_ARTIFACT: 'co-cu111-pbe-clean-timeout-recovery-repro1-L11-V24-K20-reference'
+  COMPLETED_REFERENCE_SHA256: '88b0df1455d2d34963b6503a980fb79260e93c3785b94ba4cefab110fcfc0245'
+
+  SOURCE_SURFACE_RUN_ID: '31922544540'
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: 'co-cu111-pbe-stage-a-numerical-extension-decision-v1'
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: 'co-cu111-pbe-stage-a-engine-v2'
+
+  PARITY_RUNTIME_CAP_S: '7200'
+  CONTINUATION_RUNTIME_CAP_S: '16200'
+  REPRO_RUNTIME_CAP_S: '7200'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen rank-fallback contract and repository hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$FALLBACK_RUNNER" "$FALLBACK_TEST"
+          python3 "$FALLBACK_TEST" -v
+          python3 "$FALLBACK_RUNNER" self-test --protocol "$FALLBACK_PROTOCOL"
+
+          echo '3a51d86a1f3d2698aace29b243c8ac4a85c7d30919aa6898400ac15cc3a833c5  '"$FALLBACK_PROTOCOL" | sha256sum -c -
+          echo '00260df6730d3812b4d1543654b491a3eaeb118a196ed1b4f53a71cde74099b5  '"$FALLBACK_RUNNER" | sha256sum -c -
+          echo '53b23e5e934824d56d4d2bd6ed28db66d062bf6d907a47074d771d7a5222dd9f  '"$FALLBACK_TEST" | sha256sum -c -
+          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '"$SURFACE_PROTOCOL" | sha256sum -c -
+          echo 'f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b  '"$SURFACE_RUNNER" | sha256sum -c -
+          echo '921505fa9cd881f3d6b5dd160b4d6365e2ebb220eaa90920cc863b075c92390b  '"$RELAY_PROTOCOL" | sha256sum -c -
+          echo '33d1620e3af2a072e1f14e4f2fefa72cf7c5f53ff247b0fb394aa72130764696  '"$RELAY_RUNNER" | sha256sum -c -
+          echo 'c2593de1a71afde68ffcc5cd4a94555f65891701751b04d0e63199ac2ce08258  '"$FOUR_RANK_PROTOCOL" | sha256sum -c -
+          echo '734e400952c932a6df85316c86ac32139ab7fbdc3974dd7865cb108f369577b2  '"$FOUR_RANK_RUNNER" | sha256sum -c -
+          echo 'SCIENTIFIC_SETTINGS_CHANGED=false'
+          echo 'PARITY_THRESHOLDS_CHANGED=false'
+          echo 'KINETIC_INPUTS_USED=false'
+
+      - name: Download immutable segment 8 seed
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SEG8_ARTIFACT }}
+          path: seg8
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PARENT_RELAY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download immutable four-rank parity HOLD
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.FOUR_RANK_ARTIFACT }}
+          path: four_rank
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.FOUR_RANK_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify immutable seed and four-rank rejection evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$FALLBACK_RUNNER" verify-evidence \
+            --protocol "$FALLBACK_PROTOCOL" \
+            --segment8-root seg8 \
+            --four-rank-result four_rank/MPI_PARITY_RESULT.json
+
+  rank_qualify:
+    name: rank-qualify
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    outputs:
+      selected_ranks: ${{ steps.selection.outputs.selected_ranks }}
+      runner_label: ${{ steps.selection.outputs.runner_label }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify OMP-safe host capacity for prospective 3-rank test
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${RUNNER_NAME}"
+          echo "arch=${RUNNER_ARCH}"
+          echo "nproc_with_openmp_cap=$(nproc)"
+          host_processors="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          echo "host_processors=${host_processors}"
+          test "${host_processors}" -ge 3
+
+      - name: Install unchanged QE runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
+      - name: Download exact Stage A QE engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download authorizing Stage A PASS decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download immutable segment 8 seed
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SEG8_ARTIFACT }}
+          path: seg8
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PARENT_RELAY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download immutable four-rank parity HOLD
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.FOUR_RANK_ARTIFACT }}
+          path: four_rank
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.FOUR_RANK_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify exact engine and MPI capability
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          chmod +x engine/bin/pw.x
+          echo '2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855  engine/bin/pw.x' | sha256sum -c -
+          ldd engine/bin/pw.x | grep -qi 'libmpi'
+
+      - name: Prospectively qualify 3 ranks, then 2, else direct 1 rank
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rank_selection
+          python3 "$FALLBACK_RUNNER" qualify \
+            --protocol "$FALLBACK_PROTOCOL" \
+            --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" \
+            --pseudo-dir engine/pseudos \
+            --pw engine/bin/pw.x \
+            --segment8-root seg8 \
+            --four-rank-result four_rank/MPI_PARITY_RESULT.json \
+            --runtime-cap-s "$PARITY_RUNTIME_CAP_S" \
+            --out rank_selection
+
+      - name: Export selected execution mode
+        id: selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r=json.load(open('rank_selection/RANK_SELECTION_RESULT.json'))
+          assert r['status']=='PASS'
+          print(f"selected_ranks={r['selected_mpi_ranks']}")
+          print(f"runner_label={r['selected_runner_label']}")
+          PY
+          cat rank_selection/RANK_SELECTION_RESULT.json
+
+      - name: Upload immutable rank-selection record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-audit-rank-selection-v1
+          path: rank_selection
+          retention-days: 90
+          if-no-files-found: error
+
+  continue_1:
+    name: continue-1
+    needs: rank_qualify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify selected host capacity
+        shell: bash
+        env:
+          SELECTED_RANKS: ${{ needs.rank_qualify.outputs.selected_ranks }}
+        run: |
+          set -euo pipefail
+          host_processors="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          echo "host_processors=${host_processors} selected_ranks=${SELECTED_RANKS}"
+          test "${host_processors}" -ge "${SELECTED_RANKS}"
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - name: Download exact Stage A QE engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Download authorizing Stage A PASS decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Download rank-selection authorization
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-audit-rank-selection-v1
+          path: selection
+      - name: Download immutable segment 8 seed
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SEG8_ARTIFACT }}
+          path: prior
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PARENT_RELAY_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Continue frozen L13 audit segment 9
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$FALLBACK_RUNNER" continue \
+            --protocol "$FALLBACK_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --prior-root prior --segment 1 \
+            --runtime-cap-s "$CONTINUATION_RUNTIME_CAP_S" --out segment_out
+      - name: Upload continuation segment 9
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg9
+          path: segment_out
+          retention-days: 90
+          if-no-files-found: error
+
+  continue_2:
+    name: continue-2
+    needs: [rank_qualify, continue_1]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify selected host capacity
+        shell: bash
+        env:
+          SELECTED_RANKS: ${{ needs.rank_qualify.outputs.selected_ranks }}
+        run: |
+          set -euo pipefail
+          host_processors="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          echo "host_processors=${host_processors} selected_ranks=${SELECTED_RANKS}"
+          test "${host_processors}" -ge "${SELECTED_RANKS}"
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-selection-v1, path: selection}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg9, path: prior}
+      - name: Continue frozen L13 audit segment 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$FALLBACK_RUNNER" continue \
+            --protocol "$FALLBACK_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --prior-root prior --segment 2 \
+            --runtime-cap-s "$CONTINUATION_RUNTIME_CAP_S" --out segment_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg10
+          path: segment_out
+          retention-days: 90
+          if-no-files-found: error
+
+  continue_3:
+    name: continue-3
+    needs: [rank_qualify, continue_2]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify selected host capacity
+        shell: bash
+        env:
+          SELECTED_RANKS: ${{ needs.rank_qualify.outputs.selected_ranks }}
+        run: |
+          set -euo pipefail
+          host_processors="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          echo "host_processors=${host_processors} selected_ranks=${SELECTED_RANKS}"
+          test "${host_processors}" -ge "${SELECTED_RANKS}"
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-selection-v1, path: selection}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg10, path: prior}
+      - name: Continue frozen L13 audit segment 11
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$FALLBACK_RUNNER" continue \
+            --protocol "$FALLBACK_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --prior-root prior --segment 3 \
+            --runtime-cap-s "$CONTINUATION_RUNTIME_CAP_S" --out segment_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg11
+          path: segment_out
+          retention-days: 90
+          if-no-files-found: error
+
+  continue_4:
+    name: continue-4
+    needs: [rank_qualify, continue_3]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify selected host capacity
+        shell: bash
+        env:
+          SELECTED_RANKS: ${{ needs.rank_qualify.outputs.selected_ranks }}
+        run: |
+          set -euo pipefail
+          host_processors="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          echo "host_processors=${host_processors} selected_ranks=${SELECTED_RANKS}"
+          test "${host_processors}" -ge "${SELECTED_RANKS}"
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-selection-v1, path: selection}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg11, path: prior}
+      - name: Continue frozen L13 audit segment 12
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$FALLBACK_RUNNER" continue \
+            --protocol "$FALLBACK_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --prior-root prior --segment 4 \
+            --runtime-cap-s "$CONTINUATION_RUNTIME_CAP_S" --out segment_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg12
+          path: segment_out
+          retention-days: 90
+          if-no-files-found: error
+
+  reproduce_audit:
+    name: reproduce-audit
+    needs: [rank_qualify, continue_4]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify selected host capacity
+        shell: bash
+        env:
+          SELECTED_RANKS: ${{ needs.rank_qualify.outputs.selected_ranks }}
+        run: |
+          set -euo pipefail
+          host_processors="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          echo "host_processors=${host_processors} selected_ranks=${SELECTED_RANKS}"
+          test "${host_processors}" -ge "${SELECTED_RANKS}"
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-selection-v1, path: selection}
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-audit-rank-fallback-L13-V28-K24-seg12, path: prior}
+      - name: Independently reproduce completed L13 audit geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$FALLBACK_RUNNER" reproduce \
+            --protocol "$FALLBACK_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --prior-root prior \
+            --runtime-cap-s "$REPRO_RUNTIME_CAP_S" --out audit_final
+      - name: Upload final rank-fallback L13 audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-audit-rank-fallback-final-L13-V28-K24-audit
+          path: audit_final
+          retention-days: 90
+          if-no-files-found: error
+
+  clean_gate:
+    name: clean-gate
+    needs: reproduce_audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download eight immutable candidate cases and historical partial terminals
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: clean_collected/source
+          merge-multiple: false
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_SURFACE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download immutable completed L11 reference
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.COMPLETED_REFERENCE_ARTIFACT }}
+          path: clean_collected/reference
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PARENT_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download completed L13 audit from rank-fallback recovery
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-audit-rank-fallback-final-L13-V28-K24-audit
+          path: clean_collected/audit
+
+      - name: Download authorizing Stage A PASS decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Independently re-audit eight candidate force gates with authoritative QE blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          RY_TO_EV=13.605693122994
+          BOHR=0.529177210903
+          CONV=RY_TO_EV/BOHR
+          pat=re.compile(r"atom\s+(\d+)\s+type\s+\d+\s+force\s*=\s*([-+0-9.Ee]+)\s+([-+0-9.Ee]+)\s+([-+0-9.Ee]+)")
+          passed=[]
+          for summary_path in Path('clean_collected/source').rglob('summary.json'):
+              s=json.loads(summary_path.read_text())
+              if s.get('role')!='candidate' or s.get('status')!='COMPLETE':
+                  continue
+              outs=list(summary_path.parent.rglob('clean_relax.out'))
+              assert len(outs)==1, (s.get('case_id'),len(outs))
+              lines=outs[0].read_text(errors='replace').splitlines()
+              blocks=[]
+              for i,line in enumerate(lines):
+                  if 'Forces acting on atoms' not in line: continue
+                  rows=[]
+                  for line2 in lines[i+1:]:
+                      if 'The non-local contrib.' in line2 or 'Total force =' in line2: break
+                      m=pat.search(line2)
+                      if not m: continue
+                      rows.append((float(m.group(2)),float(m.group(3)),float(m.group(4))))
+                      if len(rows)==int(s['layers']): break
+                  if len(rows)==int(s['layers']): blocks.append(rows)
+              assert blocks
+              flags=[a.get('flags',[0,0,0]) for a in s['final_atoms']]
+              vals=[]
+              for force,fl in zip(blocks[-1],flags):
+                  for value,flag in zip(force,fl):
+                      if int(flag)==1: vals.append(abs(value)*CONV)
+              corrected=max(vals)
+              assert corrected <= 0.02, (s['case_id'],corrected)
+              assert s['mechanical_pass'] is True
+              passed.append((s['case_id'],corrected))
+          assert len(passed)==8, passed
+          for case,force in sorted(passed): print(f'{case} corrected_max_movable_force_ev_A={force:.12f}')
+          print('EIGHT_CANDIDATE_FORCE_READJUDICATION_PASS')
+          PY
+
+      - name: Apply unchanged ten-case clean-surface gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${COMPLETED_REFERENCE_SHA256}  clean_collected/reference/summary.json" | sha256sum -c -
+          mkdir -p clean_gate
+          python3 "$SURFACE_RUNNER" clean-gate \
+            --protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --root clean_collected \
+            --out clean_gate/CLEAN_SURFACE_GATE.json \
+            > clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          cat clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          python3 - <<'PY'
+          import json
+          r=json.load(open('clean_gate/CLEAN_SURFACE_GATE.json'))
+          assert r['provenance']['kinetic_inputs_used'] is False
+          print('CLEAN_SURFACE_STATUS='+r['status'])
+          print('NEXT_GATE='+r['next_gate'])
+          print('SCIENTIFIC_SETTINGS_CHANGED=false')
+          print('KINETIC_INPUTS_USED=false')
+          PY
+
+      - name: Upload clean-surface adjudication
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-rank-fallback-gate-v1
+          path: clean_gate
+          retention-days: 90
+          if-no-files-found: error
