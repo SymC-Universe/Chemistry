@@ -1,12 +1,9 @@
 name: CO Cu111 PBE Stage A L26 C2 final resume v1
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/co-cu111-pbe-stage-a-l26-c2-final-resume-v1.yml'
 
 permissions:
   contents: read
@@ -39,7 +36,7 @@ env:
 
 jobs:
   resume-final-c2-l26:
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
 
     steps:
@@ -52,7 +49,7 @@ jobs:
           echo "runner_name=${RUNNER_NAME}"
           echo "runner_os=${RUNNER_OS}"
           echo "runner_arch=${RUNNER_ARCH}"
-          echo "requested_runner_label=ubuntu-latest-m"
+          echo "requested_runner_label=ubuntu-24.04"
           echo "nproc_with_frozen_omp=$(nproc)"
           echo "online_processors=$(getconf _NPROCESSORS_ONLN)"
           free -h

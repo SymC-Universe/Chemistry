@@ -1,12 +1,9 @@
 name: CO Cu111 PBE Stage A L26 runtime diagnostics v1
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/co-cu111-pbe-stage-a-l26-runtime-diagnostics-v1.yml'
 
 permissions:
   actions: read
@@ -26,7 +23,7 @@ env:
 
 jobs:
   diagnose:
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout exact branch state

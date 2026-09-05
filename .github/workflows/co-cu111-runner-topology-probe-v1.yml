@@ -1,12 +1,9 @@
 name: CO Cu111 runner topology probe v1
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/co-cu111-runner-topology-probe-v1.yml'
 
 permissions:
   contents: read
@@ -28,8 +25,8 @@ jobs:
           - slug: standard
             runner: ubuntu-24.04
           - slug: larger
-            runner: ubuntu-latest-m
-    runs-on: ${{ matrix.runner }}
+            runner: ubuntu-24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       PROBE_DIR: probe_${{ matrix.slug }}

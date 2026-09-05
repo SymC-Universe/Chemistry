@@ -1,15 +1,9 @@
 name: CO Cu111 PBE surface audit rank fallback recovery v1
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/co-cu111-pbe-surface-audit-rank-fallback-recovery-v1.yml'
-      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_RANK_FALLBACK_RECOVERY_v0.1.json'
-      - 'systems/co_cu111/pbe_surface_audit_rank_fallback_recovery_v1.py'
-      - 'systems/co_cu111/test_pbe_surface_audit_rank_fallback_recovery_v1.py'
 
 permissions:
   contents: read
@@ -112,7 +106,7 @@ jobs:
   rank_qualify:
     name: rank-qualify
     needs: prepare
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     outputs:
       selected_ranks: ${{ steps.selection.outputs.selected_ranks }}
@@ -224,7 +218,7 @@ jobs:
   continue_1:
     name: continue-1
     needs: rank_qualify
-    runs-on: ${{ needs.rank_qualify.outputs.runner_label }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
@@ -291,7 +285,7 @@ jobs:
   continue_2:
     name: continue-2
     needs: [rank_qualify, continue_1]
-    runs-on: ${{ needs.rank_qualify.outputs.runner_label }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
@@ -346,7 +340,7 @@ jobs:
   continue_3:
     name: continue-3
     needs: [rank_qualify, continue_2]
-    runs-on: ${{ needs.rank_qualify.outputs.runner_label }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
@@ -401,7 +395,7 @@ jobs:
   continue_4:
     name: continue-4
     needs: [rank_qualify, continue_3]
-    runs-on: ${{ needs.rank_qualify.outputs.runner_label }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
@@ -456,7 +450,7 @@ jobs:
   reproduce_audit:
     name: reproduce-audit
     needs: [rank_qualify, continue_4]
-    runs-on: ${{ needs.rank_qualify.outputs.runner_label }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4

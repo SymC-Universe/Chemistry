@@ -1,19 +1,16 @@
 name: Larger runner access smoke
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/large-runner-access-smoke.yml'
 
 permissions:
   contents: read
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:

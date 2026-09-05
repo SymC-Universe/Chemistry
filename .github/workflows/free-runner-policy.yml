@@ -1,0 +1,54 @@
+name: Free GitHub-hosted runner policy
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: free-github-hosted-runner-policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  enforce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject paid, larger, dynamic, or custom runner labels
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          allowed = re.compile(
+              r"(?:ubuntu-(?:latest|24\.04|22\.04|20\.04)|"
+              r"windows-(?:latest|2025|2022|2019)|"
+              r"macos-(?:latest|15|14|13))"
+          )
+          violations = []
+          for path in sorted(Path(".github/workflows").glob("*.y*ml")):
+              for line_number, line in enumerate(path.read_text().splitlines(), 1):
+                  match = re.match(r"^\s*runs-on:\s*(.*?)\s*(?:#.*)?$", line)
+                  if not match:
+                      continue
+                  label = match.group(1).strip().strip("'\"")
+                  if not allowed.fullmatch(label):
+                      violations.append(f"{path}:{line_number}: runs-on: {label}")
+          if violations:
+              raise SystemExit(
+                  "PAID_OR_UNAPPROVED_RUNNER_BLOCKED\n" + "\n".join(violations)
+              )
+          print("FREE_STANDARD_RUNNER_POLICY_PASS")
+          PY

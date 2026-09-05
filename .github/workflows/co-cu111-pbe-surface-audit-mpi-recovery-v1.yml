@@ -1,15 +1,9 @@
 name: CO Cu111 PBE surface audit MPI recovery v1
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/co-cu111-pbe-surface-audit-mpi-recovery-v1.yml'
-      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_MPI_RECOVERY_v0.1.json'
-      - 'systems/co_cu111/pbe_surface_audit_mpi_recovery_v1.py'
-      - 'systems/co_cu111/test_pbe_surface_audit_mpi_recovery_v1.py'
 
 permissions:
   contents: read
@@ -94,7 +88,7 @@ jobs:
 
   mpi-parity:
     needs: prepare
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
@@ -178,7 +172,7 @@ jobs:
 
   mpi-continue-1:
     needs: mpi-parity
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
@@ -238,7 +232,7 @@ jobs:
 
   mpi-continue-2:
     needs: mpi-continue-1
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
@@ -295,7 +289,7 @@ jobs:
 
   reproduce-audit:
     needs: mpi-continue-2
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4

@@ -1,12 +1,9 @@
 name: CO Cu111 PBE Stage A L26 final assembly v2
 
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/na-cu001-integration
-    paths:
-      - '.github/workflows/co-cu111-pbe-stage-a-l26-final-assembly-v2.yml'
 
 permissions:
   contents: read
@@ -30,7 +27,7 @@ env:
 
 jobs:
   assemble-all-recovery-targets:
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
