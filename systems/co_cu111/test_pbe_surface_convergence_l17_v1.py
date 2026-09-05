@@ -56,6 +56,15 @@ class TestL17ExactRestart(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 mod.verify_checkpoint_manifest(root, manifest_sha)
 
+    def test_new_state_output_path_does_not_require_existing_file(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            target = mod.state_output_path(root)
+            self.assertEqual(target, root / "L17_RESTART_STATE.json")
+            self.assertFalse(target.exists())
+            mod.write_json(target, {"status": "CHECKPOINT"})
+            self.assertEqual(mod.load_json(mod.state_path(root))["status"], "CHECKPOINT")
+
     def test_prior_failure_preserved(self):
         src = self.p["source_l15_reference"]
         self.assertFalse(src["prior_gate_pass"])

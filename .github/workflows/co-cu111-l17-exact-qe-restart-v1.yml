@@ -33,6 +33,8 @@ env:
   STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
   SELECTION_RUN_ID: '32915640451'
   SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  RECOVERY_RUN_ID: '33942175805'
+  RECOVERY_ARTIFACT: co-cu111-l17-exact-restart-relax-01
   OMP_NUM_THREADS: '1'
   OPENBLAS_NUM_THREADS: '1'
   MKL_NUM_THREADS: '1'
@@ -49,8 +51,8 @@ jobs:
         run: |
           set -euo pipefail
           echo '69659623872c45c4408c2db86052818cb821bf825d5fc48db6f7aa8eec316c07  systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L17_v0.1.json' | sha256sum -c -
-          echo 'f6562c231699cc6743da639bbc51a976d4794b0b7c4de4891d1fcf8746c657c7  systems/co_cu111/pbe_surface_convergence_l17_v1.py' | sha256sum -c -
-          echo 'a087dc748d6acdbca30ebe37e999e602a9b863069259402531468ce78146fd64  systems/co_cu111/test_pbe_surface_convergence_l17_v1.py' | sha256sum -c -
+          echo '102a0ef3d60812fdebced291583e05a02c3e5adfe847ea6744ea17fe4c3316c1  systems/co_cu111/pbe_surface_convergence_l17_v1.py' | sha256sum -c -
+          echo '8f1e0764131bb66956f4f76b2492d63f3cc60a6df784ee2370f15df4321f7ef7  systems/co_cu111/test_pbe_surface_convergence_l17_v1.py' | sha256sum -c -
           python3 -m py_compile "$RUNNER" "$TEST"
           python3 "$TEST"
           python3 "$RUNNER" self-test --protocol "$PROTOCOL"
@@ -96,12 +98,16 @@ jobs:
         with: {name: '${{ env.SELECTION_ARTIFACT }}', path: selection, repository: SymC-Universe/Chemistry, run-id: '${{ env.SELECTION_RUN_ID }}', github-token: '${{ github.token }}'}
       - uses: actions/download-artifact@v4
         with: {name: '${{ env.L15_ARTIFACT }}', path: l15_reference, repository: SymC-Universe/Chemistry, run-id: '${{ env.L15_RUN_ID }}', github-token: '${{ github.token }}'}
-      - name: Run L17 relaxation with QE clean checkpoint
+      - uses: actions/download-artifact@v4
+        with: {name: '${{ env.RECOVERY_ARTIFACT }}', path: state, repository: SymC-Universe/Chemistry, run-id: '${{ env.RECOVERY_RUN_ID }}', github-token: '${{ github.token }}'}
+      - name: Recover preserved segment-1 checkpoint metadata
         shell: bash
         run: |
           set -euo pipefail
           chmod +x engine/bin/pw.x
-          python3 "$RUNNER" relax-segment --protocol "$PROTOCOL" --l15-root l15_reference --segment 1 --out state \
+          python3 "$RUNNER" recover-relax-state --protocol "$PROTOCOL" --l15-root l15_reference --segment 1 --out state \
+            --source-run-id 33942175805 --source-job-id 101241623145 --source-artifact-id 9965875189 \
+            --source-artifact-sha256 8eae43d5dbadad959d5d38f3262830d94f43c4a1100eb8b74167b2cdf6e3c681 \
             --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
             --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json
       - if: always()

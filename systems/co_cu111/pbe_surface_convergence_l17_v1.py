@@ -327,8 +327,12 @@ def classify_output(text: str, calculation: str, rc: int, wrapper_timeout: bool)
     }
 
 
+def state_output_path(root: Path) -> Path:
+    return root / "L17_RESTART_STATE.json"
+
+
 def state_path(root: Path) -> Path:
-    path = root / "L17_RESTART_STATE.json"
+    path = state_output_path(root)
     if not path.is_file():
         raise SystemExit("MECHANICAL_HOLD: missing L17 restart state")
     return path
@@ -377,7 +381,7 @@ def command_relax_segment(args: argparse.Namespace) -> None:
         if prior["status"] == "COMPLETE":
             carried = dict(prior)
             carried.update({"segment": seg, "carried_forward_without_recomputation": True, "source_state_sha256": sha256(state_path(prior_root))})
-            write_json(state_path(out_root), carried)
+            write_json(state_output_path(out_root), carried)
             print(json.dumps(carried, indent=2, sort_keys=True))
             return
         copy_checkpoint(prior_root, out_root)
@@ -450,7 +454,103 @@ def command_relax_segment(args: argparse.Namespace) -> None:
         "kinetic_inputs_used": False,
         "carried_forward_without_recomputation": False,
     }
-    write_json(state_path(out_root), state)
+    write_json(state_output_path(out_root), state)
+    print(json.dumps(state, indent=2, sort_keys=True))
+
+
+def command_recover_relax_state(args: argparse.Namespace) -> None:
+    """Reconstruct only the metadata lost after a completed QE clean stop.
+
+    The source artifact must contain the byte-preserved QE outdir, its manifest,
+    and the exact input/output from segment 1. No pw.x process is started here.
+    """
+    pp = Path(args.protocol).resolve()
+    p = protocol(pp)
+    if int(args.segment) != 1:
+        raise SystemExit("MECHANICAL_HOLD: metadata recovery is restricted to relaxation segment 1")
+    out_root = Path(args.out).resolve()
+    base, old, surface, bundle = verify_runtime(args, p)
+    cell, seed, seed_evidence = seed_l17(verify_l15(Path(args.l15_root).resolve(), p), p, base)
+    checkpoint, inp, out = runtime_paths(out_root, "relax")
+    if not inp.is_file() or not out.is_file():
+        raise SystemExit("MECHANICAL_HOLD: preserved segment lacks exact QE input/output")
+
+    expected_input = base.qe_input(
+        calculation="relax",
+        prefix="co_cu111_clean_l17_extension",
+        cell=cell,
+        atoms=seed,
+        kmesh=32,
+        protocol=surface,
+        bundle=bundle,
+        pseudo_dir=Path(args.pseudo_dir).resolve(),
+        outdir=checkpoint,
+    )
+    expected_input = add_control_fields(
+        expected_input,
+        "from_scratch",
+        int(p["execution"]["qe_max_seconds_per_segment"]),
+    )
+    if inp.read_text() != expected_input:
+        raise SystemExit("SCIENTIFIC_HOLD: preserved segment-1 QE input differs from frozen reconstruction")
+
+    raw = out.read_text(errors="replace")
+    outcome = classify_output(raw, "relax", 0, False)
+    manifest_sha = verify_checkpoint_manifest(out_root)
+    final_atoms = None
+    final_energy_ev = None
+    force = None
+    if outcome["status"] == "COMPLETE":
+        final_atoms = base.parse_positions(raw, 17, seed)
+        blocks = old.authoritative_force_blocks(raw, 17)
+        if final_atoms is None or not blocks:
+            raise SystemExit("MECHANICAL_HOLD: completed recovered L17 relaxation lacks final geometry/forces")
+        _, template = base.clean_geometry(float(p["frozen_method"]["bulk_lattice_constant_angstrom"]), 17, 36.0)
+        final_atoms = old.apply_template(final_atoms, template)
+        force = old.max_movable_force_ev_a(blocks[-1], final_atoms)
+        energies = [float(x) * RY_TO_EV for x in ENERGY_RE.findall(raw)]
+        if not energies:
+            raise SystemExit("MECHANICAL_HOLD: completed recovered L17 relaxation lacks final energy")
+        final_energy_ev = energies[-1]
+
+    state = {
+        "schema": STATE_SCHEMA,
+        "stage": "relax",
+        "status": outcome["status"],
+        "segment": 1,
+        "case_id": p["extension_audit"]["case_id"],
+        "layers": 17,
+        "vacuum_angstrom": 36.0,
+        "kmesh": 32,
+        "restart_mode": "from_scratch",
+        "checkpoint_semantics": "QE_CLEAN_MAX_SECONDS_EXACT_RESTART",
+        "checkpoint_manifest_sha256": manifest_sha,
+        "full_qe_outdir_preserved": True,
+        "wrapper_timeout": False,
+        "pw_returncode": 0,
+        "elapsed_s": None,
+        "job_done": outcome["job_done"],
+        "clean_max_seconds_stop": outcome["clean_max_seconds_stop"],
+        "bfgs_finished": outcome["bfgs_finished"],
+        "cell_angstrom": cell,
+        "seed_evidence": seed_evidence,
+        "final_atoms": final_atoms,
+        "relax_energy_ev": final_energy_ev,
+        "max_movable_force_ev_per_angstrom": force,
+        "raw_input_sha256": sha256(inp),
+        "raw_output_sha256": sha256(out),
+        "scientific_settings_changed": False,
+        "thresholds_changed": False,
+        "kinetic_inputs_used": False,
+        "carried_forward_without_recomputation": False,
+        "metadata_recovered_after_state_write_failure": True,
+        "recovery_ran_pw": False,
+        "source_workflow_run_id": int(args.source_run_id),
+        "source_workflow_job_id": int(args.source_job_id),
+        "source_artifact_id": int(args.source_artifact_id),
+        "source_artifact_zip_sha256": args.source_artifact_sha256,
+    }
+    write_json(state_output_path(out_root), state)
     print(json.dumps(state, indent=2, sort_keys=True))
 
 
@@ -471,7 +571,7 @@ def command_scf_segment(args: argparse.Namespace) -> None:
         if prior["status"] == "COMPLETE":
             carried = dict(prior)
             carried.update({"segment": seg, "carried_forward_without_recomputation": True, "source_state_sha256": sha256(state_path(prior_root))})
-            write_json(state_path(out_root), carried)
+            write_json(state_output_path(out_root), carried)
             print(json.dumps(carried, indent=2, sort_keys=True))
             return
         copy_checkpoint(prior_root, out_root)
@@ -546,7 +646,7 @@ def command_scf_segment(args: argparse.Namespace) -> None:
         "kinetic_inputs_used": False,
         "carried_forward_without_recomputation": False,
     }
-    write_json(state_path(out_root), state)
+    write_json(state_output_path(out_root), state)
     print(json.dumps(state, indent=2, sort_keys=True))
 
 
@@ -648,6 +748,17 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--out", required=True)
     add_runtime_args(sp)
     sp.set_defaults(func=command_relax_segment)
+    sp = sub.add_parser("recover-relax-state")
+    sp.add_argument("--protocol", required=True)
+    sp.add_argument("--l15-root", required=True)
+    sp.add_argument("--segment", type=int, required=True)
+    sp.add_argument("--out", required=True)
+    sp.add_argument("--source-run-id", type=int, required=True)
+    sp.add_argument("--source-job-id", type=int, required=True)
+    sp.add_argument("--source-artifact-id", type=int, required=True)
+    sp.add_argument("--source-artifact-sha256", required=True)
+    add_runtime_args(sp)
+    sp.set_defaults(func=command_recover_relax_state)
     sp = sub.add_parser("scf-segment")
     sp.add_argument("--protocol", required=True)
     sp.add_argument("--relax-root")
