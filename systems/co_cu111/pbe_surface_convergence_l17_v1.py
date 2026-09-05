@@ -218,6 +218,16 @@ def seed_l17(l15: dict[str, Any], p: dict[str, Any], base) -> tuple[list[list[fl
     return cell17, seed, evidence
 
 
+def checkpoint_files(root: Path) -> list[Path]:
+    checkpoint = root / "qe_checkpoint"
+    if not checkpoint.is_dir():
+        raise SystemExit("MECHANICAL_HOLD: missing QE checkpoint directory")
+    files = sorted(p for p in checkpoint.rglob("*") if p.is_file())
+    if not files:
+        raise SystemExit("MECHANICAL_HOLD: empty QE checkpoint directory")
+    return files
+
+
 def write_checkpoint_manifest(root: Path) -> str:
     checkpoint = root / "qe_checkpoint"
     lines = []
