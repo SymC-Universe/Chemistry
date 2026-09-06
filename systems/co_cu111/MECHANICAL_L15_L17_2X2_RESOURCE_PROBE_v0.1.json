@@ -1,0 +1,41 @@
+{
+  "schema": "co-cu111-l15-l17-2x2-resource-probe-v0.1",
+  "status": "FROZEN_BEFORE_RESOURCE_PROBE_RESULT",
+  "scope": "MECHANICAL_ONLY_NO_SCIENTIFIC_ENERGY_ADJUDICATION",
+  "source_workflow_run": 34017084351,
+  "source_head_sha": "a9befc7e08860e8812b562e0adc0ed9d63afa5c4",
+  "observed_failure": {
+    "preflight_pass": true,
+    "eight_of_eight_segment1_jobs_failed": true,
+    "representative_l15_top_job": 101442671259,
+    "representative_l17_top_job": 101442671312,
+    "failure": "GitHub hosted runner shutdown signal during pw.x; exit code 143",
+    "scientific_energy_result_generated": false,
+    "checkpoint_uploaded": false
+  },
+  "probe_case": {
+    "depth": "L15",
+    "site": "top",
+    "uses_exact_v0_2_2x2_K8_geometry_and_electronic_settings": true,
+    "supercell": [2, 2],
+    "kmesh": 8,
+    "coverage_ML": 0.25,
+    "common_vacuum_angstrom": 36.0,
+    "atomic_coordinates_fixed": true
+  },
+  "mechanical_changes_only": {
+    "qe_max_seconds": 30,
+    "wrapper_timeout_seconds": 60,
+    "stream_qe_stdout_to_actions_log": true,
+    "purpose": "Exit before the repeatedly observed hosted-runner shutdown window and capture QE initialization/memory diagnostics. The shortened runtime makes this output non-admissible for scientific energy or slab-sufficiency adjudication."
+  },
+  "decision_rules": {
+    "clean_qe_checkpoint_before_60s": "MECHANICAL_ROUTE_SUPPORTS_SHORT_EXACT_CHECKPOINT_TEST",
+    "wrapper_timeout_with_runner_alive": "MECHANICAL_ROUTE_SURVIVES_60S_BUT_QE_DID_NOT_CLEAN_STOP",
+    "runner_shutdown_before_probe_finishes": "MECHANICAL_INFRASTRUCTURE_HOLD_STANDARD_RUNNER",
+    "qe_memory_or_allocation_error": "MECHANICAL_RESOURCE_HOLD_MEMORY",
+    "scientific_pass_allowed": false,
+    "l17_reclassification_allowed": false,
+    "automatic_l19_allowed": false
+  }
+}
