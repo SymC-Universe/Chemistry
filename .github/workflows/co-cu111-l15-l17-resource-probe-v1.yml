@@ -37,8 +37,8 @@ env:
 
 jobs:
   probe:
-    name: Stream 2x2 QE startup before hosted-runner shutdown window
-    runs-on: ubuntu-24.04
+    name: Stream 2x2 QE startup on paid larger runner
+    runs-on: ubuntu-latest-m
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +90,7 @@ jobs:
           repository: SymC-Universe/Chemistry
           run-id: ${{ env.ENGINE_RUN_ID }}
           github-token: ${{ github.token }}
-      - name: Verify engine and runner class
+      - name: Verify engine and paid larger-runner resource class
         shell: bash
         run: |
           set -euo pipefail
@@ -101,6 +101,20 @@ jobs:
           echo "runner_arch=${RUNNER_ARCH}"
           echo "processors=$(nproc)"
           free -h
+          python3 - <<'PY'
+          from pathlib import Path
+          kib = None
+          for line in Path('/proc/meminfo').read_text().splitlines():
+              if line.startswith('MemTotal:'):
+                  kib = int(line.split()[1])
+                  break
+          assert kib is not None
+          gib = kib / 1024 / 1024
+          print(f'runner_memtotal_gib={gib:.3f}')
+          if gib < 48.0:
+              raise SystemExit(f'MECHANICAL_HOLD: paid larger runner has only {gib:.3f} GiB; >=48 GiB required for this proof')
+          print('PAID_LARGER_RUNNER_RESOURCE_GATE_PASS')
+          PY
       - name: Run 60-second streamed mechanical probe
         shell: bash
         run: |
