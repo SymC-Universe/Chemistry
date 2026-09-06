@@ -154,13 +154,26 @@ The corrected workflow is configured so that:
 5. Production L15/top can then continue from segment 3 through the ordinary tested state machine.
 6. The other seven matched L15/L17-site cases begin from scratch because no equivalent previously qualified scientific checkpoints exist for them.
 
-At the time this record was opened, replacement production preflight had passed, L15/bridge had entered its real segment-1 SCF, and L15/top was queued for the checkpoint-import path. Live success of the production import must be added to this record only after the import verification step itself completes successfully.
+### 8. Production segment-1 checkpoint reuse was then verified live rather than assumed
+
+Replacement-run job `101528646242`, `L15/top segment 1 of 6`, reached the reuse path after the replacement preflight passed.
+
+Observed production behavior:
+
+- `Reuse qualified L15 top segment 1`: `success`
+- `Verify reused qualified L15 top segment 1`: `success`
+- `Install unchanged QE runtime dependencies`: `skipped`
+- production input-artifact download for a fresh SCF: `skipped`
+- `Start frozen 2x2 K8 matched-depth SCF`: `skipped`
+- upload of the verified production-carried state: started after the provenance verification
+
+Therefore the production workflow did not merely contain checkpoint-reuse code; it demonstrably selected that code path and avoided re-running the already-qualified L15/top segment-1 QE calculation. Segment-2 import remains separately subject to its own verification when the workflow reaches that stage. Only after that succeeds may production L15/top continue at segment 3.
 
 ## How the tests were used
 
 Tests were not treated as a substitute for the real restart qualification. They were used as a firewall before production and were then complemented by the real two-segment L15/top restart exercise.
 
-In replacement production preflight, the workflow ran:
+In replacement production preflight, job `101528619053`, the workflow ran:
 
 1. Python byte-compilation of the v1 runner, v2 runner, and v2 test file.
 2. The v2 runner self-test, which returned `SELF_TEST_PASS`.
@@ -181,12 +194,16 @@ The nine passing v2 tests were:
 - `test_resource_hold_is_preserved`: preserves the historical mechanical resource-hold provenance.
 - `test_sufficiency_classifier_pass_and_fail`: exercises both sides of the final diagnostic classification rule.
 
+The test suite completed with `Ran 9 tests` and `OK`, followed by the explicit `V0_2_RESOURCE_ADAPTATION_FIREWALL_VERIFIED` assertion block. The same preflight then reverified the L15 and L17 source identities, the original L17 HOLD, the Stage-A engine, and all three pseudopotentials before production work was admitted.
+
 This gives two distinct layers of evidence:
 
 - **software tests** verify that the state machine, firewalls, geometry rules, thresholds, and checkpoint-integrity logic behave as specified;
 - **the real qualification calculation** verifies that an actual QE L15/top checkpoint survives artifact transfer and resumes with exact QE restart semantics on the selected paid runner.
 
-Neither layer is represented as proving the eventual L15-vs-L17 scientific result. That result remains pending the completed eight-case diagnostic and final adjudication.
+The live production segment-1 reuse adds a third link: the production workflow actually consumed and verified the qualified checkpoint instead of silently recomputing it.
+
+None of these layers is represented as proving the eventual L15-vs-L17 scientific result. That result remains pending the completed eight-case diagnostic and final adjudication.
 
 ## Meter-conscious execution rule
 
@@ -205,15 +222,22 @@ For this L15-L17 diagnostic the operational priority is:
 9. The currently active replacement run `34048806316` is authorized to continue as needed to complete the frozen diagnostic.
 10. If recovery from a future mechanical failure would require discarding valid checkpoints or materially duplicating many paid runner-hours, escalate the cost consequence before launching a broad paid recomputation. Narrow checkpoint-preserving mechanical recovery remains authorized.
 
+GitHub's workflow timing endpoint currently reports `billable ... total_ms: 0` for the larger-runner qualification even though the run demonstrably occupied larger runners. That endpoint is therefore not used as the authoritative larger-runner cost meter here. Meter reconstruction uses each larger-runner job's actual start/end timestamps and GitHub's billing dashboard remains authoritative for dollar charges.
+
+The qualification run's total workflow duration was approximately 34,016,000 ms. For scientific-compute accounting, the two real L15/top QE segments recorded 17037.83 s and 16221.08 s of SCF elapsed time respectively. These are preserved so reuse savings can be distinguished from fresh paid compute.
+
 The user's account-level spend observed outside this repository is not encoded here as a reproducibility datum. This record tracks reproducible compute lineage and paid-runner use, while GitHub billing remains the authoritative source for dollar charges.
 
-## Scientific status at record creation
+## Scientific status after first live production reuse verification
 
 - Exact QE restart: mechanically QUALIFIED on a real L15/top case.
 - L15/top after qualification segment 2: CHECKPOINT, not scientifically converged.
 - Replacement production preflight: PASS.
+- Production reuse of L15/top qualification segment 1: VERIFIED PASS.
+- Production reuse of L15/top qualification segment 2: PENDING its workflow stage.
+- L15/bridge production segment 1: real SCF in progress when this update was recorded.
 - Eight-case L15-vs-L17 scientific adjudication: PENDING.
 - Original L17 clean-surface scientific HOLD: PRESERVED.
 - No L19 authorization: PRESERVED.
 
-This file should be updated after production checkpoint-import verification, after each terminal eight-case state is available, and after final adjudication so the final reproducibility guide can reconstruct the complete sequence without relying on conversational history.
+This file should be updated after production segment-2 checkpoint-import verification, after each terminal eight-case state is available, and after final adjudication so the final reproducibility guide can reconstruct the complete sequence without relying on conversational history.
