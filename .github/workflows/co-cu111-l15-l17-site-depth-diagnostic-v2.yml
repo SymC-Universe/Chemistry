@@ -145,7 +145,7 @@ jobs:
   screen_1:
     name: v0.2 exact-restart site SCF segment 1 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
     needs: preflight
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-m
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -190,7 +190,7 @@ jobs:
   screen_2:
     name: v0.2 exact-restart site SCF segment 2 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
     needs: screen_1
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-m
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -227,7 +227,7 @@ jobs:
   screen_3:
     name: v0.2 exact-restart site SCF segment 3 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
     needs: screen_2
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-m
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -264,7 +264,7 @@ jobs:
   screen_4:
     name: v0.2 exact-restart site SCF segment 4 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
     needs: screen_3
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-m
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -301,7 +301,7 @@ jobs:
   screen_5:
     name: v0.2 exact-restart site SCF segment 5 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
     needs: screen_4
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-m
     timeout-minutes: 360
     strategy:
       fail-fast: false
@@ -338,7 +338,7 @@ jobs:
   screen_6:
     name: v0.2 exact-restart site SCF segment 6 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
     needs: screen_5
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-m
     timeout-minutes: 360
     strategy:
       fail-fast: false
