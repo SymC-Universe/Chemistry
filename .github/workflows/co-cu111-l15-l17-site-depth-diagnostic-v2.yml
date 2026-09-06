@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: co-cu111-l15-l17-site-depth-diagnostic-v2
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   PROTOCOL: systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json
@@ -34,6 +34,9 @@ env:
   STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
   ENGINE_RUN_ID: '31371043888'
   ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  QUAL_RUN_ID: '34019612490'
+  QUAL_SEG1_ARTIFACT: co-cu111-l15-l17-restart-qualification-seg01-v1
+  QUAL_SEG2_ARTIFACT: co-cu111-l15-l17-restart-qualification-seg02-v1
   OMP_NUM_THREADS: '1'
   OPENBLAS_NUM_THREADS: '1'
   MKL_NUM_THREADS: '1'
@@ -155,13 +158,47 @@ jobs:
         site: [top, bridge, fcc_hollow, hcp_hollow]
     steps:
       - uses: actions/checkout@v4
+      - name: Reuse qualified L15 top segment 1
+        if: ${{ matrix.depth == 'L15' && matrix.site == 'top' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.QUAL_SEG1_ARTIFACT }}
+          path: screen
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.QUAL_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify reused qualified L15 top segment 1
+        if: ${{ matrix.depth == 'L15' && matrix.site == 'top' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          s=json.load(open('screen/L15_L17_SITE_SCF_STATE.json'))
+          psha=hashlib.sha256(Path('systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json').read_bytes()).hexdigest()
+          assert s['depth']=='L15' and s['site']=='top' and s['segment']==1
+          assert s['protocol_sha256']==psha
+          assert s['checkpoint_semantics']=='QE_CLEAN_MAX_SECONDS_EXACT_RESTART'
+          assert s['status'] in {'COMPLETE','CHECKPOINT'}
+          assert s['original_l17_hold_preserved'] is True
+          assert s['absolute_clean_surface_pass_claimed'] is False
+          if s['status']=='CHECKPOINT':
+              assert s['checkpoint_manifest_sha256']
+              assert Path('screen/qe_checkpoint').is_dir()
+          Path('screen/PRODUCTION_REUSED_QUALIFICATION_SEGMENT1').write_text('source_run=34019612490\n')
+          print('PRODUCTION_REUSED_QUALIFICATION_SEGMENT1')
+          PY
       - name: Install unchanged QE runtime dependencies
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
       - uses: actions/download-artifact@v4
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         with:
           name: co-cu111-l15-l17-site-depth-inputs-v2
           path: inputs
       - name: Start frozen 2x2 K8 matched-depth SCF
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -200,17 +237,54 @@ jobs:
         site: [top, bridge, fcc_hollow, hcp_hollow]
     steps:
       - uses: actions/checkout@v4
+      - name: Reuse qualified L15 top segment 2
+        if: ${{ matrix.depth == 'L15' && matrix.site == 'top' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.QUAL_SEG2_ARTIFACT }}
+          path: screen
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.QUAL_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify reused qualified L15 top segment 2
+        if: ${{ matrix.depth == 'L15' && matrix.site == 'top' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          s=json.load(open('screen/L15_L17_SITE_SCF_STATE.json'))
+          psha=hashlib.sha256(Path('systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json').read_bytes()).hexdigest()
+          assert s['depth']=='L15' and s['site']=='top' and s['segment']==2
+          assert s['protocol_sha256']==psha
+          assert s['checkpoint_semantics']=='QE_CLEAN_MAX_SECONDS_EXACT_RESTART'
+          assert s['restart_mode']=='restart'
+          assert s['status'] in {'COMPLETE','CHECKPOINT'}
+          assert s['original_l17_hold_preserved'] is True
+          assert s['absolute_clean_surface_pass_claimed'] is False
+          assert Path('screen/EXACT_RESTART_QUALIFIED').is_file()
+          if s['status']=='CHECKPOINT':
+              assert s['checkpoint_manifest_sha256']
+              assert Path('screen/qe_checkpoint').is_dir()
+          Path('screen/PRODUCTION_REUSED_QUALIFICATION_SEGMENT2').write_text('source_run=34019612490\n')
+          print('PRODUCTION_REUSED_QUALIFICATION_SEGMENT2')
+          PY
       - name: Install unchanged QE runtime dependencies
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
       - uses: actions/download-artifact@v4
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         with:
           name: co-cu111-l15-l17-site-depth-inputs-v2
           path: inputs
       - uses: actions/download-artifact@v4
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         with:
           name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg01
           path: prior
       - name: Resume or carry exact site SCF state
+        if: ${{ matrix.depth != 'L15' || matrix.site != 'top' }}
         shell: bash
         run: |
           set -euo pipefail
