@@ -1,0 +1,400 @@
+name: CO Cu111 L15 vs L17 site-depth diagnostic v2
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json'
+      - 'systems/co_cu111/pbe_l15_l17_site_depth_diagnostic_v2.py'
+      - 'systems/co_cu111/test_pbe_l15_l17_site_depth_diagnostic_v2.py'
+      - '.github/workflows/co-cu111-l15-l17-site-depth-diagnostic-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-l15-l17-site-depth-diagnostic-v2
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json
+  RUNNER: systems/co_cu111/pbe_l15_l17_site_depth_diagnostic_v2.py
+  V1_RUNNER: systems/co_cu111/pbe_l15_l17_observable_sufficiency_v1.py
+  TEST: systems/co_cu111/test_pbe_l15_l17_site_depth_diagnostic_v2.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  L15_RUN_ID: '33712992505'
+  L15_ARTIFACT: co-cu111-l15-native-postrelax-reproduced-v1
+  L17_RUN_ID: '33956049744'
+  L17_RELAX_ARTIFACT: co-cu111-l17-exact-restart-relax-06
+  L17_RESULT_ARTIFACT: co-cu111-l17-convergence-result-v1
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  preflight:
+    name: Verify v0.2 resource-feasible depth contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify code, tests, and v0.1 resource-hold firewall
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$V1_RUNNER" "$RUNNER" "$TEST"
+          python3 "$RUNNER" self-test --protocol "$PROTOCOL"
+          python3 "$TEST" -v
+          python3 - <<'PY'
+          import json
+          p=json.load(open('systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json'))
+          assert p['parent_v0_1_resource_hold']['workflow_run_id']==34016668712
+          assert p['parent_v0_1_resource_hold']['preflight_passed'] is True
+          assert p['parent_v0_1_resource_hold']['all_eight_segment1_cases_failed_before_scientific_energy_result'] is True
+          assert p['parent_v0_1_resource_hold']['scientific_result_consulted'] is False
+          assert p['matched_site_depth_diagnostic']['supercell']==[2,2]
+          assert p['matched_site_depth_diagnostic']['kmesh']==8
+          assert p['matched_site_depth_diagnostic']['nominal_coverage_ML']==0.25
+          assert p['matched_site_depth_diagnostic']['slab_depth_sensitivity_max_ev_per_CO']==0.005
+          assert p['decision']['absolute_clean_surface_pass_claimed'] is False
+          assert p['decision']['low_coverage_4x4_sufficiency_claimed'] is False
+          assert p['decision']['l17_original_failure_preserved'] is True
+          assert p['decision']['automatic_l19_dispatch'] is False
+          print('V0_2_RESOURCE_ADAPTATION_FIREWALL_VERIFIED')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L15_ARTIFACT }}
+          path: source_l15
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L15_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L17_RELAX_ARTIFACT }}
+          path: source_l17_relax
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L17_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L17_RESULT_ARTIFACT }}
+          path: source_l17_result
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L17_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify immutable sources, runner resource class, and preserved L17 HOLD
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" preflight --protocol "$PROTOCOL" --l15-root source_l15 --l17-root source_l17_relax --out preflight.json
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p=json.load(open('systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json'))
+          r=json.load(open('source_l17_result/L17_CONVERGENCE_RESULT.json'))
+          h=hashlib.sha256(Path('source_l17_result/L17_CONVERGENCE_RESULT.json').read_bytes()).hexdigest()
+          assert h == p['source_l17']['result_json_sha256']
+          assert r['status'] == p['source_l17']['required_result_status']
+          assert r['surface_excess_pass'] is False
+          assert abs(r['l15_l17_delta_ev_per_surface_atom'] - p['source_l17']['observed_l15_l17_delta_ev_per_surface_atom']) < 1e-15
+          assert r['additional_scientific_rung_authorized'] is False
+          print('ORIGINAL_L17_HOLD_PRESERVED')
+          PY
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          chmod +x engine/bin/pw.x
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+          echo "processors=$(nproc)"
+          free -h
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: |
+            source_l15
+            source_l17_relax
+            source_l17_result
+            stage_a_decision
+            engine
+            preflight.json
+          retention-days: 90
+          if-no-files-found: error
+
+  screen_1:
+    name: v0.2 exact-restart site SCF segment 1 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        depth: [L15, L17]
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: inputs
+      - name: Start frozen 2x2 K8 matched-depth SCF
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x inputs/engine/bin/pw.x
+          python3 "$RUNNER" scf-segment \
+            --protocol "$PROTOCOL" \
+            --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" \
+            --pseudo-dir inputs/engine/pseudos \
+            --pw inputs/engine/bin/pw.x \
+            --l15-root inputs/source_l15 \
+            --l17-root inputs/source_l17_relax \
+            --depth '${{ matrix.depth }}' \
+            --site '${{ matrix.site }}' \
+            --segment 1 \
+            --out screen
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg01
+          path: screen
+          retention-days: 30
+          if-no-files-found: error
+
+  screen_2:
+    name: v0.2 exact-restart site SCF segment 2 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
+    needs: screen_1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        depth: [L15, L17]
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg01
+          path: prior
+      - name: Resume or carry exact site SCF state
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x inputs/engine/bin/pw.x
+          python3 "$RUNNER" scf-segment --protocol "$PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir inputs/engine/pseudos --pw inputs/engine/bin/pw.x --l15-root inputs/source_l15 --l17-root inputs/source_l17_relax --depth '${{ matrix.depth }}' --site '${{ matrix.site }}' --segment 2 --prior-root prior --out screen
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg02
+          path: screen
+          retention-days: 30
+          if-no-files-found: error
+
+  screen_3:
+    name: v0.2 exact-restart site SCF segment 3 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
+    needs: screen_2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        depth: [L15, L17]
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg02
+          path: prior
+      - name: Resume or carry exact site SCF state
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x inputs/engine/bin/pw.x
+          python3 "$RUNNER" scf-segment --protocol "$PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir inputs/engine/pseudos --pw inputs/engine/bin/pw.x --l15-root inputs/source_l15 --l17-root inputs/source_l17_relax --depth '${{ matrix.depth }}' --site '${{ matrix.site }}' --segment 3 --prior-root prior --out screen
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg03
+          path: screen
+          retention-days: 30
+          if-no-files-found: error
+
+  screen_4:
+    name: v0.2 exact-restart site SCF segment 4 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
+    needs: screen_3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        depth: [L15, L17]
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg03
+          path: prior
+      - name: Resume or carry exact site SCF state
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x inputs/engine/bin/pw.x
+          python3 "$RUNNER" scf-segment --protocol "$PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir inputs/engine/pseudos --pw inputs/engine/bin/pw.x --l15-root inputs/source_l15 --l17-root inputs/source_l17_relax --depth '${{ matrix.depth }}' --site '${{ matrix.site }}' --segment 4 --prior-root prior --out screen
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg04
+          path: screen
+          retention-days: 30
+          if-no-files-found: error
+
+  screen_5:
+    name: v0.2 exact-restart site SCF segment 5 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
+    needs: screen_4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        depth: [L15, L17]
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg04
+          path: prior
+      - name: Resume or carry exact site SCF state
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x inputs/engine/bin/pw.x
+          python3 "$RUNNER" scf-segment --protocol "$PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir inputs/engine/pseudos --pw inputs/engine/bin/pw.x --l15-root inputs/source_l15 --l17-root inputs/source_l17_relax --depth '${{ matrix.depth }}' --site '${{ matrix.site }}' --segment 5 --prior-root prior --out screen
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg05
+          path: screen
+          retention-days: 30
+          if-no-files-found: error
+
+  screen_6:
+    name: v0.2 exact-restart site SCF segment 6 of 6 (${{ matrix.depth }}, ${{ matrix.site }})
+    needs: screen_5
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        depth: [L15, L17]
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-inputs-v2
+          path: inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg05
+          path: prior
+      - name: Resume or carry exact site SCF state
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x inputs/engine/bin/pw.x
+          python3 "$RUNNER" scf-segment --protocol "$PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir inputs/engine/pseudos --pw inputs/engine/bin/pw.x --l15-root inputs/source_l15 --l17-root inputs/source_l17_relax --depth '${{ matrix.depth }}' --site '${{ matrix.site }}' --segment 6 --prior-root prior --out screen
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-v2-${{ matrix.depth }}-${{ matrix.site }}-seg06
+          path: screen
+          retention-days: 30
+          if-no-files-found: error
+
+  adjudicate:
+    name: Apply v0.2 L15-L17 site-depth diagnostic gate
+    needs: screen_6
+    if: ${{ always() && needs.screen_6.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-l15-l17-site-depth-v2-*-seg06
+          path: final_states
+          merge-multiple: false
+      - name: Adjudicate diagnostic without upgrading any prior claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p result
+          python3 "$RUNNER" adjudicate --protocol "$PROTOCOL" --root final_states --out result/L15_L17_SITE_DEPTH_DIAGNOSTIC_RESULT.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-site-depth-diagnostic-result-v2
+          path: result
+          retention-days: 90
+          if-no-files-found: error
