@@ -1,0 +1,124 @@
+name: CO Cu111 L15-L17 2x2 mechanical resource probe v1
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'systems/co_cu111/MECHANICAL_L15_L17_2X2_RESOURCE_PROBE_v0.1.json'
+      - 'systems/co_cu111/pbe_l15_l17_resource_probe_v1.py'
+      - '.github/workflows/co-cu111-l15-l17-resource-probe-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-l15-l17-resource-probe-v1
+  cancel-in-progress: false
+
+env:
+  PROBE_CONTRACT: systems/co_cu111/MECHANICAL_L15_L17_2X2_RESOURCE_PROBE_v0.1.json
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json
+  RUNNER: systems/co_cu111/pbe_l15_l17_resource_probe_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  L15_RUN_ID: '33712992505'
+  L15_ARTIFACT: co-cu111-l15-native-postrelax-reproduced-v1
+  L17_RUN_ID: '33956049744'
+  L17_RELAX_ARTIFACT: co-cu111-l17-exact-restart-relax-06
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  probe:
+    name: Stream 2x2 QE startup before hosted-runner shutdown window
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify mechanical-only contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER"
+          python3 - <<'PY'
+          import json
+          p=json.load(open('systems/co_cu111/MECHANICAL_L15_L17_2X2_RESOURCE_PROBE_v0.1.json'))
+          assert p['schema']=='co-cu111-l15-l17-2x2-resource-probe-v0.1'
+          assert p['status']=='FROZEN_BEFORE_RESOURCE_PROBE_RESULT'
+          assert p['scope']=='MECHANICAL_ONLY_NO_SCIENTIFIC_ENERGY_ADJUDICATION'
+          assert p['source_workflow_run']==34017084351
+          assert p['observed_failure']['eight_of_eight_segment1_jobs_failed'] is True
+          assert p['decision_rules']['scientific_pass_allowed'] is False
+          assert p['decision_rules']['l17_reclassification_allowed'] is False
+          assert p['decision_rules']['automatic_l19_allowed'] is False
+          print('MECHANICAL_ONLY_FIREWALL_PASS')
+          PY
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L15_ARTIFACT }}
+          path: source_l15
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L15_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L17_RELAX_ARTIFACT }}
+          path: source_l17_relax
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L17_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify engine and runner class
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          chmod +x engine/bin/pw.x
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+          echo "processors=$(nproc)"
+          free -h
+      - name: Run 60-second streamed mechanical probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" \
+            --protocol "$PROTOCOL" \
+            --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" \
+            --pseudo-dir engine/pseudos \
+            --pw engine/bin/pw.x \
+            --l15-root source_l15 \
+            --l17-root source_l17_relax \
+            --out probe
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-l17-2x2-resource-probe-v1
+          path: probe
+          retention-days: 90
+          if-no-files-found: warn
