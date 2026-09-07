@@ -1,0 +1,146 @@
+name: CO Cu111 personal standard-runner survival probe v1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-personal-standard-probe-v1
+  cancel-in-progress: true
+
+env:
+  POLICY: systems/co_cu111/PERSONAL_ACCOUNT_FREE_COMPUTE_POLICY_v0.1.json
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_L15_L17_SITE_DEPTH_DIAGNOSTIC_v0.2.json
+  RUNNER: systems/co_cu111/pbe_l15_l17_site_depth_diagnostic_v2.py
+  TEST: systems/co_cu111/test_pbe_l15_l17_site_depth_diagnostic_v2.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  UPSTREAM_INPUT_ARTIFACT_ID: '9993915792'
+  UPSTREAM_INPUT_ARTIFACT_ZIP_SHA256: babc1533a8c894420762c734e853a5009497cada508441573f8cef552e6ca257
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  probe:
+    name: Non-admissible L15 top standard-runner survival probe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail closed unless this is the public personal repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['POLICY']))
+          assert p['status']=='FROZEN_BEFORE_PERSONAL_ACCOUNT_COMPUTE'
+          assert p['target_owner']=='SymCUniverse'
+          assert p['target_repository']=='Chemistry'
+          assert p['repository_visibility_required']=='public'
+          assert p['billing_policy']['github_larger_runners_allowed'] is False
+          assert p['billing_policy']['automatic_paid_escalation_allowed'] is False
+          assert p['checkpoint_policy']['new_large_qe_checkpoints_as_actions_artifacts_allowed'] is False
+          print('PERSONAL_ZERO_PAID_RUNNER_POLICY_VERIFIED')
+          PY
+          test "${GITHUB_REPOSITORY}" = 'SymCUniverse/Chemistry'
+          test "${{ github.event.repository.private }}" = 'false'
+          test "${RUNNER_NAME}" != ''
+
+      - name: Verify unchanged frozen diagnostic code
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$RUNNER" self-test --protocol "$PROTOCOL"
+          python3 "$TEST" -v
+
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
+      - name: Download the small frozen upstream input bundle without copying checkpoint storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://api.github.com/repos/SymC-Universe/Chemistry/actions/artifacts/${UPSTREAM_INPUT_ARTIFACT_ID}/zip"
+          curl --fail --location --retry 3 --retry-all-errors "$url" --output upstream-inputs.zip
+          echo "${UPSTREAM_INPUT_ARTIFACT_ZIP_SHA256}  upstream-inputs.zip" | sha256sum -c -
+          mkdir -p inputs
+          unzip -q upstream-inputs.zip -d inputs
+          rm -f upstream-inputs.zip
+          chmod +x inputs/engine/bin/pw.x
+          sha256sum -c inputs/engine/meta/STAGE_A_ENGINE.sha256
+
+      - name: Record standard-runner resources before QE
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "runner_os=${RUNNER_OS}"
+            echo '--- free ---'
+            free -h
+            echo '--- df ---'
+            df -h /
+          } | tee resource_before.txt
+
+      - name: Run five-minute non-admissible survival probe
+        shell: bash
+        run: |
+          set +e
+          start=$(date +%s)
+          /usr/bin/time -v -o resource_usage.txt \
+            timeout --signal=TERM --kill-after=30s 300s \
+            python3 "$RUNNER" scf-segment \
+              --protocol "$PROTOCOL" \
+              --surface-protocol "$SURFACE_PROTOCOL" \
+              --stage-a-result inputs/stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+              --bundle "$BUNDLE" \
+              --pseudo-dir inputs/engine/pseudos \
+              --pw inputs/engine/bin/pw.x \
+              --l15-root inputs/source_l15 \
+              --l17-root inputs/source_l17_relax \
+              --depth L15 \
+              --site top \
+              --segment 1 \
+              --out probe_state
+          rc=$?
+          end=$(date +%s)
+          elapsed=$((end-start))
+          pkill -f 'inputs/engine/bin/pw.x' 2>/dev/null || true
+          if test -f probe_state/scf.out; then tail -n 250 probe_state/scf.out > probe_tail.txt; else : > probe_tail.txt; fi
+          {
+            echo "exit_code=${rc}"
+            echo "elapsed_seconds=${elapsed}"
+            echo 'scientific_admissibility=NONE_RESOURCE_PROBE_ONLY'
+            echo 'checkpoint_evidence_admitted=false'
+            echo 'scientific_result_admitted=false'
+          } > probe_status.txt
+          cat resource_usage.txt || true
+          cat probe_status.txt
+          rm -rf probe_state
+          if [[ "$rc" -eq 124 && "$elapsed" -ge 295 ]]; then
+            echo 'STANDARD_RUNNER_SURVIVED_300_SECOND_QE_PROBE' | tee -a probe_status.txt
+            exit 0
+          fi
+          echo 'STANDARD_RUNNER_PROBE_DID_NOT_SURVIVE_TO_CONTROLLED_TIMEOUT' | tee -a probe_status.txt
+          exit 1
+
+      - name: Upload tiny mechanical probe record only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-personal-standard-probe-v1
+          path: |
+            resource_before.txt
+            resource_usage.txt
+            probe_status.txt
+            probe_tail.txt
+          retention-days: 7
+          if-no-files-found: error
