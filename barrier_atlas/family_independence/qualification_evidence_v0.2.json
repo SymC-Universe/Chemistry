@@ -1,0 +1,75 @@
+{
+  "schema": "barrier-atlas-family-independence-qualification-evidence-v0.2",
+  "parent_campaign": "FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_release": "Barrier_Height_Rate_Atlas_v0.9",
+  "automatic_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_prohibitions": [
+    "predicted-versus-observed residual",
+    "chi",
+    "expected ChemSA agreement"
+  ],
+  "records": [
+    {
+      "candidate_id": "FI-MC01-TRYPSIN-BENZAMIDINE",
+      "candidate_family": "trypsin-benzamidine binding/unbinding",
+      "source": {
+        "citation": "Ansari N, Rizzi V, Parrinello M. Water regulates the residence time of Benzamidine in Trypsin. Nature Communications 13, 5438 (2022).",
+        "doi": "10.1038/s41467-022-33104-3",
+        "open_article": "https://www.nature.com/articles/s41467-022-33104-3",
+        "reproducibility_repository": "narjesansari/LigandBinding_Trypsin_FES_RATE",
+        "repository_commit": "fe2ee38a58bc8ed3b7dcae23f2be70ad0fefba9f"
+      },
+      "source_gate": "PASS",
+      "physical_observable": "ligand unbinding residence time / k_off",
+      "calculated_rate": {"value": 687.0, "unit": "s^-1", "mechanism": "slower unbinding mechanism", "mechanism_fraction": "about 60 percent of simulations"},
+      "observed_rate": {"value": 600.0, "uncertainty": 300.0, "unit": "s^-1", "source_reference": "Guillain and Thusius, JACS 92, 5534-5536 (1970)"},
+      "comparator_gate": "PASS_INDEPENDENT_HISTORICAL_EXPERIMENT_REPRODUCED_IN_OPEN_ARTICLE",
+      "simulation_temperature_K": 300.0,
+      "condition_gate": "PARTIAL_PRIMARY_EXPERIMENT_CONDITION_REINSPECTION_REQUIRED",
+      "barrier_gate": "HOLD_NO_NUMERIC_PHYSICAL_ACTIVATION_BARRIER_IN_RETRIEVED_TEXT_OR_PINNED_INPUTS",
+      "barrier_notes": [
+        "The open article states that the OPES flooding bias cap must be lower than the free-energy barrier and locates the excluded transition region from the FES, but the retrieved text does not numerically state the physical activation barrier.",
+        "The pinned RATE/plumed.dat contains OPES_METAD BARRIER=22. This is an algorithmic maximum bias setting and must not be relabeled as the physical activation free-energy barrier.",
+        "The 6.36 +/- 0.07 kcal/mol value is a binding free-energy difference, not an activation barrier."
+      ],
+      "classification_gate": "HOLD_DIRECTIONAL_OBSERVABLE",
+      "classification_notes": "The rate actually qualified by the paper is k_off for unbinding. Under the frozen dominant-elementary-event ontology, it cannot be assigned to MC01 association_complexation merely because the same system also binds. Independently adjudicate whether the kinetic coordinate belongs to MC02 dissociation_fragmentation or whether an independent k_on trail can qualify MC01.",
+      "independence_gate": "PASS_DISTINCT_FROM_EXISTING_BETA_CD_AND_CYCLOBUTANE_FAMILIES_IF_CLASSIFIED",
+      "highest_contiguous_promotion_state": "SOURCE_QUALIFIED",
+      "terminal_state": "CLASSIFICATION_HOLD_AND_BARRIER_HALF_TRAIL",
+      "ready_for_adjudication": false,
+      "automatic_admission": false
+    },
+    {
+      "candidate_id": "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK",
+      "candidate_family": "cyclobutene to 1,3-butadiene thermal electrocyclic ring opening",
+      "source_gate": "PASS_CARRIED_FROM_FROZEN_V0_9_REGISTER",
+      "barrier_gate": "PARTIAL_ELECTRONIC_BARRIER_REPORTED_WITH_COORDINATE_CAVEAT",
+      "comparator_gate": "HOLD_CONDITION_MATCHED_PRIMARY_RATE_AND_PREFATOR_PAIR_REQUIRED",
+      "condition_gate": "HOLD",
+      "classification_gate": "HOLD_LIKELY_MC07_PERICYCLIC_NOT_MC02_DISSOCIATION",
+      "independence_gate": "NOT_EVALUATED_FOR_MC02",
+      "highest_contiguous_promotion_state": "SOURCE_QUALIFIED",
+      "terminal_state": "CLASSIFICATION_HOLD",
+      "ready_for_adjudication": false,
+      "automatic_admission": false
+    },
+    {
+      "candidate_id": "FI-MC06-CYCLOPROPANE-PROPENE",
+      "candidate_family": "cyclopropane to propene thermal isomerization",
+      "source": {"doi": "10.1080/00268976.2017.1317112"},
+      "source_gate": "PASS_CARRIED_FROM_FROZEN_V0_9_REGISTER",
+      "barrier_gate": "HOLD_MULTISTEP_DIRADICAL_NETWORK",
+      "comparator_gate": "HOLD_EFFECTIVE_RATE_TO_PATH_MAPPING_UNRESOLVED",
+      "condition_gate": "HOLD",
+      "classification_gate": "PROVISIONAL_MC06_CONSISTENT_WITH_FROZEN_REGISTER",
+      "independence_gate": "PASS_DISTINCT_FROM_CH3NC_ISOMERIZATION_IF_MECHANISM_RESOLVED",
+      "highest_contiguous_promotion_state": "SOURCE_QUALIFIED",
+      "terminal_state": "HOLD",
+      "ready_for_adjudication": false,
+      "automatic_admission": false
+    }
+  ]
+}

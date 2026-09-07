@@ -1,0 +1,22 @@
+name: CO Cu111 L15-L17 paid-runner exact restart qualification v1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STATUS: PAUSED_BY_USER_COST_CONTROL
+
+jobs:
+  halt:
+    name: Disabled paid-runner historical workflow
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo "$STATUS"
+          echo 'HISTORICAL_QUALIFICATION_EVIDENCE_PRESERVED'
+          echo 'NO_LARGER_RUNNERS_AUTHORIZED'
+          echo 'NO_SCIENTIFIC_COMPUTE_AUTHORIZED'

@@ -1,0 +1,228 @@
+name: CO Cu111 L15 native restart production v1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-l15-native-restart-production-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  chunk_1:
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 1
+  chunk_2:
+    needs: chunk_1
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 2
+      prior_artifact: co-cu111-l15-native-restart-v1-seg1
+  chunk_3:
+    needs: chunk_2
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 3
+      prior_artifact: co-cu111-l15-native-restart-v1-seg2
+  chunk_4:
+    needs: chunk_3
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 4
+      prior_artifact: co-cu111-l15-native-restart-v1-seg3
+  chunk_5:
+    needs: chunk_4
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 5
+      prior_artifact: co-cu111-l15-native-restart-v1-seg4
+  chunk_6:
+    needs: chunk_5
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 6
+      prior_artifact: co-cu111-l15-native-restart-v1-seg5
+  chunk_7:
+    needs: chunk_6
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 7
+      prior_artifact: co-cu111-l15-native-restart-v1-seg6
+  chunk_8:
+    needs: chunk_7
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 8
+      prior_artifact: co-cu111-l15-native-restart-v1-seg7
+  chunk_9:
+    needs: chunk_8
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 9
+      prior_artifact: co-cu111-l15-native-restart-v1-seg8
+  chunk_10:
+    needs: chunk_9
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 10
+      prior_artifact: co-cu111-l15-native-restart-v1-seg9
+  chunk_11:
+    needs: chunk_10
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 11
+      prior_artifact: co-cu111-l15-native-restart-v1-seg10
+  chunk_12:
+    needs: chunk_11
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 12
+      prior_artifact: co-cu111-l15-native-restart-v1-seg11
+  chunk_13:
+    needs: chunk_12
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 13
+      prior_artifact: co-cu111-l15-native-restart-v1-seg12
+  chunk_14:
+    needs: chunk_13
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 14
+      prior_artifact: co-cu111-l15-native-restart-v1-seg13
+  chunk_15:
+    needs: chunk_14
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 15
+      prior_artifact: co-cu111-l15-native-restart-v1-seg14
+  chunk_16:
+    needs: chunk_15
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 16
+      prior_artifact: co-cu111-l15-native-restart-v1-seg15
+  chunk_17:
+    needs: chunk_16
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 17
+      prior_artifact: co-cu111-l15-native-restart-v1-seg16
+  chunk_18:
+    needs: chunk_17
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 18
+      prior_artifact: co-cu111-l15-native-restart-v1-seg17
+  chunk_19:
+    needs: chunk_18
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 19
+      prior_artifact: co-cu111-l15-native-restart-v1-seg18
+  chunk_20:
+    needs: chunk_19
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 20
+      prior_artifact: co-cu111-l15-native-restart-v1-seg19
+  chunk_21:
+    needs: chunk_20
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 21
+      prior_artifact: co-cu111-l15-native-restart-v1-seg20
+  chunk_22:
+    needs: chunk_21
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 22
+      prior_artifact: co-cu111-l15-native-restart-v1-seg21
+  chunk_23:
+    needs: chunk_22
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 23
+      prior_artifact: co-cu111-l15-native-restart-v1-seg22
+  chunk_24:
+    needs: chunk_23
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 24
+      prior_artifact: co-cu111-l15-native-restart-v1-seg23
+  chunk_25:
+    needs: chunk_24
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 25
+      prior_artifact: co-cu111-l15-native-restart-v1-seg24
+  chunk_26:
+    needs: chunk_25
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 26
+      prior_artifact: co-cu111-l15-native-restart-v1-seg25
+  chunk_27:
+    needs: chunk_26
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 27
+      prior_artifact: co-cu111-l15-native-restart-v1-seg26
+  chunk_28:
+    needs: chunk_27
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 28
+      prior_artifact: co-cu111-l15-native-restart-v1-seg27
+  chunk_29:
+    needs: chunk_28
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 29
+      prior_artifact: co-cu111-l15-native-restart-v1-seg28
+  chunk_30:
+    needs: chunk_29
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 30
+      prior_artifact: co-cu111-l15-native-restart-v1-seg29
+  chunk_31:
+    needs: chunk_30
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 31
+      prior_artifact: co-cu111-l15-native-restart-v1-seg30
+  chunk_32:
+    needs: chunk_31
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 32
+      prior_artifact: co-cu111-l15-native-restart-v1-seg31
+  chunk_33:
+    needs: chunk_32
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 33
+      prior_artifact: co-cu111-l15-native-restart-v1-seg32
+  chunk_34:
+    needs: chunk_33
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 34
+      prior_artifact: co-cu111-l15-native-restart-v1-seg33
+  chunk_35:
+    needs: chunk_34
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 35
+      prior_artifact: co-cu111-l15-native-restart-v1-seg34
+  chunk_36:
+    needs: chunk_35
+    uses: ./.github/workflows/_co-cu111-l15-native-restart-chunk-v1.yml
+    with:
+      segment: 36
+      prior_artifact: co-cu111-l15-native-restart-v1-seg35

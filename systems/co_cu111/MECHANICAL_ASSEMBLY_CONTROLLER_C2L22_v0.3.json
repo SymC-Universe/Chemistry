@@ -1,0 +1,72 @@
+{
+  "schema": "co-cu111-stage-a-c2l22-mechanical-assembly-v0.3",
+  "status": "FROZEN_BEFORE_ASSEMBLY_REPAIR_RESULT",
+  "system": "CO/Cu(111)",
+  "scope": "Mechanical-only assembly repair for the frozen Stage A C2/L22 isolated-CO member. All 15 v0.2 single-point recovery jobs completed successfully, but run 31477725768 still emitted MECHANICAL_INCOMPLETE during consolidation. This controller permits only normalization of artifact directory roots before the unchanged integrity validator is rerun.",
+  "source_stage_a": {
+    "run_id": 31371043888,
+    "commit": "d411a92c7a548524e7af598b909313f5b421faf9",
+    "engine_artifact": "co-cu111-pbe-stage-a-engine-v2"
+  },
+  "prior_recovery_v1": {
+    "run_id": 31445411702,
+    "state_artifact": "co-cu111-stage-a-mechanical-recovery-v1-state",
+    "artifact_id": 9087698824,
+    "artifact_digest": "sha256:e482f693aeaafc196e72530cafd8355716ab389580ca7a9645598a241f92958a"
+  },
+  "single_point_recovery_v2": {
+    "run_id": 31477725768,
+    "commit": "166ef7b35d1baec042570e69d4656863f0248e83",
+    "artifact_pattern": "co-cu111-stage-a-recovery-v2-C2-L22-i*",
+    "required_indices": [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22],
+    "all_single_point_jobs_completed_successfully": true,
+    "assembly_result": "MECHANICAL_INCOMPLETE",
+    "scientific_result_consulted": false
+  },
+  "frozen_inputs": {
+    "protocol": "systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json",
+    "protocol_git_blob_sha": "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336",
+    "bundle": "systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json",
+    "bundle_git_blob_sha": "4a23d19bbd4374e250582fb1d02419828a06eb5d",
+    "runner": "systems/co_cu111/pbe_stage_a_runner_v1.py",
+    "runner_git_blob_sha": "13f457a7f8daaeb2ffccdb9fe6f01c1b0d3a1bdd",
+    "recovery_runner": "systems/co_cu111/pbe_stage_a_recovery_v2.py",
+    "recovery_contract": "systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_C2L22_v0.2.json",
+    "mpi_ranks": 1,
+    "thread_environment": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1
+    }
+  },
+  "allowed_repair": {
+    "operation": "artifact_root_normalization_only",
+    "rule": "Locate exactly one prior C2/L22 member directory in the v0.1 recovery artifact, copy its contents into recovered/stageA/co_C2_L22, then overlay the 15 successful v0.2 single-point artifacts into that same member directory. Do not execute pw.x and do not modify any run_record, input, output, hash, energy, or scientific metadata before validation.",
+    "required_v2_chunk_count": 15,
+    "validator": "Use the unchanged v0.1 validate_and_assemble_member implementation through pbe_stage_a_recovery_v2.py with the frozen v0.2 recovery contract. COMPLETE requires all 23 bond points to pass existing return-code, JOB DONE, finite-energy, input-hash, output-hash, and bond-coordinate integrity checks."
+  },
+  "forbidden_changes": [
+    "any QE execution",
+    "cutoff pairs",
+    "CO box lengths",
+    "bond grid",
+    "PBE functional",
+    "pseudopotentials",
+    "boundary condition",
+    "SCF settings",
+    "MPI rank count",
+    "thread settings",
+    "scientific thresholds",
+    "fit definitions",
+    "selection rules",
+    "physical references",
+    "kinetic inputs",
+    "editing archived run records, inputs, outputs, hashes, or energies"
+  ],
+  "provenance": {
+    "repair_selected_from_mechanical_assembly_evidence_only": true,
+    "scientific_results_consulted_for_repair": false,
+    "scientific_settings_changed": false,
+    "scientific_analyzer_allowed_after_this_repair": false,
+    "reason": "Run 31477725768 completed every frozen C2/L22 single-point recovery job successfully but failed only at consolidation. The smallest safe repair is directory-root normalization and revalidation, with no recomputation and no scientific interpretation."
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "schema": "barrier-atlas-targeted-hold-closure-update-v0.1",
+  "status": "ADDITIVE_EVIDENCE_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false
+  },
+  "updates": [
+    {
+      "update_id": "HC-MC01-TRYPSIN-PRIMARY-CONDITIONS",
+      "trail_id": "FI-MC01-TRYPSIN-BENZAMIDINE",
+      "target_class": "MC01",
+      "scientific_change": "The previously unknown primary kinetic conditions were reconstructed. They reveal a real state-point/media mismatch rather than closing the condition gate.",
+      "computational_side": {
+        "source_doi": "10.1038/s41467-018-05769-2",
+        "barrier_value_kJ_per_mol": 11.6,
+        "barrier_type": "metadynamics free-energy-surface association barrier",
+        "temperature_K": 297.0,
+        "reference_pressure_bar": 1.0,
+        "protonation_setup_pH": 7.5,
+        "medium_description": "explicit TIP3P water; system neutralized with chloride ions; metadynamics used the same basic MD setup"
+      },
+      "experimental_side": {
+        "primary_source_doi": "10.1021/ja00721a051",
+        "observable": "benzamidine association k_on",
+        "value": 2.9e7,
+        "unit": "M^-1 s^-1",
+        "temperature_C": 17.0,
+        "temperature_K": 290.15,
+        "pH": 7.7,
+        "buffer": "0.07 M Tris chloride",
+        "calcium_chloride_M": 0.020,
+        "provenance_note": "Figure 2 states that the benzamidine relaxation experiment uses the Figure 1 experimental conditions."
+      },
+      "temperature_difference_K": 6.85,
+      "condition_gate": "FAIL_CURRENTLY_UNMAPPED_STATE_POINT_AND_MEDIUM",
+      "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+      "terminal_state": "CONDITION_MISMATCH_HOLD",
+      "ready_for_adjudication": false,
+      "next_gate": "Find an independent benzamidine association-rate measurement at a condition defensibly matched to the 297 K simulation, or prospectively recompute the barrier/rate at the 290.15 K primary assay state point, or preregister a physics-based condition mapping with uncertainty. No ad hoc rate-derived rescaling is licensed."
+    },
+    {
+      "update_id": "HC-MC16-HO2-HO2-CALIBRATION-QUARANTINE",
+      "trail_id": "FI-MC16-HO2-HO2-SELF-REACTION",
+      "target_class": "MC16",
+      "candidate_family": "HO2 + HO2 self-reaction / termination network",
+      "source_gate": "PASS",
+      "theory_source_doi": "10.1016/j.combustflame.2021.111975",
+      "representation_mode": "NETWORK_RESOLVED",
+      "barrier_gate": "PASS_AT_NETWORK_MODEL_LEVEL",
+      "mechanism_note": "High-level electronic-structure, transition-state-theory, and master-equation treatment includes triplet and singlet channels; the high-temperature singlet branch can form two OH radicals plus O2 rather than behaving as a single scalar termination channel.",
+      "comparator_gate": "FAIL_INDEPENDENCE_FOR_SAME_TARGET_PRESSURE_DEPENDENCE",
+      "same_target_calibration_detected": true,
+      "calibration_note": "The paper reports adjustment of collision, energy-transfer, and state-density parameters in obtaining agreement with observed pressure dependence. Those observations therefore cannot serve as an independent validation target for the adjusted pressure-dependent model.",
+      "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+      "terminal_state": "CALIBRATION_QUARANTINE_HOLD",
+      "ready_for_adjudication": false,
+      "next_gate": "Identify an experiment outside the data used for pressure-dependence adjustment and predeclare the validation regime, or isolate an a-priori low-pressure/high-temperature prediction whose inputs were not selected using that target."
+    },
+    {
+      "update_id": "HC-MC11-ECDHFR-HYDRIDE-RECON",
+      "trail_id": "FI-MC11-ECDHFR-HYDRIDE",
+      "target_class": "MC11",
+      "candidate_family": "Escherichia coli dihydrofolate reductase hydride transfer",
+      "source_gate": "PASS",
+      "theory_source_doi": "10.1021/bi034824f",
+      "barrier_gate": "PASS_AT_LITERATURE_RECONNAISSANCE_LEVEL",
+      "theory_note": "EA-VTST/MT QM/MM literature reports a phenomenological activation free energy near 13.1 kcal/mol at about 300 K for the hydride-transfer step.",
+      "experimental_candidates": [
+        {
+          "source_doi": "10.1021/bi00387a052",
+          "observable": "pre-steady-state hydride transfer",
+          "reported_max_rate_s_inverse": 950.0,
+          "qualification_issue": "The 950 s^-1 value is pH-dependent and functions as a kinetic-scheme maximum rather than a single explicitly condition-matched raw state point."
+        },
+        {
+          "observable": "single-turnover hydride transfer at pH 7 and 25 C",
+          "reported_rate_s_inverse": 203.7,
+          "reported_uncertainty_s_inverse": 7.4,
+          "qualification_issue": "This is a clean raw kinetic event, but its state point is not automatically identical to the theoretical phenomenological barrier comparator used in the 13.1 versus 13.4 kcal/mol literature comparison."
+        }
+      ],
+      "comparator_gate": "HOLD_EXACT_EVENT_AND_STATE_POINT_MAPPING",
+      "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+      "terminal_state": "COMPARATOR_EVENT_MAPPING_HOLD",
+      "ready_for_adjudication": false,
+      "next_gate": "Pin the original EA-VTST/MT calculation conditions and a primary raw hydride-transfer measurement at the same pH, temperature, substrate/cofactor state, and kinetic definition; separately audit whether any model parameters were trained to the same experimental barrier."
+    },
+    {
+      "update_id": "HC-MC02-DIMETHYLOXETANE-REPLACEMENT",
+      "trail_id": "FI-MC02-DIMETHYLOXETANE-FRAGMENTATION",
+      "target_class": "MC02",
+      "candidate_family": "2,2-dimethyloxetane unimolecular thermal fragmentation",
+      "classification_gate": "PASS_PROVISIONAL_GENUINE_FRAGMENTATION",
+      "classification_note": "The reactant disappears by parallel unimolecular paths yielding isobutene + formaldehyde or ethene + acetone, making this a genuine fragmentation candidate rather than repurposing an electrocyclic ring opening.",
+      "source_gate": "PASS",
+      "barrier_sources": [
+        {
+          "doi": "10.3184/146867812X13382039414667",
+          "method": "MPW1PW91/6-311+G** among several tested density functionals",
+          "rate_expression_path1": "k1(T)=4.79e13 exp(-27055/T) s^-1",
+          "rate_expression_path2": "k2(T)=1.79e14 exp(-31091/T) s^-1"
+        },
+        {
+          "doi": "10.1134/S0036024412060246",
+          "method": "MPW1PW91/6-311+G** plus RRKM",
+          "high_pressure_limit_path1": "4.79e13 exp(-27055/T) s^-1",
+          "falloff_pressure_mmHg": 7.26e-4
+        }
+      ],
+      "experimental_comparator": {
+        "authors": "P. Hammonds and K. A. Holbrook",
+        "title": "Thermolyses of 2-methyloxetan and 2,2-dimethyloxetan",
+        "journal": "J. Chem. Soc. Faraday Trans. 1",
+        "year": 1982,
+        "nist_squib": "1982HAM/HOL2195",
+        "temperature_range_K": [675.0, 744.0],
+        "pressure_range_bar": [0.00960, 0.0123],
+        "example_reaction": "2,2-dimethyloxetane -> acetone + ethene",
+        "reaction_order": 1,
+        "nist_rate_expression": "3.63e15 s^-1 exp(-270220 J mol^-1 / RT)"
+      },
+      "pressure_regime_gate": "PASS_PROVISIONAL_HIGH_PRESSURE_RELATIVE_TO_THEORETICAL_FALLOFF",
+      "method_selection_gate": "HOLD_SAME_TARGET_AGREEMENT_INFORMED_METHOD_SELECTION",
+      "method_selection_note": "The 2012 multi-functional study explicitly states that MPW1PW91 was found to give reasonably good agreement with the experimental kinetics. Selecting that method because of the agreement would violate the campaign selection firewall.",
+      "comparator_gate": "PASS_CANDIDATE_INDEPENDENT_EXPERIMENT_EXISTS_BUT_NOT_YET_LICENSED_FOR_SELECTED_MODEL",
+      "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+      "terminal_state": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+      "ready_for_adjudication": false,
+      "next_gate": "Use a method-selection rule fixed independently of the Hammonds-Holbrook target, retain all predeclared method variants as model replicates rather than selecting the best residual, and pin the complete primary bibliographic record before condition-matched adjudication."
+    }
+  ],
+  "aggregate": {
+    "new_ready_for_adjudication": 0,
+    "new_hard_condition_holds": 1,
+    "new_calibration_quarantines": 1,
+    "new_genuine_mc02_replacement_candidates": 1,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

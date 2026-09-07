@@ -1,0 +1,32 @@
+name: Na Cu001 ESM slab geometry tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/slab_runner_v5.py'
+      - 'na_cu001_ci/test_slab_runner_v5.py'
+      - '.github/workflows/na-cu001-esm-geometry-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run ESM geometry tests
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            na_cu001_ci/slab_runner_v2.py \
+            na_cu001_ci/slab_runner_v3.py \
+            na_cu001_ci/slab_runner_v4.py \
+            na_cu001_ci/slab_runner_v5.py \
+            na_cu001_ci/test_slab_runner_v4.py \
+            na_cu001_ci/test_slab_runner_v5.py
+          cd na_cu001_ci
+          python3 test_slab_runner_v4.py
+          python3 test_slab_runner_v5.py

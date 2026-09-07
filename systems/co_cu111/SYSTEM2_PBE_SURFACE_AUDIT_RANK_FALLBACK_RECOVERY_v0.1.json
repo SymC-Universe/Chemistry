@@ -1,0 +1,159 @@
+{
+  "schema": "co-cu111-pbe-surface-audit-rank-fallback-recovery-v0.1",
+  "status": "FROZEN_MECHANICAL_RANK_FALLBACK_AFTER_FOUR_RANK_PARITY_HOLD",
+  "system": "CO/Cu(111)",
+  "purpose": "Continue only the frozen L13/V28/K24 clean-surface audit after four MPI ranks failed the preregistered force-component parity gate. Prospectively test three and then two MPI ranks against the same immutable one-rank segment-8 input geometry using unchanged parity thresholds, select the highest passing rank count, and otherwise fall back to the original direct one-rank pw.x execution. Continue the same BFGS proposal chain for at most four additional bounded segments, then independently reproduce the completed audit and apply the unchanged clean-surface gate. No scientific setting or threshold is changed.",
+  "scientific_scope": "NO_SCIENTIFIC_CONFIGURATION_CHANGE",
+  "parent_four_rank_parity": {
+    "run_id": 32857157316,
+    "workflow_name": "CO Cu111 PBE surface audit MPI recovery v1",
+    "workflow_head_sha": "a659e3e02f0c4248377c5f229ba734ebdbab15b1",
+    "artifact_name": "co-cu111-pbe-surface-audit-mpi-parity-v1",
+    "artifact_id": 9569243415,
+    "artifact_digest": "sha256:e7a93c293e1a727fc49ea4a51dc66aac48b0a9e9d076ccd4b134e0b8e90996a6",
+    "result_sha256": "292a4f29e68380a9902ac622b144d463c2e732fd8d97da7c66e3434da098d63f",
+    "status": "MECHANICAL_MPI_PARITY_HOLD",
+    "reference_mpi_ranks": 1,
+    "test_mpi_ranks": 4,
+    "energy_absolute_difference_ev": 1.3605313142761588e-07,
+    "force_component_absolute_difference_max_ev_per_angstrom": 0.0003195881493653654,
+    "energy_tolerance_ev": 0.0001,
+    "force_tolerance_ev_per_angstrom": 0.0001,
+    "raw_input_sha256": "44247c6e53c6c7342e02b376f8675386292aff771c1bfbb21d6e774837f87843",
+    "raw_output_sha256": "28774139dbd19426cbf3fa87c02236ede06589c8616071da621d00f133a96a91",
+    "scientific_jobs_executed_after_parity": false
+  },
+  "segment8_seed": {
+    "source_run_id": 32545223290,
+    "artifact_name": "co-cu111-pbe-clean-audit-proposal-relay-L13-V28-K24-seg8",
+    "artifact_id": 9481470766,
+    "artifact_digest": "sha256:d7010a3aa5a5086cd5e13c21be83e8e573aa851325ed42420ba4555ac3b55188",
+    "relay_segment_sha256": "9e31bf164abb23545613a29c389b75e43243bcf54b636d2a79d036ffec5a8997",
+    "relax_input_sha256": "aa8827003720a64c73e070eb2ef15e799e453ff44d023d15181d4b701f9bad40",
+    "relax_output_sha256": "1fdb56224acf736128d77b46aaff458e1764ae688298275b069eb6e57b344b03",
+    "required_status": "CONTINUE",
+    "required_logical_segment": 8,
+    "next_trial_semantics": "PROPOSED_NOT_YET_EVALUATED"
+  },
+  "parser_correction": {
+    "authoritative_parser": "Read exactly nat atom rows immediately following each 'Forces acting on atoms' header and use complete total-force blocks only.",
+    "changes_scientific_force_gate": false,
+    "unchanged_force_gate_ev_per_angstrom": 0.02,
+    "segment8_true_input_max_movable_force_ev_per_angstrom": 0.0514611482476079,
+    "segment8_true_second_evaluated_max_movable_force_ev_per_angstrom": 0.04778961262979822,
+    "segment8_true_input_energy_ev": -37690.402787825384
+  },
+  "frozen_sources": {
+    "surface_protocol": {
+      "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json",
+      "sha256": "1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f"
+    },
+    "surface_runner": {
+      "path": "systems/co_cu111/pbe_surface_site_ordering_v1.py",
+      "sha256": "f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b"
+    },
+    "proposal_relay_protocol": {
+      "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_PROPOSAL_RELAY_v0.1.json",
+      "sha256": "921505fa9cd881f3d6b5dd160b4d6365e2ebb220eaa90920cc863b075c92390b"
+    },
+    "proposal_relay_runner": {
+      "path": "systems/co_cu111/pbe_surface_audit_proposal_relay_v1.py",
+      "sha256": "33d1620e3af2a072e1f14e4f2fefa72cf7c5f53ff247b0fb394aa72130764696"
+    },
+    "four_rank_protocol": {
+      "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_MPI_RECOVERY_v0.1.json",
+      "sha256": "c2593de1a71afde68ffcc5cd4a94555f65891701751b04d0e63199ac2ce08258"
+    },
+    "four_rank_runner": {
+      "path": "systems/co_cu111/pbe_surface_audit_mpi_recovery_v1.py",
+      "sha256": "734e400952c932a6df85316c86ac32139ab7fbdc3974dd7865cb108f369577b2"
+    },
+    "stage_a_run_id": 31887006685,
+    "stage_a_result_artifact": "co-cu111-pbe-stage-a-numerical-extension-decision-v1",
+    "stage_a_result_sha256": "2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3",
+    "engine_run_id": 31371043888,
+    "engine_artifact": "co-cu111-pbe-stage-a-engine-v2",
+    "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855"
+  },
+  "rank_qualification": {
+    "reference_mpi_ranks": 1,
+    "candidate_mpi_ranks_descending": [3, 2],
+    "fallback_mpi_ranks": 1,
+    "fallback_execution": "DIRECT_PW_X_NO_MPIRUN",
+    "reference_geometry": "immutable segment-8 input_atoms evaluated by the original direct one-rank execution",
+    "energy_absolute_difference_max_ev": 0.0001,
+    "force_component_absolute_difference_max_ev_per_angstrom": 0.0001,
+    "force_parser": "authoritative total-force block only",
+    "selection_rule": "HIGHEST_PASSING_PROSPECTIVE_PARITY_RANK_ELSE_ORIGINAL_DIRECT_ONE_RANK",
+    "four_rank_is_permanently_excluded_by_parent_hold": true
+  },
+  "execution": {
+    "parallel_runner_label": "ubuntu-latest-m",
+    "one_rank_runner_label": "ubuntu-24.04",
+    "host_capacity_probe": "env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc",
+    "thread_caps": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1
+    },
+    "parallel_command": "mpirun -np SELECTED_RANKS exact Stage A pw.x",
+    "one_rank_command": "direct exact Stage A pw.x",
+    "parallelization_change_is_execution_only": true,
+    "electronic_scratch_reused": false,
+    "parity_runtime_cap_seconds_per_candidate": 7200,
+    "continuation_segment_runtime_cap_seconds": 16200,
+    "reproduction_runtime_cap_seconds": 7200,
+    "maximum_new_continuation_segments": 4,
+    "logical_segment_numbers": [9, 10, 11, 12],
+    "restart_claim": "NOT_EXACT_QE_RESTART",
+    "continuation_mode": "EVALUATE_PRIOR_BFGS_PROPOSED_TRIAL_FROM_SCRATCH"
+  },
+  "unchanged_science": {
+    "case_id": "L13-V28-K24-audit",
+    "layers": 13,
+    "vacuum_angstrom": 28.0,
+    "kmesh": 24,
+    "role": "audit",
+    "executable": "exact Stage A pw.x",
+    "pseudopotentials": "exact Stage A Cu/C/O bundle",
+    "ecutwfc_ry": 90,
+    "ecutrho_ry": 900,
+    "input_dft": "PBE",
+    "occupations": "smearing",
+    "smearing": "mv",
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "assume_isolated": "esm",
+    "esm_bc": "bc1",
+    "ion_dynamics": "bfgs",
+    "movable_components": "outer two layers on each face, z only",
+    "force_gate_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_gate_ev": 0.001,
+    "surface_excess_convergence_max_ev_per_surface_atom": 0.001,
+    "reference_audit_rule": "unchanged",
+    "candidate_selection_rule": "unchanged"
+  },
+  "reuse_contract": {
+    "completed_reference_run_id": 32435777875,
+    "completed_reference_artifact": "co-cu111-pbe-clean-timeout-recovery-repro1-L11-V24-K20-reference",
+    "completed_reference_summary_sha256": "88b0df1455d2d34963b6503a980fb79260e93c3785b94ba4cefab110fcfc0245",
+    "eight_candidate_source_run_id": 31922544540,
+    "eight_completed_candidates_recomputed": false,
+    "reference_recomputed": false,
+    "audit_only_recomputed": true,
+    "clean_gate_implementation": "unchanged pbe_surface_site_ordering_v1.py clean-gate",
+    "site_ordering_dispatched_by_this_recovery": false
+  },
+  "provenance": {
+    "scientific_settings_changed": false,
+    "parity_thresholds_changed": false,
+    "four_rank_failure_used_only_to_exclude_four_rank_execution": true,
+    "candidate_rank_order_frozen_before_new_results": true,
+    "one_rank_fallback_is_original_execution_model": true,
+    "continuation_budget_extension_is_mechanical_only": true,
+    "kinetic_inputs_used": false,
+    "surface_energy_or_kinetic_result_used_to_choose_execution_change": false
+  }
+}

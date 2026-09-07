@@ -1,0 +1,28 @@
+name: Larger runner access smoke
+
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Confirm larger runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "start=$(date -u +%FT%TZ)"
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+          echo "Beginning 180-second runner lifetime test"
+          sleep 180
+          echo "end=$(date -u +%FT%TZ)"
+          echo "LARGER_RUNNER_180_SECOND_LIFETIME_PASS"

@@ -1,0 +1,241 @@
+name: CO Cu111 PBE surface audit continuation extension v2 closure recovery v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-pbe-surface-audit-continuation-extension-v2-closure-recovery-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-surface-audit-continuation-extension-v2-closure-recovery-v1
+  cancel-in-progress: false
+
+env:
+  EXT2_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_CONTINUATION_EXTENSION_v0.2.json
+  EXT2_RUNNER: systems/co_cu111/pbe_surface_audit_continuation_extension_v2.py
+  EXT2_TEST: systems/co_cu111/test_pbe_surface_audit_continuation_extension_v2.py
+  EXT1_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_CONTINUATION_EXTENSION_v0.1.json
+  EXT1_RUNNER: systems/co_cu111/pbe_surface_audit_continuation_extension_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  SURFACE_RUNNER: systems/co_cu111/pbe_surface_site_ordering_v1.py
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  SOURCE_EXTENSION_RUN_ID: '33254238443'
+  SOURCE_SEG30_ARTIFACT: co-cu111-pbe-surface-audit-continuation-extension-v2-L13-V28-K24-seg30
+  SELECTION_RUN_ID: '32915640451'
+  SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  PARENT_RECOVERY_RUN_ID: '32435777875'
+  COMPLETED_REFERENCE_ARTIFACT: co-cu111-pbe-clean-timeout-recovery-repro1-L11-V24-K20-reference
+  COMPLETED_REFERENCE_SHA256: '88b0df1455d2d34963b6503a980fb79260e93c3785b94ba4cefab110fcfc0245'
+  SOURCE_SURFACE_RUN_ID: '31922544540'
+  REPRO_RUNTIME_CAP_S: '7200'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  reproduce_audit:
+    name: reproduce-audit-from-immutable-seg30
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen code contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$EXT2_RUNNER" "$EXT2_TEST"
+          echo 'e9f6bcbf82837cfb28f6330b069404eae19a0c42981963c04d7f8ea492f0ddc5  '"$EXT2_PROTOCOL" | sha256sum -c -
+          echo '8b7fcf48d97c36aca4b594dd0d950058d4e51338cbb23441b86973ec5934de29  '"$EXT2_RUNNER" | sha256sum -c -
+          echo 'cc91ce355c41a4ae9fde85a2b1507c0f524c487526d7d6025a3bd456dcc1b8b9  '"$EXT2_TEST" | sha256sum -c -
+          echo '5ce59d236bf77324d9ba52eff92b8f4d83d4f162e8d2f058bfbca4a8557656bd  '"$EXT1_PROTOCOL" | sha256sum -c -
+          echo '2e72878ec30ce233fd72d6f8aed9089efa0374c6b81ef99c4b1da4f3e89a5ed0  '"$EXT1_RUNNER" | sha256sum -c -
+          python3 "$EXT2_TEST" -v
+          python3 "$EXT2_RUNNER" self-test --protocol "$EXT2_PROTOCOL"
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_SEG30_ARTIFACT }}
+          path: prior
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_EXTENSION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify immutable completed L13 audit checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'f5ce41f6e2023e5e628a4b865338abbffa3fa750d9d77c5ecf8ba9ebddbd031d  prior/CONTINUATION_EXTENSION_V2_SEGMENT.json' | sha256sum -c -
+          python3 - <<'PY'
+          import json
+          p='prior/CONTINUATION_EXTENSION_V2_SEGMENT.json'
+          r=json.load(open(p))
+          assert r['schema']=='co-cu111-pbe-surface-audit-continuation-extension-segment-v0.2'
+          assert r['status']=='RELAX_COMPLETE'
+          assert r['logical_segment']==30 and r['segment']==6
+          assert r['execution_mode']=='DIRECT_ONE_RANK' and r['mpi_ranks']==1
+          assert r['carried_forward_without_recomputation'] is True
+          assert abs(r['latest_authoritative_max_movable_force_ev_per_angstrom']-0.019443455043810964)<1e-12
+          assert r['scientific_settings_changed'] is False
+          assert r['parallelization_changed'] is False
+          assert r['kinetic_inputs_used'] is False
+          assert r['final_atoms'] and r['next_trial_atoms'] is None
+          assert r['pw_sha256']=='2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855'
+          assert r['rank_selection_sha256']=='e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4'
+          print('IMMUTABLE_SEG30_RELAX_COMPLETE_VERIFIED')
+          print('CORRECTED_L13_FORCE_EV_A=%.15f'%r['latest_authoritative_max_movable_force_ev_per_angstrom'])
+          PY
+      - name: Independently reproduce completed L13 audit geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$EXT2_RUNNER" reproduce \
+            --protocol "$EXT2_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --prior-root prior \
+            --runtime-cap-s "$REPRO_RUNTIME_CAP_S" --out audit_final
+          python3 - <<'PY'
+          import json
+          r=json.load(open('audit_final/summary.json'))
+          print('REPRO_STATUS='+r['status'])
+          print('REPRO_DELTA_EV=%.15f'%r['energy_reproduction_delta_ev'])
+          print('CORRECTED_L13_FORCE_EV_A=%.15f'%r['max_movable_force_ev_per_angstrom'])
+          print('MECHANICAL_PASS='+str(r['mechanical_pass']).lower())
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-audit-continuation-extension-v2-final-L13-V28-K24-audit
+          path: audit_final
+          retention-days: 90
+          if-no-files-found: error
+
+  clean_gate:
+    name: clean-gate
+    needs: reproduce_audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: clean_collected/source
+          merge-multiple: false
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_SURFACE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.COMPLETED_REFERENCE_ARTIFACT }}
+          path: clean_collected/reference
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PARENT_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-audit-continuation-extension-v2-final-L13-V28-K24-audit
+          path: clean_collected/audit
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Independently re-audit eight candidate force gates with authoritative QE blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          RY_TO_EV=13.605693122994; BOHR=0.529177210903; CONV=RY_TO_EV/BOHR
+          pat=re.compile(r"atom\s+(\d+)\s+type\s+\d+\s+force\s*=\s*([-+0-9.Ee]+)\s+([-+0-9.Ee]+)\s+([-+0-9.Ee]+)")
+          passed=[]
+          for summary_path in Path('clean_collected/source').rglob('summary.json'):
+              s=json.loads(summary_path.read_text())
+              if s.get('role')!='candidate' or s.get('status')!='COMPLETE': continue
+              outs=list(summary_path.parent.rglob('clean_relax.out')); assert len(outs)==1,(s.get('case_id'),len(outs))
+              lines=outs[0].read_text(errors='replace').splitlines(); blocks=[]
+              for i,line in enumerate(lines):
+                  if 'Forces acting on atoms' not in line: continue
+                  rows=[]
+                  for line2 in lines[i+1:]:
+                      if 'The non-local contrib.' in line2 or 'Total force =' in line2: break
+                      m=pat.search(line2)
+                      if not m: continue
+                      rows.append((float(m.group(2)),float(m.group(3)),float(m.group(4))))
+                      if len(rows)==int(s['layers']): break
+                  if len(rows)==int(s['layers']): blocks.append(rows)
+              assert blocks
+              flags=[a.get('flags',[0,0,0]) for a in s['final_atoms']]; vals=[]
+              for force,fl in zip(blocks[-1],flags):
+                  for value,flag in zip(force,fl):
+                      if int(flag)==1: vals.append(abs(value)*CONV)
+              corrected=max(vals); assert corrected<=0.02,(s['case_id'],corrected); assert s['mechanical_pass'] is True
+              passed.append((s['case_id'],corrected))
+          assert len(passed)==8,passed
+          for case,force in sorted(passed): print(f'{case} corrected_max_movable_force_ev_A={force:.12f}')
+          print('EIGHT_CANDIDATE_FORCE_READJUDICATION_PASS')
+          PY
+      - name: Apply unchanged ten-case clean-surface gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${COMPLETED_REFERENCE_SHA256}  clean_collected/reference/summary.json" | sha256sum -c -
+          mkdir -p clean_gate
+          python3 "$SURFACE_RUNNER" clean-gate \
+            --protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --root clean_collected \
+            --out clean_gate/CLEAN_SURFACE_GATE.json \
+            > clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          cat clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          python3 - <<'PY'
+          import json
+          r=json.load(open('clean_gate/CLEAN_SURFACE_GATE.json'))
+          assert r['provenance']['kinetic_inputs_used'] is False
+          print('CLEAN_SURFACE_STATUS='+r['status'])
+          print('NEXT_GATE='+r['next_gate'])
+          print('SCIENTIFIC_SETTINGS_CHANGED=false')
+          print('KINETIC_INPUTS_USED=false')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-continuation-extension-v2-closure-recovery-gate
+          path: clean_gate
+          retention-days: 90
+          if-no-files-found: error

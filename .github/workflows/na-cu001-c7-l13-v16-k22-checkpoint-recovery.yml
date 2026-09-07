@@ -1,0 +1,233 @@
+name: Na Cu001 C7 L13 V16 K22 checkpoint recovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/slab_l13_checkpoint_recovery_v1.py'
+      - 'na_cu001_ci/test_slab_l13_checkpoint_recovery_v1.py'
+      - '.github/workflows/na-cu001-c7-l13-v16-k22-checkpoint-recovery.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c7-l13-v16-k22-checkpoint-recovery
+  cancel-in-progress: false
+
+env:
+  FROZEN_SOURCE_COMMIT: '055b2f5d782c2a590e65ad429cefd0981f0dd37b'
+  L13_RUN_ID: '31030768817'
+  OMP_NUM_THREADS: '1'
+  SEGMENT_MAX_SECONDS: '13500'
+
+jobs:
+  segment-1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    outputs:
+      complete: ${{ steps.status.outputs.complete }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: control
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FROZEN_SOURCE_COMMIT }}
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v2-base
+          path: base_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.L13_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v2-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.L13_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify recovery wrapper and frozen source binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
+          python3 -m py_compile \
+            control/na_cu001_ci/slab_l13_checkpoint_recovery_v1.py \
+            control/na_cu001_ci/test_slab_l13_checkpoint_recovery_v1.py
+          (
+            cd control/na_cu001_ci
+            python3 test_slab_l13_checkpoint_recovery_v1.py
+          )
+          test "$(git -C frozen rev-parse HEAD)" = "$FROZEN_SOURCE_COMMIT"
+          chmod +x qe_bundle/bin/pw.x
+      - name: Run cleanly bounded first segment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          python3 control/na_cu001_ci/slab_l13_checkpoint_recovery_v1.py segment \
+            --source-dir frozen/na_cu001_ci \
+            --segment 1 \
+            --restart-mode from_scratch \
+            --max-seconds "$SEGMENT_MAX_SECONDS" \
+            --layers 13 \
+            --vacuum 16 \
+            --kmesh 22 \
+            --handoff base_bundle/base/BULK_HANDOFF.json \
+            --bulk-result base_bundle/base/BULK_CONVERGENCE_RESULT.json \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --out work/l13_outputs/l13_v16_k22 \
+            --np 2 \
+            --status-out work/segment1_status.json
+      - name: Export segment status
+        id: status
+        shell: bash
+        run: |
+          set -euo pipefail
+          complete="$(python3 -c 'import json; print(str(json.load(open("work/segment1_status.json"))["complete"]).lower())')"
+          echo "complete=$complete" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v16-k22-checkpoint-segment1
+          path: work
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+
+  segment-2:
+    needs: segment-1
+    if: needs.segment-1.outputs.complete != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    outputs:
+      complete: ${{ steps.status.outputs.complete }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: control
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FROZEN_SOURCE_COMMIT }}
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v16-k22-checkpoint-segment1
+          path: work
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v2-base
+          path: base_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.L13_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v2-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.L13_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify frozen execution identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
+          test "$(git -C frozen rev-parse HEAD)" = "$FROZEN_SOURCE_COMMIT"
+          chmod +x qe_bundle/bin/pw.x
+      - name: Resume from the verified checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 control/na_cu001_ci/slab_l13_checkpoint_recovery_v1.py segment \
+            --source-dir frozen/na_cu001_ci \
+            --segment 2 \
+            --restart-mode restart \
+            --max-seconds "$SEGMENT_MAX_SECONDS" \
+            --layers 13 \
+            --vacuum 16 \
+            --kmesh 22 \
+            --handoff base_bundle/base/BULK_HANDOFF.json \
+            --bulk-result base_bundle/base/BULK_CONVERGENCE_RESULT.json \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --out work/l13_outputs/l13_v16_k22 \
+            --np 2 \
+            --status-out work/segment2_status.json
+      - name: Export resumed segment status
+        id: status
+        shell: bash
+        run: |
+          set -euo pipefail
+          complete="$(python3 -c 'import json; print(str(json.load(open("work/segment2_status.json"))["complete"]).lower())')"
+          echo "complete=$complete" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-c7-l13-v16-k22-checkpoint-segment2
+          path: work
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+      - name: Require a completed converged replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ steps.status.outputs.complete }}' = true
+
+  publish:
+    needs: [segment-1, segment-2]
+    if: always() && needs.segment-1.result == 'success' && (needs.segment-2.result == 'success' || needs.segment-2.result == 'skipped')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        if: needs.segment-2.result == 'success'
+        with:
+          name: na-cu001-c7-l13-v16-k22-checkpoint-segment2
+          path: work
+      - uses: actions/download-artifact@v4
+        if: needs.segment-2.result == 'skipped'
+        with:
+          name: na-cu001-c7-l13-v16-k22-checkpoint-segment1
+          path: work
+      - name: Compact and verify final evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="work/segment1_status.json"
+          if test -f work/segment2_status.json; then status="work/segment2_status.json"; fi
+          python3 - "$status" <<'PY'
+          import json, sys
+          row=json.load(open(sys.argv[1]))
+          if not row.get('complete'):
+              raise SystemExit('HOLD: checkpoint recovery did not complete')
+          PY
+          case_root=work/l13_outputs/l13_v16_k22
+          find "$case_root" -type d \( -name tmp -o -name '*.save' \) -prune -exec rm -rf {} + 2>/dev/null || true
+          find "$case_root" -type f \( -name '*.wfc*' -o -name charge-density.dat -o -name data-file-schema.xml \) -delete 2>/dev/null || true
+          rm -f "$case_root"/*/RESTART_STATE.sha256
+          mapfile -d '' compact_files < <(
+            find "$case_root" -type f \( -name run_record.json -o -name 'cu001_*.in' -o -name 'cu001_*.out' \) -print0 | sort -z
+          )
+          test "${#compact_files[@]}" -eq 3
+          printf '%s\0' "${compact_files[@]}" | xargs -0 sha256sum > "$case_root/COMPACT_EVIDENCE.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v2-recovered-v16_k22
+          path: |
+            work/l13_outputs/**/run_record.json
+            work/l13_outputs/**/*.in
+            work/l13_outputs/**/*.out
+            work/l13_outputs/**/COMPACT_EVIDENCE.sha256
+            work/segment1_status.json
+            work/segment2_status.json
+          retention-days: 90
+          if-no-files-found: error

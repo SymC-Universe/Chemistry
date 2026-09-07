@@ -1,0 +1,174 @@
+name: Reusable CO Cu111 L15 native restart chunk v1
+
+on:
+  workflow_call:
+    inputs:
+      segment:
+        required: true
+        type: number
+      prior_artifact:
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  DEPLOYMENT: systems/co_cu111/SYSTEM2_L15_NATIVE_RESTART_DEPLOYMENT_v0.1.json
+  RESTART_PROTOCOL: systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json
+  EXT_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json
+  RUNNER: systems/co_cu111/l15_native_restart_production_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  QUAL_RUN_ID: '33343734581'
+  QUAL_ARTIFACT: co-cu111-qe-native-restart-qualification-result-v1
+  SOURCE_HOLD_RUN_ID: '33306112961'
+  SOURCE_HOLD_ARTIFACT: co-cu111-pbe-clean-surface-gate-recovery-v1
+  L13_REFERENCE_RUN_ID: '33296522880'
+  L13_REFERENCE_ARTIFACT: co-cu111-pbe-clean-audit-reproduction-recovery-v2-L13-V28-K24
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  SELECTION_RUN_ID: '32915640451'
+  SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  native-chunk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify production wiring source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER"
+          python3 -m json.tool "$DEPLOYMENT" >/dev/null
+          python3 -m json.tool "$RESTART_PROTOCOL" >/dev/null
+          python3 -m json.tool "$EXT_PROTOCOL" >/dev/null
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open(os.environ['DEPLOYMENT']))
+          r=json.load(open(os.environ['RESTART_PROTOCOL']))
+          assert d['status']=='FROZEN_BEFORE_NATIVE_L15_PRODUCTION_RESULTS'
+          assert d['execution']['qe_max_seconds_per_chunk']==16200
+          assert d['execution']['maximum_native_chunks']==36
+          assert d['execution']['checkpoint_status_is_successful_handoff'] is True
+          assert d['scientific_contract']['scientific_settings_changed'] is False
+          assert d['scientific_contract']['thresholds_changed'] is False
+          assert d['scientific_contract']['kinetic_inputs_used'] is False
+          assert r['native_checkpoint']['clean_stop_mechanism']=='CONTROL.max_seconds'
+          assert r['native_checkpoint']['resume_restart_mode']=='restart'
+          assert r['native_checkpoint']['disk_io']=='medium'
+          print('L15_NATIVE_PRODUCTION_WIRING_VERIFIED')
+          PY
+
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.QUAL_ARTIFACT }}
+          path: qualification
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.QUAL_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_HOLD_ARTIFACT }}
+          path: hold
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_HOLD_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L13_REFERENCE_ARTIFACT }}
+          path: l13
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L13_REFERENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download exact prior native checkpoint
+        if: ${{ inputs.segment > 1 }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.prior_artifact }}
+          path: prior
+
+      - name: Verify exact engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855  engine/bin/pw.x' | sha256sum -c -
+          chmod +x engine/bin/pw.x
+
+      - name: Execute checkpoint-protected L15 chunk
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --segment '${{ inputs.segment }}'
+            --deployment "$DEPLOYMENT"
+            --restart-protocol "$RESTART_PROTOCOL"
+            --extension-protocol "$EXT_PROTOCOL"
+            --hold-root hold
+            --l13-root l13
+            --qualification-root qualification
+            --surface-protocol "$SURFACE_PROTOCOL"
+            --stage-a-result stage_a/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json
+            --bundle "$BUNDLE"
+            --pseudo-dir engine/pseudos
+            --pw engine/bin/pw.x
+            --selection selection/RANK_SELECTION_RESULT.json
+            --out chunk_out
+          )
+          if [ '${{ inputs.segment }}' -gt 1 ]; then
+            args+=(--prior-root prior)
+          fi
+          python3 "$RUNNER" "${args[@]}"
+          cat chunk_out/NATIVE_L15_CHUNK.json
+
+      - name: Upload native checkpoint or completed state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-native-restart-v1-seg${{ inputs.segment }}
+          path: |
+            chunk_out
+            restart_state
+          retention-days: 2
+          compression-level: 0
+          if-no-files-found: error

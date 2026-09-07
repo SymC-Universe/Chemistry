@@ -1,0 +1,74 @@
+\section*{Live Computational Checkpoints and Failure Reconciliation, Version 1.2}
+
+\noindent\textbf{Purpose.}
+The frozen method and gate definitions remain in
+\texttt{REPRODUCIBILITY\_GUIDE\_INSERT\_v1.1.tex}.  The chronological execution
+record is maintained separately in
+\texttt{na\_cu001\_ci/COMPUTATIONAL\_CHECKPOINT\_LEDGER.md}.  Separating the
+frozen protocol from the live ledger prevents a later numerical result from
+silently changing the preregistered method while still providing a complete
+record of execution, failures, fixes, retained holds, artifact identities, and
+next dependencies.
+
+\subsection*{Checkpoint state machine}
+
+The route is divided into checkpoints C0--C15: corrected source and negative
+tests; original bulk holdout; prospective audited bulk extension; extension
+preparation; the 26-case extension matrix; audited bulk selection; downstream
+bridge verification; ESM slab convergence; electrostatic, clean-surface, and Na
+reference closure; adsorption and endpoint closure; ordinary and climbing-image
+NEB; mobility-region convergence; active-region Hessian and downhill
+connectivity; numerical sensitivity; tiered barrier/rate admission; and terminal
+manifest/integration validation.
+
+A checkpoint is complete only when the registered artifact exists, states the
+required PASS condition, and its direct dependency and raw-file hashes validate.
+A successful GitHub job is necessary but is not by itself a scientific PASS.
+
+\subsection*{Failure classes}
+
+Every GitHub failure notification is reconciled in the ledger before a rerun or
+code change.  The permitted classes are:
+
+\begin{description}
+\item[MECHANICAL\_FAILURE:] workflow, transport, permission, syntax, missing-file,
+or runner defects.  A prospective focused patch is permitted, but no scientific
+criterion may change.
+\item[SCIENTIFIC\_HOLD:] a frozen numerical or physical gate was not satisfied.
+The result is retained.  Continuation requires a newly frozen extension, not
+post-result threshold relaxation.
+\item[SUPERSEDED\_EXPLORATORY\_RUN:] an earlier implementation replaced before
+current-route admission.  Its failure remains in the historical record and its
+outputs are not reused as evidence.
+\item[EXTERNAL\_OR\_UNRESOLVED:] the available record is insufficient for a
+causal diagnosis.  No retry or admission is permitted until resolved.
+\end{description}
+
+\subsection*{Email and Actions reconciliation}
+
+GitHub Actions status is checked directly and cross-reconciled with recent
+GitHub notification email.  A notification is not marked resolved merely because
+a later run exists.  The ledger records the run, failed job, root cause,
+classification, prospective correction or retained HOLD, and the successful
+verification that closes a mechanical defect.  An hourly condition watch reports
+only new unresolved failures, cancellations, or scientific holds; it does not
+rerun calculations or change thresholds.
+
+\subsection*{Current recorded boundary}
+
+At establishment of the live ledger, the original 80 Ry/$16^3$ bulk comparison
+was retained as a scientific HOLD because no historical candidate satisfied the
+unchanged 1 meV/atom energy criterion.  The subsequent extension was frozen
+before its results, with 24 candidates, a 140 Ry/$22^3$ finite reference, and an
+independent 150 Ry/$24^3$ audit.  Surface calculations remain prohibited until
+the reference audit and candidate-selection artifact pass and are independently
+verified.
+
+\subsection*{Terminal record}
+
+The completed computational package must include the ledger, frozen protocols,
+source manifest, raw manifest, gate artifacts, exact workflow runs and commits,
+and the generated terminal verdict.  A terminal HOLD or mechanism revision is a
+valid recorded result.  Only a complete PASS may generate the tiered
+Barrier-Height/Rate Atlas coordinate; the later ChemSA joined-dynamics comparison
+remains a separate stage and cannot retune the computational route.

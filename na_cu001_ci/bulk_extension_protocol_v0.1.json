@@ -1,0 +1,54 @@
+{
+  "schema": "na-cu001-bulk-extension-protocol-v0.1",
+  "status": "FROZEN_AFTER_V0.3_HOLD_BEFORE_EXTENSION_RESULTS",
+  "system_role": "construction_convergence_only_no_kinetic_targets",
+  "triggering_hold": {
+    "workflow_run_id": "30840469734",
+    "launch_commit": "1cd76ee2fb425bdb72b43c41c8e46e3e0ffdc94a",
+    "source_result_schema": "na-cu001-bulk-selection-v0.3",
+    "reason": "No member of the original 50-70 Ry by 8-14 cubic k-mesh candidate matrix satisfied the unchanged 0.001 eV/atom equilibrium-energy criterion against the 80 Ry/16^3 holdout. The lattice criterion passed broadly, so the route stopped before any slab calculation."
+  },
+  "anti_circularity": {
+    "experimental_quarantine": "No Na/Cu(001) adsorption, barrier, prefactor, rate, friction, linewidth, or turnover value may enter this extension.",
+    "threshold_rule": "The existing |delta a0| <= 0.005 A and |delta E0| <= 0.001 eV/atom thresholds are unchanged.",
+    "failure_rule": "If the high-cost reference fails its independent audit, or if no registered candidate passes against the audited reference, the result is HOLD. The reference and audit cannot select themselves."
+  },
+  "reused_historical_candidates": {
+    "ecuts_ry": [50, 55, 60, 65, 70],
+    "kmeshes": [8, 10, 12, 14],
+    "expected_count": 20,
+    "source_workflow_run_id": "30803996866"
+  },
+  "extension_candidates": {
+    "ecuts_ry": [80, 90, 100, 110, 120, 130],
+    "kmeshes": [14, 16, 18, 20],
+    "expected_count": 24,
+    "ecutrho_multiplier": 3
+  },
+  "reference": {
+    "ecutwfc_ry": 140,
+    "ecutrho_ry": 420,
+    "kmesh": 22
+  },
+  "independent_reference_audit": {
+    "ecutwfc_ry": 150,
+    "ecutrho_ry": 450,
+    "kmesh": 24
+  },
+  "lattice_grid_angstrom": [3.55, 3.58, 3.61, 3.64, 3.67, 3.70],
+  "joint_gate": {
+    "delta_a_max_angstrom": 0.005,
+    "delta_e_max_ev_per_atom": 0.001
+  },
+  "selection_order": {
+    "rule": "smallest registered estimated computational cost among joint-pass candidates",
+    "cost_score": "ecutwfc_ry^(3/2) * kmesh^3",
+    "tie_breakers": ["ecutwfc_ry", "kmesh"]
+  },
+  "software_and_pseudopotential_identity": {
+    "qe_version": "7.6",
+    "qe_source_sha256": "945c8f16ab330c8f0b30f4de1a9a088b85038476fcd819394e641f4d2d8b7d51",
+    "cu_upf_filename": "Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf",
+    "cu_upf_sha256": "b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d"
+  }
+}

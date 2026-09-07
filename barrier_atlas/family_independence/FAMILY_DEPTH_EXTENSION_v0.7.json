@@ -1,0 +1,94 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v0.7",
+  "status": "ADDITIVE_FAMILY_DEPTH_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_six_trail_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.6.json",
+  "source_audit": "barrier_atlas/family_independence/MC16_CH3_H2_CHAIN_PROPAGATION_SOURCE_AUDIT_v0.1.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "MC16 chain_propagation_termination class-gap search; W2-F12 benchmark chosen by pre-existing benchmark-reference status, never by residual, chi, or expected ChemSA agreement"
+  },
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC16-CH3-H2-CHAIN-PROPAGATION",
+      "target_class": "MC16",
+      "candidate_family": "methyl-radical hydrogen abstraction from molecular hydrogen",
+      "reaction": "CH3 + H2 -> CH4 + H",
+      "classification_gate": "PASS_MC16_RADICAL_CHAIN_PROPAGATION",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_W2_F12_CLASSICAL_GAS_PHASE_BARRIER",
+      "barrier_quantity": {
+        "value": 11.9,
+        "unit": "kcal/mol",
+        "type": "W2-F12 benchmark classical reaction barrier at the GMTKN55/BH76 reference geometry; transition-state total energy (electronic plus nuclear repulsion) minus separated-reactant total energies",
+        "source_doi": "10.1021/acs.jctc.4c01038",
+        "benchmark_provenance_doi": "10.1039/C7CP04913G",
+        "zpe_status": "NOT_INCLUDED",
+        "thermal_status": "NOT_INCLUDED",
+        "free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+        "arrhenius_activation_energy_status": "NOT_AN_EXPERIMENTAL_ARRHENIUS_ACTIVATION_ENERGY"
+      },
+      "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_GAS_PHASE_RATE_CHAIN",
+      "observed_comparator": {
+        "source_doi": "10.1039/F19817702271",
+        "temperature_range_K": [584.0, 671.0],
+        "pressure_range_Torr": [5.0, 26.0],
+        "type": "primary experimental second-order gas-phase rate coefficient",
+        "rate_expression": "log10(k2 / (cm^3 mol^-1 s^-1)) = 11.70 - (44 kJ mol^-1)/(2.3 R T)"
+      },
+      "condition_gate": "PASS_SAME_GAS_PHASE_ELEMENTARY_EVENT_WITH_EXPLICIT_KINETIC_TEMPERATURE_AND_PRESSURE_WINDOW",
+      "independence_gate": "PASS_DISTINCT_PHYSICAL_FAMILY_AND_W2_F12_REFERENCE_NOT_FIT_TO_SELECTED_TARGET_RATE",
+      "representation_mode": "SINGLE_BARRIER_RADICAL_CHAIN_PROPAGATION_H_ATOM_TRANSFER",
+      "representation_gate": "PASS_SINGLE_ELEMENTARY_BARRIER",
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "selection_role_of_residual_chi_or_chemsa": "NONE"
+    }
+  ],
+  "preserved_nonpromotion_states": {
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+    "FI-MC08-METHANE-ZEOLITE-HD-EXCHANGE": "MECHANISM_AND_RAW_COMPARATOR_HOLD",
+    "FI-MC15-VASKA-H2-OXIDATIVE-ADDITION": "CONDITION_AND_QUANTITY_MAPPING_HOLD",
+    "FI-MC16-METHYLPEROXY-SELF-REACTION": "PES_TOPOLOGY_NETWORK_AND_MODEL_PROVENANCE_HOLD"
+  },
+  "supersession_note": "v0.7 adds an independent MC16 radical-chain propagation trail. It does not relabel, supersede, or promote the held methylperoxy MC16 trail, any frozen six-trail outcome, any v0.9 coordinate, or any v0.9 grade.",
+  "aggregate": {
+    "new_ready_for_adjudication": 1,
+    "new_ready_class": "MC16",
+    "new_ready_trail": "FI-MC16-CH3-H2-CHAIN-PROPAGATION",
+    "family_depth_classes_with_additive_ready_second_family": ["MC02", "MC04", "MC06", "MC11", "MC14", "MC16"],
+    "ready_second_family_count": 6,
+    "target_class_count": 11,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

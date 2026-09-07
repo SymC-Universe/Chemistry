@@ -1,0 +1,141 @@
+name: CO Cu111 PBE Stage A C2 L22 assembly v3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/co-cu111-pbe-stage-a-c2l22-assemble-v3.yml'
+      - 'systems/co_cu111/MECHANICAL_ASSEMBLY_CONTROLLER_C2L22_v0.3.json'
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PRIOR_RECOVERY_RUN_ID: '31445411702'
+  PRIOR_RECOVERY_STATE_ARTIFACT: 'co-cu111-stage-a-mechanical-recovery-v1-state'
+  V2_RECOVERY_RUN_ID: '31477725768'
+  V2_ARTIFACT_PATTERN: 'co-cu111-stage-a-recovery-v2-C2-L22-i*'
+  PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  FROZEN_RUNNER: 'systems/co_cu111/pbe_stage_a_runner_v1.py'
+  RECOVERY_RUNNER: 'systems/co_cu111/pbe_stage_a_recovery_v2.py'
+  RECOVERY_CONTRACT: 'systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_C2L22_v0.2.json'
+  ASSEMBLY_CONTRACT: 'systems/co_cu111/MECHANICAL_ASSEMBLY_CONTROLLER_C2L22_v0.3.json'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  assemble-c2l22:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install analysis runtime
+        run: sudo apt-get update && sudo apt-get install -y python3-numpy
+      - name: Verify assembly-only controller and frozen inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$FROZEN_RUNNER" systems/co_cu111/pbe_stage_a_recovery_v1.py "$RECOVERY_RUNNER"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          c=json.loads(Path('systems/co_cu111/MECHANICAL_ASSEMBLY_CONTROLLER_C2L22_v0.3.json').read_text())
+          assert c['schema']=='co-cu111-stage-a-c2l22-mechanical-assembly-v0.3'
+          assert c['status']=='FROZEN_BEFORE_ASSEMBLY_REPAIR_RESULT'
+          assert c['prior_recovery_v1']['run_id']==31445411702
+          assert c['single_point_recovery_v2']['run_id']==31477725768
+          assert c['single_point_recovery_v2']['all_single_point_jobs_completed_successfully'] is True
+          assert c['single_point_recovery_v2']['scientific_result_consulted'] is False
+          assert c['allowed_repair']['operation']=='artifact_root_normalization_only'
+          assert c['allowed_repair']['required_v2_chunk_count']==15
+          assert c['provenance']['scientific_settings_changed'] is False
+          assert c['provenance']['scientific_analyzer_allowed_after_this_repair'] is False
+          for path_key,sha_key in (('protocol','protocol_git_blob_sha'),('bundle','bundle_git_blob_sha'),('runner','runner_git_blob_sha')):
+              p=c['frozen_inputs'][path_key]
+              got=subprocess.check_output(['git','hash-object',p],text=True).strip()
+              assert got==c['frozen_inputs'][sha_key], (p,got,c['frozen_inputs'][sha_key])
+          assert c['frozen_inputs']['mpi_ranks']==1
+          assert c['frozen_inputs']['thread_environment']=={'OMP_NUM_THREADS':1,'OPENBLAS_NUM_THREADS':1}
+          PY
+      - name: Download v0.1 recovery state
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PRIOR_RECOVERY_STATE_ARTIFACT }}
+          path: prior
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.PRIOR_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Download all successful v0.2 C2 L22 single-point artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ env.V2_ARTIFACT_PATTERN }}
+          path: overlay-v2
+          merge-multiple: true
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.V2_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Normalize artifact roots without modifying scientific files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t prior_hits < <(find prior -type d -name 'co_C2_L22' -print)
+          if [ "${#prior_hits[@]}" -ne 1 ]; then
+            echo "MECHANICAL_HOLD: expected exactly one prior C2/L22 member, found ${#prior_hits[@]}"
+            exit 4
+          fi
+          mapfile -t overlay_hits < <(find overlay-v2 -type d -name 'co_C2_L22' -print)
+          if [ "${#overlay_hits[@]}" -ne 1 ]; then
+            echo "MECHANICAL_HOLD: expected exactly one merged v0.2 C2/L22 member, found ${#overlay_hits[@]}"
+            exit 4
+          fi
+          chunk_count=$(find "${overlay_hits[0]}" -maxdepth 1 -type f -name 'CHUNK_*.json' | wc -l)
+          if [ "$chunk_count" -ne 15 ]; then
+            echo "MECHANICAL_HOLD: expected 15 successful v0.2 single-point chunks, found $chunk_count"
+            exit 4
+          fi
+          mkdir -p recovered/stageA/co_C2_L22
+          cp -a "${prior_hits[0]}/." recovered/stageA/co_C2_L22/
+          cp -a "${overlay_hits[0]}/." recovered/stageA/co_C2_L22/
+      - name: Assemble and integrity-validate C2 L22
+        id: assemble
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p state
+          set +e
+          python3 "$RECOVERY_RUNNER" assemble-all \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --root recovered \
+            --state-out state/C2L22_MECHANICAL_RECOVERY_STATE.json
+          rc=$?
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$rc" > state/ASSEMBLY_EXIT_CODE.txt
+          sha256sum "$PROTOCOL" "$BUNDLE" "$FROZEN_RUNNER" "$RECOVERY_RUNNER" "$RECOVERY_CONTRACT" "$ASSEMBLY_CONTRACT" > state/BOUND_INPUTS.sha256
+      - name: Upload consolidated C2 L22 mechanical result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-stage-a-c2l22-assembly-v3-state
+          path: |
+            state
+            recovered/stageA/co_C2_L22
+          retention-days: 90
+          if-no-files-found: error
+      - name: Enforce mechanical completeness only
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ '${{ steps.assemble.outputs.rc }}' != '0' ]; then
+            echo 'MECHANICAL_INCOMPLETE: C2/L22 remains incomplete; no scientific inference permitted.'
+            exit 3
+          fi
+          echo 'C2_L22_MECHANICAL_COMPLETE'
+          echo 'SCIENTIFIC_ANALYZER_NOT_RUN: C1/L26 and C2/L26 remain on different-resource-class infrastructure HOLD.'

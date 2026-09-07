@@ -1,0 +1,84 @@
+{
+  "schema": "barrier-atlas-mc13-for-event-mapping-reassessment-v0.1",
+  "status": "ADDITIVE_PRIMARY_EVIDENCE_REASSESSMENT_WITHOUT_PROMOTION",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "kinetic_isotope_effect_may_establish_event_identity_beyond_primary_source_interpretation": false
+  },
+  "trail_id": "FI-ENZYME-DB-INVENTORY",
+  "target_class": "MC13",
+  "candidate_family": "Pyrococcus furiosus formaldehyde ferredoxin oxidoreductase oxidation",
+  "pdb_id": "1B25",
+  "prior_state": "CONDITION_AND_EVENT_MAPPING_HOLD",
+  "computational_mechanism": {
+    "source_doi": "10.1016/j.jinorgbio.2011.03.020",
+    "description": "formaldehyde binds directly to tungsten; W(VI)=O nucleophilic attack forms a tetrahedral intermediate; the calculated rate-limiting second step transfers a proton to Glu308 coupled to two-electron reduction of tungsten",
+    "registered_profile_kcal_per_mol": {
+      "reactant": 0.0,
+      "TS1": 14.3,
+      "intermediate": -2.1,
+      "TS2": 14.5,
+      "product": -9.9
+    },
+    "TS2_internal_barrier_from_intermediate_kcal_per_mol": 16.6,
+    "quantity_firewall": "14.5 kcal/mol is the overall reactant-to-TS2 maximum in the registered profile; 16.6 kcal/mol is the intermediate-to-TS2 internal barrier. Neither may be silently substituted for the other."
+  },
+  "primary_presteady_state_evidence": {
+    "source_doi": "10.1007/s00775-007-0301-3",
+    "conditions": {
+      "temperature_C": 50.0,
+      "temperature_K": 323.15,
+      "buffer": "50 mM Epps",
+      "pH": 8.4,
+      "anaerobic": true,
+      "FOR_uM": 20.0,
+      "total_formaldehyde_mM": 25.0,
+      "free_formaldehyde_uM_reported": 50.0
+    },
+    "observed_fast_phases_s_inverse": [4.7, 1.9],
+    "first_phase_primary_KIE": 4.2,
+    "primary_source_reasoning": [
+      "The authors state that a KIE of 4.2 is unrealistically large for a noncovalent binding event and instead points toward breaking/making covalent bonds.",
+      "Their preferred alternative interpretation assigns k1 = 4.7 s^-1 to two-electron reduction of tungsten when substrate entry/binding is optically silent.",
+      "Under that interpretation k2 = 1.9 s^-1 is a conformational change to an open state with decreased product affinity."
+    ]
+  },
+  "event_mapping_reassessment": {
+    "binding_only_interpretation": "DISFAVORED_BY_PRIMARY_KIE_EVIDENCE",
+    "oxidation_assignment": "SUPPORTED_AS_MORE_LIKELY_BY_PRIMARY_SOURCE",
+    "exact_computed_step_mapping": "NOT_UNIQUELY_CLOSED",
+    "reason": "The experiment supports a covalent chemical/redox event for the 4.7 s^-1 phase, but does not directly observe the computed tetrahedral intermediate or separately identify the proton-transfer/two-electron TS2. The measured phase can therefore support oxidation-event identity without licensing a one-to-one scalar mapping to TS2."
+  },
+  "condition_mapping_reassessment": {
+    "status": "HOLD",
+    "reason": "The registered computational profile is a static active-site cluster potential-energy profile with dielectric model epsilon=4, whereas the comparator is whole-enzyme pre-steady-state kinetics at 323.15 K in 50 mM Epps, pH 8.4. No validated transformation from the cluster electronic-energy profile to this experimental kinetic state point has been established."
+  },
+  "comparator_gate": "PASS_PRIMARY_PRESTEADY_STATE_OXIDATION_EVENT_SUPPORTED",
+  "condition_gate": "HOLD_STATIC_CLUSTER_PROFILE_VS_323K_WHOLE_ENZYME_KINETICS",
+  "event_mapping_gate": "HOLD_OXIDATION_SUPPORTED_BUT_TS2_ONE_TO_ONE_MAPPING_UNRESOLVED",
+  "independence_gate": "PASS_DISTINCT_FROM_FAM_POV_PCET_CROSS_REACTIONS",
+  "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+  "terminal_state": "CONDITION_AND_EVENT_MAPPING_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "next_gate": "Seek a primary observable that specifically resolves the tungsten two-electron/proton-transfer step, or a validated kinetic model that maps the 4.7 s^-1 oxidation phase onto the computed TS2 without folding binding, tetrahedral-intermediate formation, and conformational rearrangement into one scalar. Separately establish a defensible thermodynamic/kinetic mapping from the static epsilon=4 cluster profile to the 323.15 K enzyme state point.",
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 6,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

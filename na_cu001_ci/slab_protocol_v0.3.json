@@ -1,0 +1,44 @@
+{
+  "schema": "na-cu001-clean-slab-preregistration-v0.3",
+  "status": "FROZEN_BEFORE_SLAB_RESULTS",
+  "bulk_input": "na-cu001-bulk-to-slab-handoff-v0.3",
+  "cell": {
+    "surface": "Cu(001)",
+    "vectors": [
+      "(a0/2,a0/2,0)",
+      "(-a0/2,a0/2,0)"
+    ],
+    "area": "a0^2/2",
+    "atoms_per_layer": 1,
+    "stacking": "alternating (0,0) and (1/2,1/2)"
+  },
+  "grid": {
+    "layers": [
+      5,
+      7,
+      9,
+      11
+    ],
+    "vacuum_angstrom": [
+      12,
+      16,
+      20,
+      24
+    ],
+    "kmesh_rule": "four even meshes centered on ceil(sqrt(2)*bulk_kmesh) with offsets -4,-2,0,+2"
+  },
+  "analysis": {
+    "fit": "E_slab(L)=mu*L+2*epsilon_surface",
+    "vacuum_k_gate_mev_per_surface_atom": 1.0,
+    "layer_gate_mev_per_surface_atom": 1.0,
+    "raw_total_energy_comparison_across_atom_counts": "forbidden"
+  },
+  "downstream_layer_floor": 7,
+  "downstream_layer_floor_reason": "The expanded one-sided mobility model requires four fully mobile top layers, one z-only buffer layer, and a fixed bottom surface.",
+  "next_gate": "electrostatic consistency audit: ESM next-vacuum stability plus a periodic diagnostic",
+  "electrostatic_convention": {
+    "assume_isolated": "esm",
+    "esm_bc": "bc1",
+    "applied_to_all_64_cases": true
+  }
+}

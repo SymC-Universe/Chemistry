@@ -1,0 +1,105 @@
+{
+  "schema": "co-cu111-l15-native-restart-deployment-v0.1",
+  "status": "FROZEN_BEFORE_NATIVE_L15_PRODUCTION_RESULTS",
+  "effective_date": "2026-08-30",
+  "scope": "MECHANICAL_EXECUTION_RECOVERY_ONLY",
+  "governing_scientific_protocol": "systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json",
+  "governing_restart_protocol": "systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json",
+  "qualification": {
+    "run_id": 33343734581,
+    "result_artifact_id": 9741750399,
+    "result_artifact_name": "co-cu111-qe-native-restart-qualification-result-v1",
+    "result_artifact_digest": "sha256:8e72c7146e1e6c237d4a6f0f79f7f380f27efad8858e68809b5ca2cfab56a7c8",
+    "required_status": "PASS",
+    "energy_absolute_difference_ev": 1.3605858839582652e-7,
+    "energy_tolerance_ev": 0.0001,
+    "force_component_absolute_difference_max_ev_per_angstrom": 0.000035738336896046104,
+    "force_tolerance_ev_per_angstrom": 0.0001,
+    "cross_runner_restart_verified": true
+  },
+  "failed_predecessors_preserved": [
+    {
+      "run_id": 33313295522,
+      "runtime_cap_seconds": 19800,
+      "status": "MECHANICAL_PRE_BFGS_SCF_TIMEOUT",
+      "salvageable_native_checkpoint": false
+    },
+    {
+      "run_id": 33329096616,
+      "runtime_cap_seconds": 21420,
+      "status": "MECHANICAL_PRE_BFGS_SCF_TIMEOUT",
+      "salvageable_native_checkpoint": false
+    }
+  ],
+  "scientific_contract": {
+    "rung": "L15/V32/K28",
+    "exchange_correlation": "PBE",
+    "ecutwfc_ry": 90,
+    "ecutrho_ry": 900,
+    "layers": 15,
+    "vacuum_angstrom": 32.0,
+    "kmesh": 28,
+    "assume_isolated": "esm",
+    "esm_bc": "bc1",
+    "electron_conv_thr": 1e-10,
+    "electron_maxstep": 200,
+    "mixing_beta": 0.3,
+    "ion_dynamics": "bfgs",
+    "force_gate_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_gate_ev": 0.001,
+    "surface_excess_convergence_max_ev_per_surface_atom": 0.001,
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "acceptance_rule_changed": false,
+    "kinetic_inputs_used": false,
+    "new_scientific_rung_authorized": false
+  },
+  "execution": {
+    "execution_mode": "DIRECT_ONE_RANK",
+    "mpi_ranks": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "qe_max_seconds_per_chunk": 16200,
+    "external_safety_timeout_seconds": 19800,
+    "github_job_timeout_minutes": 360,
+    "maximum_native_chunks": 36,
+    "prefix": "co_cu111_clean_l15_extension",
+    "outdir_logical_path": "restart_state",
+    "disk_io": "medium",
+    "first_restart_mode": "from_scratch",
+    "later_restart_mode": "restart",
+    "checkpoint_status_is_successful_handoff": true,
+    "checkpoint_must_be_persisted_before_next_chunk": true,
+    "checkpoint_artifact_retention_days": 2,
+    "checkpoint_artifact_compression_level": 0,
+    "checkpoint_soft_max_bytes": 9000000000
+  },
+  "checkpoint_validity": {
+    "require_qe_max_seconds_clean_stop": true,
+    "external_timeout_is_valid_checkpoint": false,
+    "require_prefix_save_directory": true,
+    "require_data_file_schema_xml": true,
+    "require_recursive_manifest": true,
+    "require_manifest_verification_on_fresh_runner": true,
+    "require_exact_stage_a_pw_x": true,
+    "require_exact_rank_selection": true,
+    "require_exact_protocol_hashes": true,
+    "require_same_rank_and_thread_caps": true,
+    "restart_state_is_authoritative_for_resume_geometry": true,
+    "input_geometry_may_not_override_restart_geometry": true
+  },
+  "terminal_behavior": {
+    "RELAX_COMPLETE": "carry the completed state through remaining cheap orchestration jobs without QE recomputation and prepare independent reproduction",
+    "CHECKPOINT": "upload exact restart state and continue on the next fresh runner",
+    "MECHANICAL_CHECKPOINT_HOLD": "stop; preserve diagnostics; do not start from scratch automatically",
+    "SCIENTIFIC_HOLD": "stop; preserve result; do not change thresholds or scientific settings"
+  },
+  "independent_reproduction": {
+    "required": true,
+    "must_start_from_scratch": true,
+    "may_not_import_relaxation_electronic_restart_state": true,
+    "production_reproduction_checkpointing_not_authorized_by_this_deployment": true,
+    "reason": "This deployment freezes and launches the L15 relaxation restart chain only. Reproduction remains scientifically independent and will receive its own prospective mechanical checkpoint deployment if a single fresh SCF cannot fit safely."
+  }
+}

@@ -1,0 +1,563 @@
+name: CO Cu111 PBE surface convergence extension v1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-pbe-surface-convergence-extension-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-surface-convergence-extension-v1
+  cancel-in-progress: false
+
+env:
+  EXT_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json
+  EXT_RUNNER: systems/co_cu111/pbe_surface_convergence_extension_v1.py
+  EXT_TEST: systems/co_cu111/test_pbe_surface_convergence_extension_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  SOURCE_HOLD_RUN_ID: '33306112961'
+  SOURCE_HOLD_ARTIFACT: co-cu111-pbe-clean-surface-gate-recovery-v1
+  L13_REFERENCE_RUN_ID: '33296522880'
+  L13_REFERENCE_ARTIFACT: co-cu111-pbe-clean-audit-reproduction-recovery-v2-L13-V28-K24
+  SELECTION_RUN_ID: '32915640451'
+  SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  SOURCE_SURFACE_RUN_ID: '31922544540'
+  CONTINUATION_RUNTIME_CAP_S: '19800'
+  REPRO_RUNTIME_CAP_S: '19200'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen extension contract and repository sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$EXT_RUNNER" "$EXT_TEST"
+          test "$(git hash-object "$EXT_PROTOCOL")" = '0cf59a7974b769f619b2684ea10966e6789dd546'
+          test "$(git hash-object "$EXT_RUNNER")" = 'bf5526692f2ce55311e71516f1cf336ce9250b87'
+          test "$(git hash-object "$EXT_TEST")" = '7c4830b590fb8b851dcab37c093e6533823c569c'
+          echo '518583a18ec5a26b442523601e325b2b525fd5a374f37c255eb9c5fff163ebd7  '$EXT_PROTOCOL | sha256sum -c -
+          echo '00f32beaa072ca474125e2296ad610215457f936faab2e03b5675ccf21453fbb  '$EXT_RUNNER | sha256sum -c -
+          echo '83145d7f50b1597801426ea647115e94c2467250a1f5ea907d201d0ad9053871  '$EXT_TEST | sha256sum -c -
+          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '$SURFACE_PROTOCOL | sha256sum -c -
+          echo 'f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b  systems/co_cu111/pbe_surface_site_ordering_v1.py' | sha256sum -c -
+          echo '00260df6730d3812b4d1543654b491a3eaeb118a196ed1b4f53a71cde74099b5  systems/co_cu111/pbe_surface_audit_rank_fallback_recovery_v1.py' | sha256sum -c -
+          echo '33d1620e3af2a072e1f14e4f2fefa72cf7c5f53ff247b0fb394aa72130764696  systems/co_cu111/pbe_surface_audit_proposal_relay_v1.py' | sha256sum -c -
+          echo '6a2216a776cbe3bf8a08e1f7215bcf0ff77caf96a2f2529875a0157f4bbfed3f  '$BUNDLE | sha256sum -c -
+          python3 "$EXT_RUNNER" self-test --protocol "$EXT_PROTOCOL"
+          python3 "$EXT_TEST" -v
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_HOLD_ARTIFACT }}
+          path: source_hold
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_HOLD_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L13_REFERENCE_ARTIFACT }}
+          path: l13_reference
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L13_REFERENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify immutable HOLD, L13 reference and rank selection
+        shell: bash
+        env:
+          CO_CU111_HOLD_FIXTURE: ${{ github.workspace }}/source_hold
+          CO_CU111_L13_FIXTURE: ${{ github.workspace }}/l13_reference
+        run: |
+          set -euo pipefail
+          echo 'afa8239acbb6ed08b92fcff881bbf4f33f95cb196c595c1f1940a100fab251b3  source_hold/CLEAN_SURFACE_GATE.json' | sha256sum -c -
+          echo 'f199a2a26e1465a8cff815a0568ea2d1eb24b31a74868a061523b93c09859ddc  l13_reference/summary.json' | sha256sum -c -
+          echo 'e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4  selection/RANK_SELECTION_RESULT.json' | sha256sum -c -
+          python3 "$EXT_TEST" -v
+          python3 "$EXT_RUNNER" verify-sources --protocol "$EXT_PROTOCOL" --hold-root source_hold --l13-root l13_reference
+          python3 - <<'PY'
+          import json
+          r=json.load(open('selection/RANK_SELECTION_RESULT.json'))
+          assert r['status']=='PASS'
+          assert r['selected_execution_mode']=='DIRECT_ONE_RANK'
+          assert r['selected_mpi_ranks']==1
+          assert r['four_rank_excluded'] is True
+          assert r['scientific_settings_changed'] is False
+          assert r['kinetic_inputs_used'] is False
+          print('DIRECT_ONE_RANK_SELECTION_VERIFIED')
+          PY
+
+  continue_1:
+    name: continue-1 / L15 logical-1
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env:
+      SEGMENT: '1'
+      PREV_SEGMENT: '0'
+    steps: &continuation_steps
+      - uses: actions/checkout@v4
+      - if: env.SEGMENT == '1'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L13_REFERENCE_ARTIFACT }}
+          path: prior
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L13_REFERENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - if: env.SEGMENT != '1'
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-convergence-extension-L15-V32-K28-seg${{ env.PREV_SEGMENT }}
+          path: prior
+      - name: Inspect prior checkpoint
+        id: prior
+        shell: bash
+        run: |
+          set -euo pipefail
+          info="$(python3 "$EXT_RUNNER" inspect-prior --protocol "$EXT_PROTOCOL" --prior-root prior --segment "$SEGMENT")"
+          echo "$info"
+          carry="$(printf '%s\n' "$info" | awk -F= '/^CARRY=/{print $2}')"
+          test "$carry" = true -o "$carry" = false
+          echo "carry=$carry" >> "$GITHUB_OUTPUT"
+      - if: steps.prior.outputs.carry != 'true'
+        name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - if: steps.prior.outputs.carry != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - if: steps.prior.outputs.carry != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - if: steps.prior.outputs.carry != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Continue frozen L15 audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.prior.outputs.carry }}" = true ]; then
+            python3 "$EXT_RUNNER" continue --protocol "$EXT_PROTOCOL" --prior-root prior --segment "$SEGMENT" --runtime-cap-s "$CONTINUATION_RUNTIME_CAP_S" --out segment_out
+          else
+            chmod +x engine/bin/pw.x
+            python3 "$EXT_RUNNER" continue --protocol "$EXT_PROTOCOL" --prior-root prior --segment "$SEGMENT" \
+              --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+              --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+              --selection selection/RANK_SELECTION_RESULT.json --runtime-cap-s "$CONTINUATION_RUNTIME_CAP_S" --out segment_out
+          fi
+          python3 - <<'PY'
+          import json
+          r=json.load(open('segment_out/SURFACE_CONVERGENCE_EXTENSION_SEGMENT.json'))
+          print('SEGMENT_STATUS='+r['status'])
+          print('L15_LOGICAL_SEGMENT='+str(r['logical_segment']))
+          print('L15_FORCE_EV_A='+str(r['latest_authoritative_max_movable_force_ev_per_angstrom']))
+          print('CARRIED_FORWARD='+str(r['carried_forward_without_recomputation']).lower())
+          print('SCIENTIFIC_SETTINGS_CHANGED='+str(r['scientific_settings_changed']).lower())
+          print('THRESHOLDS_CHANGED='+str(r['thresholds_changed']).lower())
+          print('KINETIC_INPUTS_USED='+str(r['kinetic_inputs_used']).lower())
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-convergence-extension-L15-V32-K28-seg${{ env.SEGMENT }}
+          path: segment_out
+          retention-days: 90
+          if-no-files-found: error
+
+  continue_2:
+    name: continue-2 / L15 logical-2
+    needs: continue_1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '2', PREV_SEGMENT: '1'}
+    steps: *continuation_steps
+  continue_3:
+    name: continue-3 / L15 logical-3
+    needs: continue_2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '3', PREV_SEGMENT: '2'}
+    steps: *continuation_steps
+  continue_4:
+    name: continue-4 / L15 logical-4
+    needs: continue_3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '4', PREV_SEGMENT: '3'}
+    steps: *continuation_steps
+  continue_5:
+    name: continue-5 / L15 logical-5
+    needs: continue_4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '5', PREV_SEGMENT: '4'}
+    steps: *continuation_steps
+  continue_6:
+    name: continue-6 / L15 logical-6
+    needs: continue_5
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '6', PREV_SEGMENT: '5'}
+    steps: *continuation_steps
+  continue_7:
+    name: continue-7 / L15 logical-7
+    needs: continue_6
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '7', PREV_SEGMENT: '6'}
+    steps: *continuation_steps
+  continue_8:
+    name: continue-8 / L15 logical-8
+    needs: continue_7
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '8', PREV_SEGMENT: '7'}
+    steps: *continuation_steps
+  continue_9:
+    name: continue-9 / L15 logical-9
+    needs: continue_8
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '9', PREV_SEGMENT: '8'}
+    steps: *continuation_steps
+  continue_10:
+    name: continue-10 / L15 logical-10
+    needs: continue_9
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '10', PREV_SEGMENT: '9'}
+    steps: *continuation_steps
+  continue_11:
+    name: continue-11 / L15 logical-11
+    needs: continue_10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '11', PREV_SEGMENT: '10'}
+    steps: *continuation_steps
+  continue_12:
+    name: continue-12 / L15 logical-12
+    needs: continue_11
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '12', PREV_SEGMENT: '11'}
+    steps: *continuation_steps
+  continue_13:
+    name: continue-13 / L15 logical-13
+    needs: continue_12
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '13', PREV_SEGMENT: '12'}
+    steps: *continuation_steps
+  continue_14:
+    name: continue-14 / L15 logical-14
+    needs: continue_13
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '14', PREV_SEGMENT: '13'}
+    steps: *continuation_steps
+  continue_15:
+    name: continue-15 / L15 logical-15
+    needs: continue_14
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '15', PREV_SEGMENT: '14'}
+    steps: *continuation_steps
+  continue_16:
+    name: continue-16 / L15 logical-16
+    needs: continue_15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '16', PREV_SEGMENT: '15'}
+    steps: *continuation_steps
+  continue_17:
+    name: continue-17 / L15 logical-17
+    needs: continue_16
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '17', PREV_SEGMENT: '16'}
+    steps: *continuation_steps
+  continue_18:
+    name: continue-18 / L15 logical-18
+    needs: continue_17
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '18', PREV_SEGMENT: '17'}
+    steps: *continuation_steps
+  continue_19:
+    name: continue-19 / L15 logical-19
+    needs: continue_18
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '19', PREV_SEGMENT: '18'}
+    steps: *continuation_steps
+  continue_20:
+    name: continue-20 / L15 logical-20
+    needs: continue_19
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '20', PREV_SEGMENT: '19'}
+    steps: *continuation_steps
+  continue_21:
+    name: continue-21 / L15 logical-21
+    needs: continue_20
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '21', PREV_SEGMENT: '20'}
+    steps: *continuation_steps
+  continue_22:
+    name: continue-22 / L15 logical-22
+    needs: continue_21
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '22', PREV_SEGMENT: '21'}
+    steps: *continuation_steps
+  continue_23:
+    name: continue-23 / L15 logical-23
+    needs: continue_22
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '23', PREV_SEGMENT: '22'}
+    steps: *continuation_steps
+  continue_24:
+    name: continue-24 / L15 logical-24
+    needs: continue_23
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '24', PREV_SEGMENT: '23'}
+    steps: *continuation_steps
+  continue_25:
+    name: continue-25 / L15 logical-25
+    needs: continue_24
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '25', PREV_SEGMENT: '24'}
+    steps: *continuation_steps
+  continue_26:
+    name: continue-26 / L15 logical-26
+    needs: continue_25
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '26', PREV_SEGMENT: '25'}
+    steps: *continuation_steps
+  continue_27:
+    name: continue-27 / L15 logical-27
+    needs: continue_26
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '27', PREV_SEGMENT: '26'}
+    steps: *continuation_steps
+  continue_28:
+    name: continue-28 / L15 logical-28
+    needs: continue_27
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '28', PREV_SEGMENT: '27'}
+    steps: *continuation_steps
+  continue_29:
+    name: continue-29 / L15 logical-29
+    needs: continue_28
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '29', PREV_SEGMENT: '28'}
+    steps: *continuation_steps
+  continue_30:
+    name: continue-30 / L15 logical-30
+    needs: continue_29
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '30', PREV_SEGMENT: '29'}
+    steps: *continuation_steps
+  continue_31:
+    name: continue-31 / L15 logical-31
+    needs: continue_30
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '31', PREV_SEGMENT: '30'}
+    steps: *continuation_steps
+  continue_32:
+    name: continue-32 / L15 logical-32
+    needs: continue_31
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '32', PREV_SEGMENT: '31'}
+    steps: *continuation_steps
+  continue_33:
+    name: continue-33 / L15 logical-33
+    needs: continue_32
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '33', PREV_SEGMENT: '32'}
+    steps: *continuation_steps
+  continue_34:
+    name: continue-34 / L15 logical-34
+    needs: continue_33
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '34', PREV_SEGMENT: '33'}
+    steps: *continuation_steps
+  continue_35:
+    name: continue-35 / L15 logical-35
+    needs: continue_34
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '35', PREV_SEGMENT: '34'}
+    steps: *continuation_steps
+  continue_36:
+    name: continue-36 / L15 logical-36
+    needs: continue_35
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    env: {SEGMENT: '36', PREV_SEGMENT: '35'}
+    steps: *continuation_steps
+
+  reproduce_audit:
+    name: reproduce-L15-audit
+    needs: continue_36
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-convergence-extension-L15-V32-K28-seg36
+          path: prior
+      - name: Confirm frozen runway reached a completed L15 state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$EXT_RUNNER" inspect-prior --protocol "$EXT_PROTOCOL" --prior-root prior --segment 37 | tee prior_status.txt
+          grep -q '^CARRY=true$' prior_status.txt || { echo 'MECHANICAL_INCOMPLETE: L15 did not converge within frozen 36-segment runway'; exit 1; }
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Independently reproduce completed L15 audit geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$EXT_RUNNER" reproduce --protocol "$EXT_PROTOCOL" --prior-root prior \
+            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json --runtime-cap-s "$REPRO_RUNTIME_CAP_S" --out l15_audit
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-convergence-extension-L15-V32-K28-reproduced
+          path: l15_audit
+          retention-days: 90
+          if-no-files-found: error
+
+  extension_gate:
+    name: extension-clean-surface-gate
+    needs: reproduce_audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_HOLD_ARTIFACT }}
+          path: source_hold
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_HOLD_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L13_REFERENCE_ARTIFACT }}
+          path: l13_reference
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L13_REFERENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-convergence-extension-L15-V32-K28-reproduced
+          path: l15_audit
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: candidates
+          merge-multiple: false
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_SURFACE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Apply prospectively frozen extension gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p extension_gate
+          python3 "$EXT_RUNNER" gate --protocol "$EXT_PROTOCOL" --hold-root source_hold --l13-root l13_reference --l15-root l15_audit \
+            --candidate-root candidates --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --out extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE.json \
+            > extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE_STDOUT.txt
+          cat extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE_STDOUT.txt
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-convergence-extension-gate-v1
+          path: extension_gate
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,38 @@
+name: Barrier Atlas MC15 Rh-MeI hold v0.1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - 'barrier_atlas/family_independence/MC15_RH_ACAC_MEI_OXIDATIVE_ADDITION_SOURCE_AUDIT_v0.1.json'
+      - 'barrier_atlas/family_independence/validate_mc15_rh_acac_mei_hold_v0_1.py'
+      - 'barrier_atlas/family_independence/test_mc15_rh_acac_mei_hold_v0_1.py'
+      - '.github/workflows/barrier-atlas-mc15-rh-acac-mei-hold-v0.1.yml'
+  pull_request:
+    paths:
+      - 'barrier_atlas/family_independence/MC15_RH_ACAC_MEI_OXIDATIVE_ADDITION_SOURCE_AUDIT_v0.1.json'
+      - 'barrier_atlas/family_independence/validate_mc15_rh_acac_mei_hold_v0_1.py'
+      - 'barrier_atlas/family_independence/test_mc15_rh_acac_mei_hold_v0_1.py'
+      - '.github/workflows/barrier-atlas-mc15-rh-acac-mei-hold-v0.1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Validate MC15 hard hold
+        run: |
+          python barrier_atlas/family_independence/validate_mc15_rh_acac_mei_hold_v0_1.py \
+            --audit barrier_atlas/family_independence/MC15_RH_ACAC_MEI_OXIDATIVE_ADDITION_SOURCE_AUDIT_v0.1.json
+      - name: Run regression tests
+        run: python -m pytest -q barrier_atlas/family_independence/test_mc15_rh_acac_mei_hold_v0_1.py

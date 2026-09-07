@@ -1,0 +1,38 @@
+name: Barrier Atlas family depth extension v1.0
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - 'barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v1.0.json'
+      - 'barrier_atlas/family_independence/MC01_BETA_CD_1_BUTANOL_ASSOCIATION_SOURCE_AUDIT_v0.1.json'
+      - 'barrier_atlas/family_independence/validate_family_depth_extension_v1_0.py'
+      - 'barrier_atlas/family_independence/test_family_depth_extension_v1_0.py'
+      - '.github/workflows/barrier-atlas-family-depth-extension-v1.0.yml'
+  pull_request:
+    paths:
+      - 'barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v1.0.json'
+      - 'barrier_atlas/family_independence/MC01_BETA_CD_1_BUTANOL_ASSOCIATION_SOURCE_AUDIT_v0.1.json'
+      - 'barrier_atlas/family_independence/validate_family_depth_extension_v1_0.py'
+      - 'barrier_atlas/family_independence/test_family_depth_extension_v1_0.py'
+      - '.github/workflows/barrier-atlas-family-depth-extension-v1.0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Validate additive MC01 family-depth extension
+        run: python barrier_atlas/family_independence/validate_family_depth_extension_v1_0.py
+      - name: Run regression tests
+        run: python -m pytest -q barrier_atlas/family_independence/test_family_depth_extension_v1_0.py

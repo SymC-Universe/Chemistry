@@ -1,0 +1,25 @@
+{
+  "schema": "barrier-atlas-validation-selection-v0.1",
+  "status": "FROZEN_BEFORE_SYSTEM_2_SELECTION",
+  "pilot_exclusion": "Na/Cu(001) is a development pilot and is excluded from the independently selected validation cohort.",
+  "candidate_universe_requirements": [
+    "surface diffusion or elementary surface reaction with a tractable periodic cell",
+    "required elements available in the frozen pseudopotential family",
+    "publicly identifiable system, surface face, and mechanism",
+    "no screening on whether the reported barrier, rate, friction, or turnover appears favorable",
+    "computational resource estimate within the declared project ceiling"
+  ],
+  "selection_method": "hash the frozen eligible candidate list, record a random seed, then perform random or stratified-random selection before reading outcome-bearing numerical literature for the selected systems",
+  "failure_retention": [
+    "ineligible after blinded structural screen",
+    "calculation nonconvergence",
+    "unexpected adsorption minimum",
+    "mechanism revision",
+    "barrier disagreement",
+    "no qualified rate",
+    "no friction evidence",
+    "no turnover",
+    "framework contradiction"
+  ],
+  "versioning_rule": "Any scientific engine change after cohort selection creates a new engine version and requires rerunning all previously calculated validation systems under that version."
+}

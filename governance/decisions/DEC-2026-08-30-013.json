@@ -1,0 +1,15 @@
+{
+  "schema": "symc-program-decision-v1.0",
+  "id": "DEC-2026-08-30-013",
+  "scope": "program-wide implementation governance",
+  "status": "ACTIVE",
+  "decision": "A frozen protocol is not equivalent to an implemented safeguard. Operational claims must distinguish FROZEN, QUALIFIED, WIRED, and ACTIVE states. ACTIVE requires protocol freeze, qualification evidence, explicit production-workflow wiring, and CI verification of the implementation-status record.",
+  "triggering_evidence": {
+    "run_id": 33329096616,
+    "legacy_architecture": "external wrapper timeout without native electronic checkpoint",
+    "native_checkpoint_protocol_existed_before_run_completed": true,
+    "native_checkpoint_protocol_was_wired_into_run": false,
+    "correction": "Do not describe the native checkpoint as set up or active for run 33329096616."
+  },
+  "consequence": "No future production-control mechanism may be described as implemented merely because its protocol file exists. Governance CI must verify deployment state, and the implementation registry is authoritative for operational-status wording."
+}

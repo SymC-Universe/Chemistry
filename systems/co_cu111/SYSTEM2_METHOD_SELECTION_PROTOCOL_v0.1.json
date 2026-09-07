@@ -1,0 +1,147 @@
+{
+  "schema": "co-cu111-system2-method-selection-protocol-v0.1",
+  "status": "FROZEN_BEFORE_PRODUCTION_DIFFUSION_CALCULATION",
+  "system": "CO/Cu(111)",
+  "system_role": "prospective_external_validation_target",
+  "layer": "Computational Reaction-Path Engine",
+  "purpose": "Select an electronic-structure method using only non-kinetic calibration observables before any new production diffusion barrier is calculated.",
+  "selection_record_state": "PROVISIONAL_SELECTED_SOURCE_AUDIT_ACTIVE",
+  "anti_circularity": {
+    "known_but_forbidden_for_method_selection": [
+      "Wong et al. 2005 STM diffusion barrier 75 +/- 5 meV",
+      "Wong et al. 2005 STM attempt frequency (5.3 +/- 0.4)e7 Hz",
+      "Kole et al. 2012 HeSE effective barrier 98 +/- 5 meV",
+      "Kole et al. 2012 Langevin-calibrated adiabatic barrier 123 meV",
+      "any published or subsequently obtained CO/Cu(111) diffusion coefficient, hopping rate, kinetic prefactor, fitted diffusion friction, or turnover quantity"
+    ],
+    "allowed_calibration_classes": [
+      "numerical convergence",
+      "Cu bulk structural fidelity",
+      "clean Cu(111) numerical stability",
+      "gas-phase CO bond length",
+      "gas-phase CO stretch frequency",
+      "experimentally established low-coverage top-site adsorption preference"
+    ],
+    "absolute_adsorption_energy_role": "held out from method selection in v0.1",
+    "production_diffusion_barrier_before_method_selection": "FORBIDDEN"
+  },
+  "published_method_basis": {
+    "pbe_site_problem": {
+      "status": "ESTABLISHED_NEGATIVE_CONTROL_EXPECTATION",
+      "rule": "PBE is still executed as the lowest-cost diagnostic candidate and may pass only if it satisfies every frozen gate; agreement with a kinetic barrier cannot rescue a failed site-ordering gate."
+    },
+    "blyp_site_evidence": {
+      "publication": "Alaei et al., Phys. Rev. B 77, 085414 (2008)",
+      "doi": "10.1103/PhysRevB.77.085414",
+      "role": "published evidence that BLYP can recover the experimentally observed CO top-site preference on Cu(111) without fitting diffusion kinetics",
+      "pseudopotential_warning": "the published work used home-made BLYP ultrasoft pseudopotentials validated against WIEN2K bulk calculations"
+    },
+    "hybrid_evidence": {
+      "role": "high-cost fallback/reference if no semilocal candidate passes",
+      "qe_pseudopotential_rule": "PBE-family pseudopotentials are permitted for PBE0/HSE-type hybrids only under the documented Quantum ESPRESSO hybrid-functional convention and after the exact files are pinned and tested"
+    }
+  },
+  "candidate_methods_ordered": [
+    {
+      "id": "PBE",
+      "cost_rank": 1,
+      "role": "diagnostic_baseline_and_eligible_only_if_all_gates_pass",
+      "xc_pseudopotential_requirement": "PBE",
+      "execution_bundle_state": "PIN_EXACT_CU_C_O_FILES_AND_HASHES_BEFORE_RUN"
+    },
+    {
+      "id": "BLYP",
+      "cost_rank": 2,
+      "role": "primary_semilocal_feasibility_candidate",
+      "xc_pseudopotential_requirement": "BLYP_FOR_CU_C_O",
+      "execution_bundle_state": "PP_PROVENANCE_HOLD",
+      "pp_provenance_rule": "No mixed PBE/BLYP production calculation is admissible. A BLYP Cu pseudopotential must be independently sourced or generated and validated before BLYP can enter the numerical method screen. C and O BLYP pseudopotentials are available in the legacy QE library, but that library is reference material and all files still require explicit validation and hashes.",
+      "automatic_escalation_if_pp_gate_fails": "HSE03"
+    },
+    {
+      "id": "HSE03",
+      "cost_rank": 3,
+      "role": "screened_hybrid_fallback_reference",
+      "xc_pseudopotential_requirement": "PBE-family pseudopotentials under QE hybrid convention",
+      "execution_bundle_state": "PIN_EXACT_CU_C_O_FILES_AND_HASHES_BEFORE_RUN",
+      "trigger": "execute only if PBE fails or is rejected and BLYP fails a physical gate, a pseudopotential-provenance gate, or a computational-feasibility gate"
+    }
+  ],
+  "excluded_from_v0_1_production_candidate_set": {
+    "molecular_DFT_plus_U": "excluded until the molecular subspace implementation and U value have independent provenance not derived from diffusion kinetics",
+    "RPA_or_correlated_wavefunction": "benchmark evidence only unless a separately frozen compute/method amendment is adopted"
+  },
+  "numerical_convergence_gates": {
+    "bulk_joint_gate": {
+      "delta_lattice_constant_max_angstrom": 0.005,
+      "delta_energy_max_ev_per_atom": 0.001,
+      "note": "inherits the already established numerical precision standard from the development-pilot engine; it is not fitted to CO/Cu(111) kinetics"
+    },
+    "surface_force_max_ev_per_angstrom": 0.02,
+    "surface_energy_reproduction_max_ev": 0.001,
+    "surface_excess_max_mev_per_surface_atom": 1.0,
+    "adsorption_site_energy_sensitivity_max_ev_per_CO": 0.005,
+    "path_force_max_ev_per_angstrom": 0.05,
+    "ci_path_force_max_ev_per_angstrom": 0.03
+  },
+  "non_kinetic_physical_gates": {
+    "cu_bulk_lattice": {
+      "reference_type": "experimental structural reference independent of diffusion kinetics",
+      "max_relative_error_fraction": 0.02,
+      "role": "broad substrate-fidelity guard, not a fitted target"
+    },
+    "gas_phase_CO_bond_length": {
+      "reference_angstrom": 1.128,
+      "reference_source": "NIST CCCBDB experimental equilibrium bond length",
+      "max_relative_error_fraction": 0.02
+    },
+    "gas_phase_CO_stretch": {
+      "reference_cm_minus_1": 2143.0,
+      "reference_source": "NIST CCCBDB experimental fundamental vibration",
+      "max_relative_error_fraction": 0.05
+    },
+    "adsorption_site_ordering": {
+      "required_global_minimum": "top",
+      "comparison_sites": ["top", "bridge", "fcc_hollow", "hcp_hollow"],
+      "minimum_margin_rule": "top must be lower than every competing site by more than two times the measured numerical site-energy sensitivity; no fixed kinetic-energy target is used",
+      "failure_state": "METHOD_REJECT_SITE_ORDERING"
+    }
+  },
+  "coverage_and_supercell_rule": {
+    "production_target_supercell": [4, 4],
+    "nominal_coverage_ML": 0.0625,
+    "coverage_holdout_supercell": [5, 5],
+    "holdout_role": "post-selection non-kinetic coverage sensitivity for site ordering and adsorption geometry before production diffusion kinetics",
+    "holdout_site_energy_stability_max_ev_per_CO": 0.005,
+    "failure_action": "increase the production supercell prospectively before any diffusion barrier is calculated; do not choose the size by barrier agreement"
+  },
+  "method_selection_algorithm": {
+    "ordering": ["PBE", "BLYP", "HSE03"],
+    "rule": "Choose the lowest-cost candidate that passes every applicable pseudopotential-provenance, numerical-convergence, non-kinetic physical, and production-feasibility gate.",
+    "pbe_failure_does_not_block_blyp": true,
+    "blyp_pp_provenance_failure_counts_as_method_unavailable_not_physical_failure": true,
+    "hybrid_mandatory": false,
+    "hybrid_is_fallback": true,
+    "no_passing_candidate_state": "METHOD_HOLD",
+    "kinetic_closeness_tiebreaker": "FORBIDDEN"
+  },
+  "production_feasibility_gate": {
+    "required": true,
+    "criterion": "the selected method and pinned pseudopotential bundle must be capable of executing the registered adsorption screen, NEB/CI-NEB and Hessian stages without changing the electronic-structure method midstream",
+    "current_standard_github_runner_is_not_presumed_sufficient": true
+  },
+  "post_selection_rule": {
+    "freeze_selected_method_and_exact_pseudopotential_hashes_before_diffusion_path": true,
+    "then_compute": [
+      "Cu(111) surface convergence",
+      "CO adsorption screen",
+      "endpoint equivalence",
+      "ordinary NEB convergence",
+      "CI-NEB",
+      "saddle verification",
+      "qualified Hessians/prefactor",
+      "derived model rate"
+    ],
+    "held_out_kinetic_comparison_only_after_reaction_path_engine_closure": true
+  }
+}

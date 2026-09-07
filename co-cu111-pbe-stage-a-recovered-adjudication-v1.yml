@@ -1,0 +1,321 @@
+name: CO Cu111 PBE Stage A recovered adjudication v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-pbe-stage-a-recovered-adjudication-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-stage-a-recovered-adjudication-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_STAGE_A_RUN_ID: '31371043888'
+  SOURCE_STAGE_A_COMMIT: 'd411a92c7a548524e7af598b909313f5b421faf9'
+  RECOVERY_RUN_ID: '31853651654'
+  RECOVERY_ARTIFACT: 'co-cu111-stage-a-mechanical-recovery-complete-v1'
+  RECOVERY_ARTIFACT_ID: '9238334290'
+  RECOVERY_ARTIFACT_DIGEST: 'sha256:edbd138134ca3290e59c22a36b87f865dd1b0c16911cea4c8580edb7a08d67f2'
+  PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  RUNNER: 'systems/co_cu111/pbe_stage_a_runner_v1.py'
+  RECOVERY_CONTRACT: 'systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json'
+
+jobs:
+  adjudicate-frozen-stage-a:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen Stage A science and archive-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER"
+
+          test "$(git hash-object "$PROTOCOL")" = "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336"
+          test "$(git hash-object "$BUNDLE")" = "4a23d19bbd4374e250582fb1d02419828a06eb5d"
+          test "$(git hash-object "$RUNNER")" = "13f457a7f8daaeb2ffccdb9fe6f01c1b0d3a1bdd"
+          test "$(git hash-object "$RECOVERY_CONTRACT")" = "16923e4384420a8820442e8bcee738bc8eff75af"
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = json.loads(Path("systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json").read_text())
+          b = json.loads(Path("systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json").read_text())
+          r = json.loads(Path("systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json").read_text())
+
+          assert p["schema"] == "co-cu111-pbe-stage-a-protocol-v0.1"
+          assert p["status"] == "FROZEN_BEFORE_PBE_STAGE_A_RESULTS"
+          assert p["combined_stage_A_rule"]["next_gate_on_pass"] == "PBE_CU111_CLEAN_SURFACE_AND_SITE_ORDERING_SCREEN"
+          assert p["combined_stage_A_rule"]["next_gate_on_pbe_rejection"] == "BLYP_PP_PROVENANCE_GATE"
+          assert b["schema"] == "co-cu111-pbe-pseudopotential-bundle-v0.1"
+          assert b["status"] == "PINNED_FOR_NON_KINETIC_METHOD_SCREEN"
+          assert r["schema"] == "co-cu111-stage-a-mechanical-recovery-v0.1"
+          assert r["analysis_rule"].startswith("Run the unchanged frozen Stage A analyzer only after")
+          assert r["provenance"]["scientific_settings_changed"] is False
+          print("FROZEN_STAGE_A_INPUTS_VERIFIED")
+          print("EXECUTION_SCOPE=ARCHIVE_ONLY_ANALYSIS_NO_QE")
+          PY
+
+      - name: Install unchanged analysis dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-numpy
+
+      - name: Download all nine original complete bulk members
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-stage-a-v2-bulk-*
+          path: collected/source_bulk
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+          merge-multiple: false
+
+      - name: Download original complete CO C0 L18
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-v2-co-C0-L18
+          path: collected/source_co/C0_L18
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download original complete CO C0 L22
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-v2-co-C0-L22
+          path: collected/source_co/C0_L22
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download original complete CO C1 L18
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-v2-co-C1-L18
+          path: collected/source_co/C1_L18
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download validated six-target mechanical recovery
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.RECOVERY_ARTIFACT }}
+          path: collected/recovery
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify complete 9 plus 9 frozen Stage A evidence set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import math
+          from pathlib import Path
+
+          root = Path("collected")
+          recovery = root / "recovery"
+          state = json.loads((recovery / "MECHANICAL_RECOVERY_STATE.json").read_text())
+          assert state["status"] == "COMPLETE"
+          assert state["scientific_result_available"] is False
+          assert len(state["members"]) == 6
+          assert all(m["complete"] for m in state["members"])
+          assert all(m["record_count"] == 23 for m in state["members"])
+          assert state["provenance"]["scientific_settings_changed"] is False
+
+          def sha256(path: Path) -> str:
+              h = hashlib.sha256()
+              with path.open("rb") as f:
+                  for block in iter(lambda: f.read(1 << 20), b""):
+                      h.update(block)
+              return h.hexdigest()
+
+          protocol_sha = sha256(Path("systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json"))
+          bundle_sha = sha256(Path("systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json"))
+
+          bulk_paths = sorted(root.rglob("bulk_*/summary.json"))
+          co_paths = sorted(root.rglob("co_*/summary.json"))
+          assert len(bulk_paths) == 9, [str(p) for p in bulk_paths]
+          assert len(co_paths) == 9, [str(p) for p in co_paths]
+
+          expected_bulk = {(c, k) for c in ("C0", "C1", "C2") for k in (12, 14, 16)}
+          expected_co = {(c, float(L)) for c in ("C0", "C1", "C2") for L in (18, 22, 26)}
+          seen_bulk = set()
+          seen_co = set()
+
+          def verify_manifest(member: Path) -> None:
+              manifest = member / "STAGE_TIME_MANIFEST.sha256"
+              assert manifest.is_file(), manifest
+              for line in manifest.read_text().splitlines():
+                  if not line.strip():
+                      continue
+                  digest, rel = line.split(None, 1)
+                  rel = rel.strip()
+                  path = member / rel
+                  assert path.is_file(), path
+                  assert sha256(path) == digest, (path, sha256(path), digest)
+
+          def verify_run_records(member: Path, expected_count: int) -> None:
+              rec_paths = sorted(member.rglob("run_record.json"))
+              assert len(rec_paths) == expected_count, (member, len(rec_paths), expected_count)
+              for rp in rec_paths:
+                  rec = json.loads(rp.read_text())
+                  assert rec["returncode"] == 0
+                  assert rec["job_done"] is True
+                  energy_key = "energy_ev_per_atom" if "energy_ev_per_atom" in rec else "energy_ev_total"
+                  assert rec[energy_key] is not None and math.isfinite(float(rec[energy_key]))
+                  ins = list(rp.parent.glob("*.in"))
+                  outs = list(rp.parent.glob("*.out"))
+                  assert len(ins) == 1 and len(outs) == 1, rp.parent
+                  assert sha256(ins[0]) == rec["input_sha256"]
+                  assert sha256(outs[0]) == rec["output_sha256"]
+
+          for p in bulk_paths:
+              d = json.loads(p.read_text())
+              assert d["schema"] == "co-cu111-pbe-stage-a-bulk-matrix-v0.1"
+              assert d["status"] == "COMPLETE"
+              assert len(d["records"]) == 6
+              assert d["provenance"]["protocol_sha256"] == protocol_sha
+              assert d["provenance"]["bundle_sha256"] == bundle_sha
+              assert d["provenance"]["scientific_settings_changed"] is False
+              key = (d["cutoff_id"], int(d["kmesh"]))
+              assert key not in seen_bulk
+              seen_bulk.add(key)
+              verify_manifest(p.parent)
+              verify_run_records(p.parent, 6)
+
+          for p in co_paths:
+              d = json.loads(p.read_text())
+              assert d["schema"] == "co-cu111-pbe-stage-a-co-scan-v0.1"
+              assert d["status"] == "COMPLETE"
+              assert len(d["records"]) == 23
+              assert d["provenance"]["protocol_sha256"] == protocol_sha
+              assert d["provenance"]["bundle_sha256"] == bundle_sha
+              assert d["provenance"]["scientific_settings_changed"] is False
+              key = (d["cutoff_id"], float(d["box_angstrom"]))
+              assert key not in seen_co
+              seen_co.add(key)
+              verify_manifest(p.parent)
+              verify_run_records(p.parent, 23)
+
+          assert seen_bulk == expected_bulk, (seen_bulk, expected_bulk)
+          assert seen_co == expected_co, (seen_co, expected_co)
+
+          source_co = {(json.loads(p.read_text())["cutoff_id"], float(json.loads(p.read_text())["box_angstrom"])) for p in Path("collected/source_co").rglob("co_*/summary.json")}
+          recovered_co = {(json.loads(p.read_text())["cutoff_id"], float(json.loads(p.read_text())["box_angstrom"])) for p in Path("collected/recovery").rglob("co_*/summary.json")}
+          assert source_co == {("C0",18.0),("C0",22.0),("C1",18.0)}, source_co
+          assert recovered_co == {("C0",26.0),("C1",22.0),("C1",26.0),("C2",18.0),("C2",22.0),("C2",26.0)}, recovered_co
+
+          print("COMPLETE_STAGE_A_ARCHIVE_VERIFIED")
+          print("BULK_MEMBERS=9")
+          print("CO_MEMBERS=9")
+          print("CO_POINTS=207")
+          print("RECOVERED_CO_POINTS=138")
+          print("SCIENTIFIC_SETTINGS_CHANGED=false")
+          PY
+
+      - name: Run unchanged frozen Stage A analyzer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p decision
+          set +e
+          python3 "$RUNNER" analyze \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --root collected \
+            --out decision/PBE_STAGE_A_RESULT.json \
+            > decision/PBE_STAGE_A_STDOUT.txt 2>&1
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > decision/PBE_STAGE_A_EXIT_CODE.txt
+          cat decision/PBE_STAGE_A_STDOUT.txt
+
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 2 ]; then
+            echo "Unexpected analyzer execution failure: exit $rc" >&2
+            exit "$rc"
+          fi
+          test -f decision/PBE_STAGE_A_RESULT.json
+
+          python3 - "$rc" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          rc = int(sys.argv[1])
+          r = json.loads(Path("decision/PBE_STAGE_A_RESULT.json").read_text())
+          allowed = {
+              "PASS",
+              "PBE_REJECT_BULK_STRUCTURE",
+              "PBE_REJECT_CO_STRUCTURE",
+              "PBE_REJECT_CO_VIBRATION",
+              "FIT_HOLD",
+              "NUMERICAL_HOLD",
+          }
+          assert r["schema"] == "co-cu111-pbe-stage-a-result-v0.1"
+          assert r["status"] in allowed
+          assert r["provenance"]["scientific_settings_changed"] is False
+          if rc == 0:
+              assert r["status"] == "PASS"
+          else:
+              assert r["status"] != "PASS"
+          expected_next = (
+              "PBE_CU111_CLEAN_SURFACE_AND_SITE_ORDERING_SCREEN"
+              if r["status"] == "PASS"
+              else ("BLYP_PP_PROVENANCE_GATE" if r["status"].startswith("PBE_REJECT") else "STAGE_A_HOLD_REVIEW")
+          )
+          assert r["next_gate"] == expected_next
+          print("PBE_STAGE_A_STATUS=" + r["status"])
+          print("NEXT_GATE=" + r["next_gate"])
+          print("SCIENTIFIC_SETTINGS_CHANGED=false")
+          PY
+
+      - name: Record adjudication provenance
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p decision
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out = {
+              "schema": "co-cu111-pbe-stage-a-recovered-adjudication-provenance-v0.1",
+              "source_stage_a_run_id": 31371043888,
+              "source_stage_a_commit": "d411a92c7a548524e7af598b909313f5b421faf9",
+              "mechanical_recovery_run_id": 31853651654,
+              "mechanical_recovery_artifact_id": 9238334290,
+              "mechanical_recovery_artifact_digest": "sha256:edbd138134ca3290e59c22a36b87f865dd1b0c16911cea4c8580edb7a08d67f2",
+              "analyzer_git_blob_sha": "13f457a7f8daaeb2ffccdb9fe6f01c1b0d3a1bdd",
+              "protocol_git_blob_sha": "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336",
+              "bundle_git_blob_sha": "4a23d19bbd4374e250582fb1d02419828a06eb5d",
+              "qe_recomputation_performed": False,
+              "scientific_settings_changed": False
+          }
+          Path("decision/RECOVERED_ADJUDICATION_PROVENANCE.json").write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
+          PY
+          sha256sum "$PROTOCOL" "$BUNDLE" "$RUNNER" decision/PBE_STAGE_A_RESULT.json decision/RECOVERED_ADJUDICATION_PROVENANCE.json > decision/DECISION_INPUTS_AND_RESULT.sha256 2>/dev/null || true
+
+      - name: Upload frozen Stage A scientific decision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-stage-a-recovered-decision-v1
+          path: decision
+          retention-days: 90
+          if-no-files-found: error

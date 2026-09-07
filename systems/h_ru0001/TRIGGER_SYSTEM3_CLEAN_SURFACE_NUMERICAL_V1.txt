@@ -1,0 +1,4 @@
+Launch authorization: 2026-08-30
+Target: System3 clean Ru(0001) fixed-grid numerical qualification v1
+Scientific settings: frozen in SYSTEM3_CLEAN_RU0001_SURFACE_PROTOCOL_v0.1.json
+Firewall: H/Ru kinetics, barriers, published site ordering, chi, expected ChemSA, and System 2 outcomes forbidden as selectors.

@@ -1,0 +1,84 @@
+{
+  "schema": "chemistry-stability-arc-inheritance-v0.1",
+  "status": "FROZEN_REPORTING_AND_ADMISSIBILITY_CONTRACT",
+  "purpose": "Carry the closed Stability Arc scalar-modal reporting discipline into future chemistry results without changing any already-frozen chemistry scientific setting, threshold, method, or conclusion.",
+  "source_handoff": {
+    "package": "Stability_Arc_Internal_Handoff_v1.0.zip",
+    "package_sha256": "de5757287594c0f2fa972eb76fc77e6b6a682e4a9ca71ee2adc7fbd566b084ee",
+    "science_freeze_commit": "5a1c0d3a579f0251374544973c1ff53194bba722",
+    "chemistry_handoff_rules_sha256": "19fb7e5cc651ed18c9b47d4c6d20e33b856a68b4f357e4483ac630b85d9ef901",
+    "stability_architecture_contract_sha256": "bba17784af6cfa80a95db03c98374bad798e2667bc3b31fb302952664d7471a0"
+  },
+  "scope": {
+    "applies_to": [
+      "future promoted ChemSA stability classifications",
+      "future real-system mechanical chi values",
+      "future chemistry reduced-generator stability records",
+      "future cross-system stability comparisons"
+    ],
+    "does_not_retroactively_modify": [
+      "ChemSA release 38 scientific results",
+      "Barrier-Height/Rate Atlas v0.9 coordinates",
+      "Na/Cu(001) development-pilot historical results",
+      "CO/Cu(111) frozen Stage A or clean-surface/site-ordering protocols",
+      "H/Ru(0001) frozen System 3 method and quantum-treatment protocol"
+    ]
+  },
+  "required_reporting_object": {
+    "G": "governing generator, Hessian/dynamical object, response operator, or explicitly justified reduced model",
+    "s": "licensed scalar coordinate set and applicable competing margins",
+    "V": "modal, eigenvector, tangent, reaction-coordinate, or subspace geometry",
+    "C": "explicit scalar-to-mode/subspace assignment and correspondence rule",
+    "R": "inter-channel or cross-description relation when more than one legitimate dynamical description is present",
+    "U": "uncertainty, conditioning, provenance, admissibility, and refusal state"
+  },
+  "chi_admissibility": {
+    "allowed_when": [
+      "the physical carrier is an identified stable second-order damped mode with physically meaningful Gamma and Omega",
+      "an independently admitted real stable 2D quotient licenses an equivalent chi-type invariant"
+    ],
+    "mandatory_companions": [
+      "mode or quotient identity",
+      "modal/eigenvector or subspace representation when numerically available",
+      "scalar-to-mode assignment",
+      "conditioning and numerical uncertainty",
+      "neighboring-mode or degeneracy information where material",
+      "reduction/admissibility status"
+    ],
+    "forbidden_shortcuts": [
+      "selecting a mode because its chi is nearest 1",
+      "reporting a system-wide chi when multiple physically distinct modes are unresolved",
+      "using well-side chi as barrier-local friction",
+      "treating chi=1 as a rate optimum, mean-square boundary, or saddle-point criticality without an independent derivation"
+    ]
+  },
+  "barrier_and_rate_boundary": {
+    "rule": "Barrier height, reaction rate, damping morphology, rate turnover, barrier transmission, exceptional-point proximity, and friction regime remain distinct quantities unless a separately frozen comparison establishes a relation.",
+    "barrier_coordinate": "An inverted scalar barrier mode has no real critical-damping boundary; use the appropriate reactive-pole/transmission description rather than manufacturing a mechanical chi at the saddle.",
+    "barrier_atlas_v0_9": "No retroactive change required. The frozen v0.9 Atlas already forbids well-side ChemSA chi from substituting for barrier-local friction and all 61 frozen coordinates record well_chi_used_for_rate=false."
+  },
+  "multimode_and_memory_rule": {
+    "if_coupled_or_non_normal": "carry the full relevant generator plus modal geometry and all required scalar margins; do not force a single scalar",
+    "if_frequency_dependent_friction_or_memory": "do not collapse a kernel to one Gamma unless a separately justified projection/reduction licenses it",
+    "if_mode_correspondence_changes": "freeze the correspondence rule before inspecting the target outcome",
+    "if_nonidentifiable": "return a refusal/nonidentifiable state rather than selecting the most favorable scalar"
+  },
+  "system_specific_application": {
+    "CO_Cu111_System2": "Current clean-surface and site-ordering work is upstream of any promoted stability scalar and is unchanged. Any later reaction-coordinate/friction/ChemSA result must satisfy this reporting contract before promotion.",
+    "H_Ru0001_System3": "The existing frozen protocol already requires reaction-coordinate matching, refuses chi until dissipation validators pass, and requires independently sourced projected friction. If later eligible for ChemSA, the final promoted record must additionally carry the explicit modal/subspace representation and scalar-to-mode assignment required here.",
+    "Na_Cu001_development_pilot": "Historical development use remains development evidence unless independently brought under a new frozen promotion contract; do not retroactively promote it by filling missing fields after outcome inspection."
+  },
+  "implementation_note": {
+    "ChemSA_current_strength": "The current engine already preserves authoritative spectra, indexed right eigenvectors, left/right response bases, mode geometry, conditioning states, scalar-reduction refusal, and separate mechanical modal factors.",
+    "future_reporting_gap_to_close": "Before a future real-system mechanical chi is promoted, expose or persist the mass-normalized mechanical modal vector/subspace together with MechanicalModeRecord (or an equivalent external report object) so the scalar-to-carrier assignment is explicit rather than reconstructable only from internal computation.",
+    "core_engine_change_required_now": false,
+    "preferred_route": "additive reporting adapter or backward-compatible output extension; do not disturb the frozen ChemSA release merely to satisfy this future reporting requirement"
+  },
+  "provenance": {
+    "scientific_settings_changed": false,
+    "scientific_thresholds_changed": false,
+    "existing_results_reinterpreted": false,
+    "kinetic_inputs_used_to_define_contract": false,
+    "post_result_retuning_authorized": false
+  }
+}

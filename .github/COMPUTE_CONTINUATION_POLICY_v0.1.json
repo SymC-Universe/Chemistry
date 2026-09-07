@@ -1,0 +1,32 @@
+{
+  "schema": "symc-compute-continuation-policy-v0.1",
+  "status": "ACTIVE_MECHANICAL_EXECUTION_POLICY",
+  "scope": "Long-running computational workflows that require continuation or recovery after wall-clock exhaustion.",
+  "minimum_continuation_cells": 5,
+  "cell_compute_runtime_seconds": 19800,
+  "cell_compute_runtime_hours": 5.5,
+  "minimum_provisioned_compute_runway_seconds": 99000,
+  "minimum_provisioned_compute_runway_hours": 27.5,
+  "rules": {
+    "provision_at_least_five_cells": true,
+    "each_cell_budgeted_for_at_least_5_5_compute_hours": true,
+    "carry_forward_authoritative_state_when_solver_supports_it": true,
+    "carry_forward_completed_result_without_recomputation": true,
+    "do_not_change_scientific_settings_to_fit_runtime": true,
+    "do_not_change_acceptance_thresholds_to_fit_runtime": true,
+    "do_not_reclassify_scientific_holds_as_mechanical": true,
+    "preserve_failure_and_timeout_provenance": true,
+    "platform_hard_limit_exception": "If the execution platform imposes a stricter hard limit, use the longest lawful cell below that limit and increase the number of cells so provisioned total runway is not reduced below 27.5 hours unless technically impossible. Record the exception explicitly."
+  },
+  "semantics": {
+    "cell": "A bounded execution unit with its own wall-clock budget and persisted continuation state or authoritative carry-forward record.",
+    "continuation": "A mechanically resumed or state-carried computation using unchanged frozen scientific inputs. If exact engine restart is unavailable, use the strongest scientifically neutral state carry-forward the engine supports and label the semantics explicitly.",
+    "early_completion": "Once the scientific computation completes, remaining provisioned cells may carry the completed result forward without recomputation; they remain part of the declared continuation runway but need not consume their full budget."
+  },
+  "scientific_effect": {
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "method_changed": false,
+    "interpretation_changed": false
+  }
+}

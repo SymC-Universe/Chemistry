@@ -1,0 +1,150 @@
+{
+  "schema": "na-cu001-downstream-protocol-v0.1",
+  "status": "frozen_before_downstream_numerical_results",
+  "system": "Na diffusion on Cu(001)",
+  "method_inheritance": "Every stage consumes hashed PASS handoffs and inherits the exact Quantum ESPRESSO version, PBE functional, Cu and Na UPF hashes, componentwise maximum cutoffs, smearing, converged slab dimensions, vacuum, k mesh, and electrostatic convention.",
+  "scientific_separation": "Computed electronic barriers, partial-Hessian prefactors, model rates, experimental quantities, friction, and linewidth are distinct fields and are never blended.",
+  "stage_2_clean_slab_handoff": {
+    "source": "preregistered 64-SCF clean Cu(001) convergence matrix",
+    "grid": {
+      "layers": [5, 7, 9, 11],
+      "vacuum_angstrom": [12.0, 16.0, 20.0, 24.0],
+      "inplane_kmeshes": "four meshes derived from the selected cubic bulk mesh"
+    },
+    "execution": "sixteen matrix jobs, one registered layer-vacuum pair per job and four in-plane k meshes per job",
+    "surface_excess_tolerance_mev_per_surface_atom": 1.0,
+    "output": "SLAB_HANDOFF.json"
+  },
+  "stage_3_clean_relaxation": {
+    "geometry": "selected symmetric clean Cu(001) slab",
+    "calculation": "relax",
+    "constraints": "outer two Cu layer pairs relax along z; inner or central layers remain fixed; x and y are fixed to preserve the registered surface lattice",
+    "electrostatics": {
+      "assume_isolated": "esm",
+      "esm_bc": "bc1",
+      "interpretation": "vacuum-slab-vacuum open-boundary slab treatment"
+    },
+    "force_threshold_ev_per_angstrom": 0.02,
+    "energy_threshold_ev": 0.0001,
+    "mirror_pair_z_tolerance_angstrom": 0.01,
+    "pass_checks": [
+      "ionic convergence reported by Quantum ESPRESSO",
+      "maximum unconstrained force <= 0.02 eV/A",
+      "relaxed layer pairs remain mirror symmetric within 0.01 A",
+      "top two interlayer relaxations are recorded",
+      "final SCF reproduces the relaxed energy"
+    ]
+  },
+  "stage_4_na_pseudopotential": {
+    "archive": "same pinned SSSP v2 PBE-efficiency archive used for Cu",
+    "selection": "unique UPF whose parsed element attribute is Na; ambiguity gives HOLD",
+    "registered_sssp_v2_na_recommendation_ry": {
+      "ecutwfc": 50.0,
+      "ecutrho": 150.0
+    },
+    "mixed_cutoffs": "componentwise maximum of selected Cu settings and registered Na recommendations",
+    "isolated_reference": {
+      "cell_angstrom": 20.0,
+      "spin_polarized": true,
+      "assume_isolated": "martyna-tuckerman"
+    },
+    "required_provenance": [
+      "archive SHA-256",
+      "Na UPF SHA-256",
+      "metadata candidates",
+      "selected mixed cutoffs",
+      "isolated Na reference energy and output hash"
+    ]
+  },
+  "stage_5_adsorption_screening": {
+    "coverage_model": "one Na adatom in a 4x4 primitive Cu(001) surface supercell",
+    "coverage_ml": 0.0625,
+    "electrostatics": "single-sided adsorption with ESM vacuum-slab-vacuum treatment for every site",
+    "initial_sites": ["fourfold hollow", "bridge", "top"],
+    "initial_heights_angstrom": [2.0, 2.5, 3.0],
+    "registered_relaxations": 9,
+    "relaxation": "Na and inherited movable Cu z coordinates relax; frozen Cu coordinates remain fixed",
+    "force_threshold_ev_per_angstrom": 0.02,
+    "site_pass_rule": "all nine starts converge, site collapse is retained, and the global minimum must classify as fourfold hollow for the registered diffusion route"
+  },
+  "stage_6_endpoint_verification": {
+    "endpoint_pair": "nearest-neighbor symmetry-equivalent fourfold hollow minima",
+    "checks": [
+      "endpoint A energy is reproduced by an independent final SCF within 0.001 eV",
+      "translated endpoint B relaxes and reproduces endpoint A within 0.001 eV",
+      "maximum unconstrained force <= 0.02 eV/A",
+      "endpoint separation equals one primitive surface translation within geometric tolerance",
+      "coordinate, input, output, and handoff hashes are recorded"
+    ]
+  },
+  "stage_7_path_convergence": {
+    "initial_path": "nearest-neighbor hollow-to-hollow interpolation through the intervening bridge region",
+    "ordinary_neb_image_counts": [5, 7, 9],
+    "path_force_threshold_ev_per_angstrom": 0.05,
+    "barrier_tolerance_ev": 0.005,
+    "pass_rule": "select the smallest image count whose forward barrier differs by <= 0.005 eV from every larger registered image count and whose endpoint energies remain verified"
+  },
+  "stage_8_ci_neb": {
+    "prerequisite": "ordinary NEB image convergence PASS",
+    "climbing_image": "auto",
+    "path_force_threshold_ev_per_angstrom": 0.03,
+    "pass_checks": [
+      "maximum-energy image is internal",
+      "CI-NEB convergence is reported",
+      "endpoint energies reproduce verified endpoints within 0.001 eV",
+      "maximum internal path error <= 0.03 eV/A",
+      "all image coordinates and outputs are hashed"
+    ]
+  },
+  "stage_9_saddle_verification": {
+    "method": "Na-only partial Hessian at the minimum and saddle plus unstable-mode downhill connectivity",
+    "finite_difference_displacements_angstrom": [0.02, 0.04],
+    "registered_scf_count": 24,
+    "hessian_requirements": [
+      "minimum has three positive Na partial-Hessian eigenvalues",
+      "saddle has exactly one negative Na partial-Hessian eigenvalue",
+      "unstable eigenvector aligns with the hollow-to-hollow path by >= 0.70",
+      "eigenvalues from 0.02 and 0.04 A displacements agree within 20 percent"
+    ],
+    "connectivity": {
+      "initial_displacement_angstrom": 0.05,
+      "rule": "relaxations from plus and minus unstable-mode displacements reach distinct registered endpoint basins"
+    },
+    "residual_saddle_force_ev_per_angstrom": 0.03,
+    "prefactor": "Na-only partial-Hessian Vineyard prefactor with a separate finite-displacement convergence check",
+    "limitation": "substrate vibrational determinants are not included"
+  },
+  "stage_10_barrier_coordinate": {
+    "primary": "electronic forward and reverse barriers from verified endpoints and CI-NEB saddle",
+    "uncertainty_components": [
+      "half the registered image-count barrier range",
+      "ordinary-to-CI barrier shift",
+      "endpoint asymmetry"
+    ],
+    "attempt_frequency": "Na-only partial-Hessian Vineyard estimate",
+    "computed_temperature_grid_k": [100.0, 150.0, 200.0, 250.0, 300.0],
+    "rate_model": "partial-Hessian harmonic transition-state estimate",
+    "separation_rule": "electronic, zero-point, thermal, friction, linewidth, and experimental quantities remain separate fields",
+    "null_rule": "zero-point, thermal free-energy, friction, and linewidth fields remain null unless independently calculated or supported at the same state point"
+  },
+  "stage_11_atlas_admission": {
+    "computational_scope": "Barrier-Rate Atlas surface extension",
+    "required_identity": ["adsorbate", "surface face", "coverage", "mechanism", "temperature grid"],
+    "required_numeric_fields": ["electronic barrier", "barrier uncertainty", "partial-Hessian prefactor", "computed model rate"],
+    "computational_verification_tier": "COMPUTATIONAL_FULL",
+    "experimental_rule": "public experimental candidates remain HOLD unless an exact coverage-temperature rate table is available",
+    "non_blending_rule": "computed and experimental values occupy distinct columns and are never substituted for one another"
+  },
+  "stage_12_integration": {
+    "required_outputs": [
+      "all stage PASS artifacts",
+      "non-self-referential integration validator output",
+      "SHA-256 closure manifest",
+      "SHA-256 raw-output manifest verified against retained files",
+      "experimental-gap register",
+      "compact raw calculation artifacts with restart scratch removed"
+    ],
+    "computational_pass_rule": "stages 1 through 11 validate with exact schemas, PASS states, resolvable handoff hashes, and a raw-output manifest that matches every retained raw file",
+    "experimental_boundary": "experimental-only HOLD fields do not invalidate computational closure but remain explicitly unresolved"
+  }
+}

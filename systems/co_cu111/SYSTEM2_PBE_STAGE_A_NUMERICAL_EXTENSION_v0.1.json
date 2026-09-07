@@ -1,0 +1,186 @@
+{
+  "schema": "co-cu111-pbe-stage-a-numerical-extension-v0.1",
+  "status": "FROZEN_AFTER_STAGE_A_NUMERICAL_HOLD_BEFORE_EXTENSION_RESULTS",
+  "system": "CO/Cu(111)",
+  "layer": "Computational Reaction-Path Engine",
+  "purpose": "Prospectively resolve the executed PBE Stage A bulk numerical HOLD without weakening any frozen gate, changing the electronic-structure method, rerunning valid archived CO data unnecessarily, or using any kinetic observable.",
+  "base_stage_a": {
+    "protocol_path": "systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json",
+    "protocol_git_blob_sha": "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336",
+    "protocol_sha256": "47a84214d15480dae6aade71f466346be3a6110a40fea8eb3b6522c4340e5f20",
+    "bundle_path": "systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json",
+    "bundle_git_blob_sha": "4a23d19bbd4374e250582fb1d02419828a06eb5d",
+    "bundle_sha256": "6a2216a776cbe3bf8a08e1f7215bcf0ff77caf96a2f2529875a0157f4bbfed3f",
+    "frozen_runner_path": "systems/co_cu111/pbe_stage_a_runner_v1.py",
+    "frozen_runner_git_blob_sha": "13f457a7f8daaeb2ffccdb9fe6f01c1b0d3a1bdd",
+    "source_stage_a_run_id": 31371043888,
+    "source_stage_a_commit": "d411a92c7a548524e7af598b909313f5b421faf9",
+    "source_engine_artifact": "co-cu111-pbe-stage-a-engine-v2",
+    "source_engine_artifact_id": 9056061436,
+    "source_engine_artifact_digest": "sha256:d08bdff49537bc987d741ab6c392a0226ebc71d3c0631f095ee9e1948926349e"
+  },
+  "triggering_stage_a_result": {
+    "workflow_run_id": 31884902290,
+    "workflow_name": "CO Cu111 PBE Stage A recovered adjudication v1",
+    "artifact_name": "co-cu111-pbe-stage-a-recovered-decision-v1",
+    "artifact_id": 9246992223,
+    "artifact_digest": "sha256:e0c7929041ccff4761f9a5f64aa3b9bb12d79cdda5c60e1550e86c946c0a9733",
+    "result_json_sha256": "4975a1316486155b04235fd4347c03af70f24851737ed78e656adf161fd622b5",
+    "status": "NUMERICAL_HOLD",
+    "next_gate": "STAGE_A_HOLD_REVIEW",
+    "cause": "No originally selectable bulk cutoff/k pair met the unchanged joint 0.005 A / 0.001 eV-per-atom gate relative to the original C2/k16 terminal holdout. The terminal C2 cases were numerically converged but prospectively non-selectable."
+  },
+  "forbidden_inputs": [
+    "CO/Cu(111) diffusion barrier",
+    "CO/Cu(111) hopping rate or diffusion coefficient",
+    "CO/Cu(111) kinetic prefactor",
+    "rate-fitted friction",
+    "ChemSA chi or expected classification",
+    "closeness to any Atlas residual"
+  ],
+  "unchanged_electronic_settings": {
+    "exchange_correlation": "PBE",
+    "occupations_bulk": "Marzari-Vanderbilt smearing",
+    "degauss_bulk_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "mpi_ranks": 1,
+    "thread_environment": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1
+    },
+    "pseudopotential_bundle": "unchanged exact Stage A PBE Cu/C/O bundle",
+    "solver": "unchanged exact Stage A Quantum ESPRESSO pw.x"
+  },
+  "unchanged_gates": {
+    "bulk_delta_a0_max_angstrom": 0.005,
+    "bulk_delta_e0_max_ev_per_atom": 0.001,
+    "bulk_reference_lattice_constant_angstrom": 3.615,
+    "bulk_reference_lattice_max_relative_error_fraction": 0.02,
+    "co_bond_length_max_difference_angstrom": 0.002,
+    "co_stretch_max_difference_cm_minus_1": 10.0,
+    "co_fit_discretization_max_cm_minus_1": 10.0,
+    "co_equilibrium_bond_reference_angstrom": 1.128,
+    "co_bond_reference_max_relative_error_fraction": 0.02,
+    "co_fundamental_vibration_reference_cm_minus_1": 2143.0,
+    "co_vibration_reference_max_relative_error_fraction": 0.05
+  },
+  "bulk_extension": {
+    "lattice_grid_angstrom": [
+      3.55,
+      3.58,
+      3.61,
+      3.64,
+      3.67,
+      3.70
+    ],
+    "fit": "quadratic E(a) fit over the unchanged complete six-point lattice grid",
+    "candidate_ecutwfc_ry": [
+      90,
+      100,
+      110,
+      120,
+      130
+    ],
+    "ecutrho_by_ecutwfc": {
+      "90": 900,
+      "100": 1000,
+      "110": 1100,
+      "120": 1200,
+      "130": 1300
+    },
+    "candidate_kmeshes": [
+      12,
+      14,
+      16,
+      18,
+      20
+    ],
+    "reused_existing_candidates": [
+      {
+        "ecutwfc_ry": 90,
+        "ecutrho_ry": 900,
+        "kmesh": 12,
+        "source_run_id": 31371043888,
+        "artifact_name": "co-cu111-pbe-stage-a-v2-bulk-C2-k12",
+        "artifact_id": 9057243309,
+        "artifact_digest": "sha256:68286a0cf0b040e7b242ab289bb404f8f348f2d62fb9f222c4aff52432680638",
+        "summary_sha256": "c45d2adb77f3ffc482c3a20b9f6508e336fd91797d3d099cc47afd702ff20e9e"
+      },
+      {
+        "ecutwfc_ry": 90,
+        "ecutrho_ry": 900,
+        "kmesh": 14,
+        "source_run_id": 31371043888,
+        "artifact_name": "co-cu111-pbe-stage-a-v2-bulk-C2-k14",
+        "artifact_id": 9057521763,
+        "artifact_digest": "sha256:4edde3969d2aa161e03f91e796e2492de4e37a3833e7f3d0a499fe30cf382add",
+        "summary_sha256": "b537ad6c123018c25af2d904fe964c73d1ea5269783d5a0cc6e1715a65186baa"
+      },
+      {
+        "ecutwfc_ry": 90,
+        "ecutrho_ry": 900,
+        "kmesh": 16,
+        "source_run_id": 31371043888,
+        "artifact_name": "co-cu111-pbe-stage-a-v2-bulk-C2-k16",
+        "artifact_id": 9058067760,
+        "artifact_digest": "sha256:184356b6711d6b3fc2fcd835bb336a0c519a715a3b0ab3c69157ea829786dfb7",
+        "summary_sha256": "c502b7f0621c2fae736a5d3c4e2f53de6a1fbfbf5d0d63639c50d51839e7cc45"
+      }
+    ],
+    "reuse_rule": "The three valid archived 90/900 Ry k=12,14,16 EOS cases are immutable candidates in the extension and must not be recomputed.",
+    "new_candidate_rule": "Execute every candidate combination not already present in the reused_existing_candidates list. This is 22 new candidate EOS cases.",
+    "terminal_reference": {
+      "ecutwfc_ry": 140,
+      "ecutrho_ry": 1400,
+      "kmesh": 22,
+      "selectable": false
+    },
+    "independent_audit": {
+      "ecutwfc_ry": 150,
+      "ecutrho_ry": 1500,
+      "kmesh": 24,
+      "selectable": false
+    },
+    "reference_audit_rule": "The 140/1400 Ry k22 reference must satisfy the unchanged bulk delta-a0 and delta-E0 gates against the separately executed 150/1500 Ry k24 audit before any extension candidate can be selected.",
+    "selection_rule": "After the terminal reference passes its independent audit, compare every frozen candidate directly with 140/1400 Ry k22. A candidate must satisfy both unchanged numerical gates and the unchanged broad Cu lattice physical guard. Select the lowest ecutwfc first and then the lowest k mesh. The reference and audit can never select themselves.",
+    "failure_rule": "If the reference audit fails or no candidate passes, retain NUMERICAL_HOLD. If the extended reference fails the unchanged Cu bulk physical guard, return PBE_REJECT_BULK_STRUCTURE. Do not weaken a gate or extend again automatically."
+  },
+  "conditional_co_combination_check": {
+    "reason": "The original Stage A combined rule requires CO numerical re-evaluation at the final production cutoff. Valid archived CO data must be reused whenever they already cover that cutoff.",
+    "if_selected_bulk_ecutwfc_ry_equals_90": "Reuse the already validated archived C2/L18 and C2/L26 CO scans. Do not recompute them.",
+    "if_selected_bulk_ecutwfc_ry_exceeds_90": "Run only two new fixed CO scans at the selected bulk cutoff: L18 and L26. Do not rerun the full 3x3 CO matrix.",
+    "boxes_angstrom": [
+      18,
+      26
+    ],
+    "boundary_condition": "assume_isolated='martyna-tuckerman'",
+    "k_points": "Gamma",
+    "bond_scan_angstrom": {
+      "start": 1.02,
+      "stop": 1.24,
+      "step": 0.01
+    },
+    "fit": "same seven-point local quartic fit and every-second-point discretization check as frozen Stage A",
+    "extended_terminal_rule": "At a selected cutoff above 90 Ry, L26 is the non-selectable same-cutoff terminal box for the conditional combination check. L18 must satisfy the unchanged bond and stretch numerical gates relative to L26; both scans must satisfy the unchanged fit-discretization and broad physical guards.",
+    "failure_rule": "Numerical or fit failure retains Stage A HOLD. Failure of the unchanged CO structural or vibrational physical guard rejects PBE and advances to the frozen BLYP pseudopotential-provenance gate."
+  },
+  "finalization": {
+    "pass_status": "PASS",
+    "next_gate_on_pass": "PBE_CU111_CLEAN_SURFACE_AND_SITE_ORDERING_SCREEN",
+    "next_gate_on_pbe_rejection": "BLYP_PP_PROVENANCE_GATE",
+    "next_gate_on_numerical_or_fit_hold": "STAGE_A_HOLD_REVIEW",
+    "automatic_downstream_dispatch": false,
+    "inspection_rule": "The extension result artifact must be inspected before launching the Cu(111) clean-surface/site-ordering screen."
+  },
+  "provenance": {
+    "base_stage_a_result_retained": true,
+    "raw_QE_input_and_output_hashes_required": true,
+    "stage_time_hash_anchor_required": true,
+    "valid_archived_points_reused_without_recomputation": true,
+    "scientific_settings_changed": false,
+    "kinetic_inputs_used": false
+  }
+}

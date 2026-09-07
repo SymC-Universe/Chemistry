@@ -1,0 +1,96 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v0.5",
+  "status": "ADDITIVE_FAMILY_DEPTH_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_six_trail_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.4.json",
+  "source_audit": "barrier_atlas/family_independence/MC04_H_PROPENE_ADDITION_SOURCE_AUDIT_v0.1.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "MC04 mechanistic-class gap search using an independently typed barrier-first/kinetics qualification path; no predicted-versus-observed residual, chi, or ChemSA expectation selected or promoted this trail"
+  },
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC04-H-PROPENE-ADDITION",
+      "target_class": "MC04",
+      "candidate_family": "hydrogen-atom addition to propene",
+      "reaction_network": "H + C3H6 -> n-C3H7 and i-C3H7",
+      "classification_gate": "PASS_MC04_ADDITION",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_PARALLEL_DELTA_H_DAGGER_0K_PROFILE",
+      "barrier_profile": [
+        {
+          "channel": "internal addition -> n-C3H7",
+          "value": 15.61,
+          "unit": "kJ/mol",
+          "type": "computed activation enthalpy at 0 K, Delta-dagger H_0K"
+        },
+        {
+          "channel": "terminal addition -> i-C3H7",
+          "value": 8.39,
+          "unit": "kJ/mol",
+          "type": "computed activation enthalpy at 0 K, Delta-dagger H_0K"
+        }
+      ],
+      "barrier_source_doi": "10.1021/acs.jpca.1c03168",
+      "comparator_gate": "PASS_INDEPENDENT_OBSERVED_HIGH_PRESSURE_LIMIT",
+      "observed_comparator": {
+        "source": "Kurylo, Peterson, and Braun, J. Chem. Phys. 54, 4662-4666 (1971); NBS SP 305 supplement 3 item 12212",
+        "temperature_K": 298.0,
+        "type": "experimentally extrapolated limiting high-pressure total addition rate for H + C3H6 -> C3H7",
+        "value": 1.61e-12,
+        "uncertainty": 0.04e-12,
+        "unit": "cm^3 molecule^-1 s^-1"
+      },
+      "condition_gate": "PASS_GAS_PHASE_298K_HIGH_PRESSURE_LIMIT_NETWORK_MAPPING",
+      "independence_gate": "PASS_DISTINCT_FAMILY_AND_CURRENT_WORK_BARRIERS_NOT_FIT_TO_TARGET_RATE",
+      "representation_mode": "NETWORK_RESOLVED_PARALLEL_ADDITION_HIGH_PRESSURE",
+      "representation_gate": "PASS_NETWORK_RESOLVED",
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "selection_role_of_residual_chi_or_chemsa": "NONE"
+    }
+  ],
+  "preserved_nonpromotion_states": {
+    "FI-MC04-H-ETHYLENE-ADDITION": "COMPARATOR_NUMERIC_PROVENANCE_HOLD",
+    "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+    "FI-MC08-METHANE-ZEOLITE-HD-EXCHANGE": "MECHANISM_AND_RAW_COMPARATOR_HOLD",
+    "FI-MC15-VASKA-H2-OXIDATIVE-ADDITION": "CONDITION_AND_QUANTITY_MAPPING_HOLD"
+  },
+  "supersession_note": "v0.5 adds an alternative MC04 propene trail. It does not alter or supersede the held H+ethylene MC04 trail, any frozen six-trail outcome, any v0.9 coordinate, or any v0.9 grade.",
+  "aggregate": {
+    "new_ready_for_adjudication": 1,
+    "new_ready_class": "MC04",
+    "new_ready_trail": "FI-MC04-H-PROPENE-ADDITION",
+    "family_depth_classes_with_additive_ready_second_family": ["MC04", "MC06", "MC11", "MC14"],
+    "ready_second_family_count": 4,
+    "target_class_count": 11,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

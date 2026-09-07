@@ -1,0 +1,126 @@
+{
+  "schema": "barrier-atlas-mc16-ch3-h2-chain-propagation-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_AUDIT_READY_WITHOUT_PARENT_MUTATION",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "MC16 chain_propagation_termination class-gap search; selected because it is an elementary radical-chain propagation family with an independently tabulated high-level barrier benchmark and primary gas-phase kinetics, never because of predicted-versus-observed agreement",
+    "benchmark_method_selection_rule": "Use the pre-existing GMTKN55/BH76 W2-F12 reference barrier because it is the benchmark reference value adopted across the BH76 set, not because it is closest to the selected CH3+H2 rate data. DFA and lower-level method variants are not eligible to replace the reference by residual ranking."
+  },
+  "trail_id": "FI-MC16-CH3-H2-CHAIN-PROPAGATION",
+  "target_class": "MC16",
+  "target_class_name": "chain_propagation_termination",
+  "candidate_family": "methyl-radical hydrogen abstraction from molecular hydrogen",
+  "reaction": "CH3 + H2 -> CH4 + H",
+  "classification_gate": "PASS_MC16_RADICAL_CHAIN_PROPAGATION",
+  "classification_basis": [
+    "The frozen MC16 ontology explicitly includes chain propagation as well as termination.",
+    "This elementary step consumes one radical (CH3) and produces one radical (H), so the radical-carrier count is unchanged, which is the operational chain-propagation pattern.",
+    "It is a distinct physical family from the frozen OH + HO2 radical-termination family and from the held methylperoxy self-reaction network."
+  ],
+  "source_gate": "PASS",
+  "barrier_source": {
+    "exact_value_source": {
+      "authors": "Andrew M. Wibowo-Teale, Bang C. Huynh, Trygve Helgaker, David J. Tozer",
+      "title": "Classical Reaction Barriers in DFT: An Adiabatic-Connection Perspective",
+      "journal": "Journal of Chemical Theory and Computation",
+      "year": 2025,
+      "doi": "10.1021/acs.jctc.4c01038",
+      "table": "Table 1",
+      "reaction_direction": "H2 + CH3 -> H + CH4",
+      "reported_w2_f12_forward_barrier_kcal_per_mol": 11.9
+    },
+    "benchmark_provenance": {
+      "authors": "Lars Goerigk, Andreas Hansen, Christoph Bauer, Stephan Ehrlich, Asim Najibi, Stefan Grimme",
+      "title": "A look at the density functional theory zoo with the advanced GMTKN55 database for general main group thermochemistry, kinetics and noncovalent interactions",
+      "journal": "Physical Chemistry Chemical Physics",
+      "year": 2017,
+      "doi": "10.1039/C7CP04913G",
+      "provenance_statement": "GMTKN55 updates the BH76 barrier-height reference set to W2-F12 reference values rather than selecting a reaction-specific density functional by agreement with kinetics."
+    },
+    "reported_quantity": {
+      "value": 11.9,
+      "unit": "kcal/mol",
+      "type": "W2-F12 benchmark classical reaction barrier at the GMTKN55/BH76 reference geometry, defined as transition-state total energy (electronic plus nuclear repulsion) minus separated-reactant total energies",
+      "zpe_status": "NOT_INCLUDED_IN_THE_CLASSICAL_BARRIER_DEFINITION",
+      "thermal_correction_status": "NOT_INCLUDED_IN_THE_CLASSICAL_BARRIER_DEFINITION",
+      "entropy_status": "NOT_INCLUDED_IN_THE_CLASSICAL_BARRIER_DEFINITION",
+      "free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+      "arrhenius_activation_energy_status": "NOT_AN_EXPERIMENTAL_ARRHENIUS_ACTIVATION_ENERGY",
+      "temperature_K": null,
+      "pressure": null,
+      "phase_mapping": "isolated gas-phase reactants and transition state"
+    },
+    "barrier_gate": "PASS_EXACTLY_TYPED_W2_F12_CLASSICAL_GAS_PHASE_BARRIER"
+  },
+  "barrier_gate": "PASS_EXACTLY_TYPED_W2_F12_CLASSICAL_GAS_PHASE_BARRIER",
+  "observed_comparator": {
+    "authors": "Roger M. Marshall and Gholamreza Shahkar",
+    "title": "Rate parameters for CH3 + H2 -> CH4 + H in the temperature range 584-671 K",
+    "journal": "Journal of the Chemical Society, Faraday Transactions 1",
+    "year": 1981,
+    "volume": 77,
+    "pages": "2271-2276",
+    "doi": "10.1039/F19817702271",
+    "type": "primary experimental second-order gas-phase rate coefficient",
+    "temperature_range_K": [584.0, 671.0],
+    "pressure_range_Torr": [5.0, 26.0],
+    "experimental_design": "Azomethane pyrolysis in a large excess of H2 with a data-treatment method designed to determine k2 without assuming a methyl-radical recombination rate constant.",
+    "rate_expression": "log10(k2 / (cm^3 mol^-1 s^-1)) = 11.70 - (44 kJ mol^-1)/(2.3 R T)",
+    "rate_derived_activation_term_status": "DESCRIPTIVE_ONLY_NOT_AN_INDEPENDENT_BARRIER_VALIDATOR"
+  },
+  "independent_kinetic_cross_check": {
+    "authors": "W. Moller, E. Mozzhukhin, H. Gg. Wagner",
+    "title": "High Temperature Reactions of CH3. 1. The Reaction CH3 + H2 -> CH4 + H",
+    "journal": "Berichte der Bunsengesellschaft fuer physikalische Chemie",
+    "year": 1986,
+    "volume": 90,
+    "pages": "854-861",
+    "doi": "10.1002/bbpc.19860901006",
+    "method": "time-resolved methyl-radical absorption at 216.5 nm behind incident shock waves",
+    "rate_expression": "k = 10^(13.3 +/- 0.1) exp[-(7200 +/- 400) K/T] cm^3 mol^-1 s^-1",
+    "role": "INDEPENDENT_SUPPORTING_KINETIC_CROSS_CHECK_NOT_USED_TO_SELECT_THE_BARRIER_OR_PROMOTE_BY_RESIDUAL"
+  },
+  "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_GAS_PHASE_RATE_CHAIN",
+  "condition_gate": "PASS_SAME_GAS_PHASE_ELEMENTARY_EVENT_WITH_EXPLICIT_KINETIC_TEMPERATURE_AND_PRESSURE_WINDOW",
+  "condition_mapping_basis": [
+    "The W2-F12 quantity is a classical potential-energy barrier and therefore is not assigned the experiment's finite temperature or a solution standard state.",
+    "The observed comparator is for the identical forward elementary gas-phase reaction CH3 + H2 -> CH4 + H over 584-671 K and 5-26 Torr.",
+    "No solvent, catalyst, isotopologue, or alternate product channel is introduced by the pairing.",
+    "The experimental Arrhenius activation term is quarantined as rate-derived and is not substituted for the independent W2-F12 barrier."
+  ],
+  "independence_gate": "PASS_DISTINCT_PHYSICAL_FAMILY_AND_W2_F12_REFERENCE_NOT_FIT_TO_SELECTED_TARGET_RATE",
+  "independence_basis": [
+    "The selected barrier is the W2-F12 reference value of the pre-existing GMTKN55/BH76 benchmark set; it is not a reaction-specific functional chosen for closeness to the Marshall-Shahkar kinetics.",
+    "The selected observed comparator is a primary experimental rate measurement and is not derived from the W2-F12 barrier.",
+    "A separate later shock-wave methyl-absorption experiment is retained only as a supporting kinetic cross-check and does not vote on method selection.",
+    "No predicted-versus-observed residual, chi value, or expected ChemSA agreement was calculated or used to select or promote the candidate.",
+    "The family is mechanistically and chemically distinct from FAM-OH-HO2-RADICAL-TERMINATION."
+  ],
+  "representation_mode": "SINGLE_BARRIER_RADICAL_CHAIN_PROPAGATION_H_ATOM_TRANSFER",
+  "representation_gate": "PASS_SINGLE_ELEMENTARY_BARRIER",
+  "representation_basis": "The comparator and benchmark describe the same elementary hydrogen-abstraction step with one saddle-point barrier; no pressure-dependent well network, competing product branch, spin-crossing network, or falloff reduction is required for the registered representation.",
+  "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+  "terminal_state": "READY_FOR_ADJUDICATION",
+  "ready_for_adjudication": true,
+  "automatic_admission": false,
+  "selection_role_of_residual_chi_or_chemsa": "NONE",
+  "preserved_mc16_hold": {
+    "trail_id": "FI-MC16-METHYLPEROXY-SELF-REACTION",
+    "terminal_state": "PES_TOPOLOGY_NETWORK_AND_MODEL_PROVENANCE_HOLD",
+    "note": "This new propagation-family trail does not relabel, supersede, or promote the methylperoxy self-reaction trail."
+  }
+}

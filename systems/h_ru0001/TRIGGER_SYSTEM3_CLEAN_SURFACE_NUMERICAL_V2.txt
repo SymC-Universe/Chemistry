@@ -1,0 +1,6 @@
+Launch authorization: 2026-08-31
+Target: System3 clean Ru(0001) fixed-grid numerical qualification v2 mechanical recovery
+Source mechanical HOLD: run 33356315835, artifact 9747438132
+Allowed change: per-SCF wall-clock timeout 1800 s -> 3600 s only, plus additive mechanical-recovery provenance
+Scientific settings and numerical thresholds: unchanged from frozen v0.1 contract
+Firewall: H/Ru kinetics, barriers, published site ordering, chi, expected ChemSA, and System 2 outcomes forbidden as selectors

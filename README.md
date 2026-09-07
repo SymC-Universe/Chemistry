@@ -1,184 +1,108 @@
-# Approach-Region Dynamics and Rate Turnover in Thermally Activated Barrier Crossing
+# ChemSA: Generator-First Stability Analysis in Chemistry
 
-This repository supports the manuscript:
+This repository contains the current ChemSA chemistry program, its reproducibility assets, the Barrier-Height/Rate Atlas, and prospective computational system tests.
 
-**Approach-Region Dynamics and Rate Turnover in Thermally Activated Barrier Crossing**  
-Nate Christensen
+The present scientific scope is **generator first**. A scalar stability coordinate is reported only when the physical and mathematical reduction that licenses it has been established. Scalar quantities remain attached to the mode, reaction coordinate, subspace, or generator from which they are derived.
 
-The project develops a reaction-dynamical descriptor for thermally activated barrier crossing across electron transfer, proton-coupled electron transfer, and heterogeneous catalysis.
+## Current core
 
-The central quantity is the dimensionless approach-region damping ratio
-
-```math
-\chi_0 = \frac{\Gamma_{\mathrm{eff}}}{2\Omega_0}
-```
-
-where \(\Gamma_{\mathrm{eff}}\) is the total projected dissipation rate and \(\Omega_0\) is the stable precursor-well approach frequency.
-
-The framework distinguishes approach-region dynamics from saddle-point transition-state dynamics. The exceptional-point condition \(\chi_0 = 1\) belongs to the stable precursor-well generator, not to the inverted saddle itself.
-
----
-
-## Core idea
-
-Thermodynamic rate theory describes barriers, driving forces, and reaction energetics. This work adds a complementary dynamical coordinate describing whether a reactive trajectory commits productively, recrosses, or becomes overdamped and sluggish.
-
-The three operational regimes are:
-
-| \(\chi_0\) range | Regime | Dynamical behavior | Chemical consequence |
-|---|---|---|---|
-| \(\chi_0 < 0.8\) | Underdamped | Oscillatory approach, recrossing likely | Back-transfer, weak activation, poor commitment |
-| \(0.8 \leq \chi_0 \leq 1.3\) | Near-critical | Fast monotonic commitment | Efficient ET, concerted PCET, high catalytic turnover |
-| \(\chi_0 > 1.3\) | Overdamped | Monotonic but sluggish | Solvent-controlled ET, inhibited PCET, over-promoted or poisoned catalysis |
-
-The window \(0.8 \leq \chi_0 \leq 1.3\) is treated as an operational near-critical band rather than an exact universal optimum.
-
----
-
-## Scope
-
-The framework applies to classical, thermally activated barrier crossing in systems where:
-
-- a dominant reactive coordinate can be identified,
-- the approach region is locally approximated by a stable damped generator,
-- friction is near-Markovian or weakly non-Markovian,
-- tunneling is not the dominant pathway,
-- thermodynamic parameters are independently acceptable.
-
-The framework is not intended to replace transition-state theory, Marcus theory, PCET theory, d-band theory, BEP scaling, adsorption-energy descriptors, or electronic-structure calculations. Instead, it provides a complementary reaction-dynamical coordinate for comparing commitment versus recrossing under otherwise comparable thermodynamic conditions.
-
----
-
-## Estimator routes
-
-The manuscript develops three calibrated routes from standard observables or computational quantities to \(\chi_0\).
-
-### Route A: Spectroscopic linewidths
-
-For operando IR or Raman measurements:
+For an identified stable second-order damped mode,
 
 ```math
-\chi_{\mathrm{spec}} = \frac{\Delta\tilde{\nu}_L}{2\tilde{\nu}}
+\chi = \frac{\Gamma}{2\Omega}
 ```
 
-where \(\Delta\tilde{\nu}_L\) is the Lorentzian linewidth component and \(\tilde{\nu}\) is the vibrational frequency.
+is a legitimate mechanical damping ratio. In that restricted setting, `chi < 1`, `chi = 1`, and `chi > 1` describe underdamped, repeated-root/critical, and overdamped modal morphology.
 
-This route is valid only when homogeneous broadening dominates. Voigt or Fano fitting may be required.
+ChemSA does **not** treat this scalar as a universal reaction-rate coordinate or a system-wide stability number. For a general first-order or coupled generator, the engine withholds mechanical `chi` unless the required scalar or proportionally damped modal reduction is independently licensed.
 
----
+The classifier instead preserves the relevant spectral and modal structure, including multiplicity, defectiveness at tolerance, conditioning, provenance, and response geometry.
 
-### Route B: Solvent relaxation
+## Exceptional-point classification
 
-For electron-transfer and PCET systems:
+A repeated eigenvalue is not automatically an exceptional point. A semisimple degeneracy retains independent eigenvectors, whereas an exceptional point is defective.
+
+ChemSA therefore distinguishes eigenvalue coincidence from eigenvector deficiency and scopes every exceptional-point interpretation to the declared provenance of the supplied equation. Crowded or numerically unresolved neighborhoods are returned as unresolved rather than promoted.
+
+## Scalar-modal reporting discipline
+
+Future promoted chemistry stability results follow a coupled scalar-modal record:
+
+- governing generator, Hessian/dynamical object, response operator, or justified reduced model;
+- licensed scalar coordinate set and applicable competing margins;
+- modal, eigenvector, reaction-coordinate, or subspace geometry;
+- explicit scalar-to-mode/subspace assignment;
+- inter-channel or cross-description relation when applicable;
+- uncertainty, conditioning, provenance, admissibility, and refusal state.
+
+A scalar is not selected because it happens to lie near a preferred value, and a mode is not selected after inspecting the desired outcome.
+
+The frozen inheritance contract is:
+
+`systems/CHEMISTRY_STABILITY_ARC_INHERITANCE_v0.1.json`
+
+## Barrier crossing is a separate dynamical question
+
+A stable well mode and an inverted transition-state mode are not governed by the same critical-damping geometry.
+
+For an isolated scalar inverted barrier coordinate,
 
 ```math
-\Gamma_{\mathrm{eff}} = \Omega_s^2 \tau_L
+q'' + \gamma q' - \omega_b^2 q = 0,
 ```
 
-so that slower solvent relaxation generally increases \(\chi_0\). Relative comparisons are preferred:
+the discriminant is
 
 ```math
-\frac{\chi_{\mathrm{ET}}^{(A)}}{\chi_{\mathrm{ET}}^{(B)}} \approx
-\frac{\tau_L^{(A)}}{\tau_L^{(B)}}
+\frac{\gamma^2}{4} + \omega_b^2,
 ```
 
-with equality only when solvent bath frequencies are comparable.
+which does not vanish for real damping and nonzero barrier frequency. There is therefore no mechanical critical-damping boundary at the saddle analogous to `chi = 1` for a stable well.
 
-Route B does not replace established solvent-dynamical descriptors such as longitudinal relaxation times or dielectric friction coefficients. It maps them onto a dimensionless coordinate by comparing solvent dissipation against intrinsic precursor-well stiffness.
+Barrier transmission is handled with the appropriate reactive-pole or transmission description. The current engine does not infer a reaction rate from local spectral architecture alone.
 
----
+## Barrier-Height/Rate Atlas
 
-### Route C: DFT electronic friction
+The Barrier-Height/Rate Atlas is maintained as a separate evidence structure for barrier/rate coordinates and mechanistic families.
 
-For surface catalysis with electronic friction or Newns-Anderson hybridization data:
+Its validation rules explicitly forbid substituting well-side ChemSA `chi` for barrier-local friction. Barrier height, reaction rate, damping morphology, transmission, friction regime, and exceptional-point proximity remain distinct quantities unless a separately frozen comparison establishes a relation.
 
-```math
-\chi_{\mathrm{DFT}} =
-\frac{\Gamma_{\mathrm{int}}+\Gamma_{\mathrm{cat}}}{2hc\tilde{\nu}}
-```
+## Current prospective computational systems
 
-Here \(\Gamma_{\mathrm{cat}}\) is an energy broadening in eV, not a time-domain friction coefficient. Ground-state Route C estimates are interpreted as lower-bound proxies when the reactive bond softens along the approach coordinate.
+### System 2: CO/Cu(111)
 
----
+The active CO/Cu(111) program is a frozen, staged first-principles workflow. Numerical convergence, clean-surface validation, adsorption-site ordering, reaction-path construction, and later dissipation validation are separated so that kinetic outcomes cannot tune upstream electronic-structure choices.
 
-## Worked examples
+The current clean-surface audit and its no-recompute site-ordering handoff remain unchanged by the scalar-modal reporting update.
 
-The repository supports calculations and figures for:
+### System 3: H/Ru(0001)
 
-### Electron transfer
+H/Ru(0001) is the selected contrast/limit system. Its prospective protocol treats nuclear quantum effects explicitly and refuses a full rate claim if the required quantum tier, coordinate matching, or dissipation provenance is not established.
 
-A solvent-dependent ET example illustrating how longitudinal relaxation time and solvent bath frequency affect relative \(\chi_{\mathrm{ET}}\), with emphasis on the limits of cross-class solvent comparisons.
-
-### Proton-coupled electron transfer
-
-A PCET mechanism-selection example showing how isotope substitution can raise \(\chi_{\mathrm{eff}}\) in the proton-dominated limit:
-
-```math
-\chi_{\mathrm{eff}}^D \approx \sqrt{2}\,\chi_{\mathrm{eff}}^H
-```
-
-The predicted signature is a non-monotonic KIE feature as environmental friction moves the system across the near-critical window.
-
-### Heterogeneous catalysis
-
-A Route C analysis of N\(_2\) activation on Fe surfaces, including unpromoted Fe, Fe(110), and K-promoted Fe(111). The framework does not replace d-band theory, BEP scaling, or adsorption-energy descriptors. It provides a reaction-dynamical coordinate that may account for residual activity variation among systems with comparable thermodynamic descriptors.
-
----
-
-## Repository contents
-
-Typical contents include:
-
-- main manuscript source files,
-- supplementary derivations,
-- reproducibility guide,
-- Python scripts used to generate figures,
-- figure source data,
-- generated manuscript figures.
-
-Key outputs include:
-
-- dynamical efficiency schematic,
-- Fe/BEP dynamical outlier figure,
-- standard-state lattice \(\chi\)-map,
-- estimator-route tables,
-- falsification and robustness calculations.
-
----
+No ChemSA `chi` is assigned until a physically matched projected damping/friction quantity and the corresponding mode or reaction coordinate pass their validators.
 
 ## Reproducibility
 
-The code in this repository is intended to reproduce the numerical values, tables, and figures reported in the manuscript and supplementary information.
+Repository code and deposited data are the canonical computational sources for numerical results. Published figures and tables should be reproducible from preserved scripts and source data, with hashes and validation records retained where material.
 
-Users should treat the repository code and deposited data files as the canonical computational source rather than copying code from PDF-rendered listings, which may introduce formatting artifacts.
+Historical failures, refusals, numerical holds, and superseded mechanical execution routes remain part of the provenance record and are not rewritten as successes.
 
----
+## Scope and nonclaims
 
-## Data availability
+The current program does not claim that:
 
-Supporting data and code archived in this repository.
+- one scalar describes every chemical stability problem;
+- `chi = 1` is a universal reaction-rate optimum;
+- `chi = 1` is a barrier-top critical point;
+- a linewidth by itself is a mechanical damping coefficient;
+- a repeated eigenvalue by itself establishes an exceptional point;
+- local spectral architecture determines reaction rate, yield, selectivity, or commitment probability;
+- quantities from different physical modes, generator classes, temperatures, media, or coordinate definitions may be pooled without an explicit matching contract.
 
-```
+Refusal or nonidentifiability is a valid result when the required reduction or provenance is absent.
 
-Repository:
+## Repository contents
 
-```text
-https://github.com/SymCUniverse/Chemistry
-```
+The repository includes current and historical manuscript assets, reproducibility packages, Barrier Atlas data and validation tools, and prospective computational workflows for chemistry systems under test.
 
----
-
-## Citation
-
-If using this repository, please cite the associated manuscript:
-
-Christensen, N.  
-**Approach-Region Dynamics and Rate Turnover in Thermally Activated Barrier Crossing.**
-
-A complete archival release, including manuscript, supplementary materials, data, and code, is available through Zenodo.
-
----
-
-## License
-
-Please see the repository license file for terms of use.
+See the individual protocol, README, validation, and reproducibility files associated with each release or system for the exact scientific contract that applies to that object.

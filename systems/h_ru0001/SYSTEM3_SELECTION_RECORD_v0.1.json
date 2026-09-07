@@ -1,0 +1,66 @@
+{
+  "schema": "chemsa-system3-selection-record-v0.1",
+  "status": "SELECTED_FOR_PROSPECTIVE_PROTOCOL_DEVELOPMENT",
+  "system": "H/Ru(0001)",
+  "candidate_id": "H_Ru0001",
+  "scientific_role": "contrast_limit",
+  "selection_basis": {
+    "candidate_pool_path": "systems/SYSTEM3_CANDIDATE_POOL_v0.1.json",
+    "candidate_pool_sha256": "c3503c853828801a2d565c3920ee3efd625e7a6d0bf1cd5fa8bc495c2c109df6",
+    "maximum_contrast_score": 4,
+    "tied_candidates": [
+      "H_Pt111",
+      "H_Ru0001"
+    ],
+    "tiebreak_seed": "SYSTEM3_CONTRAST_SELECTION_V0.1",
+    "tiebreak_hashes": {
+      "H_Pt111": "b67c41af43cf52c01867d2df32216402a52fbf957c9e7c51ee4bb50b370c4dde",
+      "H_Ru0001": "9f1d90d2f27d8eb352dfaed00a9ab58900ff5e30b1ab80964e636017028cf30c"
+    },
+    "rule": "lexicographically smallest SHA256 digest among candidates tied at the maximum contrast score",
+    "selected_digest": "9f1d90d2f27d8eb352dfaed00a9ab58900ff5e30b1ab80964e636017028cf30c"
+  },
+  "anti_bias": {
+    "selection_did_not_use": [
+      "chi",
+      "expected ChemSA agreement",
+      "new computational barrier agreement",
+      "new computational rate agreement",
+      "known Atlas residual"
+    ],
+    "exposure_status": "NOT_BLIND",
+    "exposure_note": "Published H/Ru(0001) kinetic, barrier and quantum-tunneling information was encountered during candidate qualification. The defensible protection is prospective method/protocol freezing and post-freeze comparison, not a claim that literature outcomes were unknown."
+  },
+  "primary_qualified_source": {
+    "citation": "McIntosh et al., Quantum Effects in the Diffusion of Hydrogen on Ru(0001), J. Phys. Chem. Lett. 4, 1565-1569 (2013)",
+    "doi": "10.1021/jz400622v",
+    "access": "final published CC-BY article publicly accessible",
+    "evidence": [
+      "He-3 spin-echo microscopic H diffusion from 75 to 250 K",
+      "nuclear quantum effects visible up to about 200 K",
+      "temperature-independent tunneling-dominated low-temperature regime",
+      "first-principles DFT plus PIMD/QTST analysis",
+      "reported low-friction multiple-jump behavior",
+      "reported ab initio quantum treatment underestimates the low-temperature tunneling rate"
+    ]
+  },
+  "quarantined_published_outcomes": {
+    "purpose": "may be retained as exposed literature evidence but cannot select the new electronic-structure method, convergence settings, path, quantum treatment, thresholds or dissipation model",
+    "fields": [
+      "reported fcc-hcp site-energy difference",
+      "reported classical or zero-point-corrected diffusion barriers",
+      "reported experimental jump rates and Arrhenius parameters",
+      "reported low-temperature tunneling plateau",
+      "reported theory-experiment rate discrepancy"
+    ]
+  },
+  "why_this_is_a_limit_test": [
+    "Hydrogen is a light nucleus for which nuclear quantum effects are experimentally important over the measured range.",
+    "A static classical barrier plus harmonic prefactor is therefore not presumed sufficient.",
+    "The published first-principles quantum calculation itself has a known low-temperature discrepancy, so the system is capable of rejecting an inadequate computational treatment rather than merely confirming a favorable case.",
+    "The substrate differs from Cu and the adsorbate class differs from both the Na development pilot and CO System 2."
+  ],
+  "next_gate": "SYSTEM3_METHOD_AND_QUANTUM_TREATMENT_PROTOCOL_REQUIRED",
+  "production_computation_authorized": false,
+  "reason_production_not_yet_authorized": "The System 3 method and nuclear-quantum treatment must be frozen independently of the exposed kinetic outcomes, and generic Reaction-Path Engine contracts must be sufficiently separated from Na/Cu-specific assumptions before full production execution."
+}

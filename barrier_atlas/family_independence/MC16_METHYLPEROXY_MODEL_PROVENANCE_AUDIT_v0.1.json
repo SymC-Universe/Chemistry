@@ -1,0 +1,84 @@
+{
+  "schema": "barrier-atlas-mc16-methylperoxy-model-provenance-audit-v0.1",
+  "status": "ADDITIVE_PROVENANCE_HOLD_WITHOUT_PROMOTION",
+  "parent_source_audit": "barrier_atlas/family_independence/MC16_METHYLPEROXY_SELF_REACTION_SOURCE_AUDIT_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.5.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "later_independent_experiment_may_not_retroactively_select_theory_variant": true
+  },
+  "trail_id": "FI-MC16-METHYLPEROXY-SELF-REACTION",
+  "target_class": "MC16",
+  "candidate_family": "methylperoxy radical self-reaction through dimethyltetroxide",
+  "representation_mode": "NETWORK_RESOLVED_TETROXIDE_SELF_REACTION_REQUIRED",
+  "new_primary_source_evidence": {
+    "source_doi": "10.1021/acs.jpca.2c01321",
+    "source_section": "3.5 Bimolecular Reaction Rates",
+    "observations": [
+      "The article first compares elementary CASSCF/TST rate coefficients against available experimental values and reports that most calculated rates are smaller than experiment.",
+      "The article then proposes a master-equation treatment combining coupled-cluster-corrected DFT energetics with long-range transition-state treatment.",
+      "The authors explicitly state that this MESMER modeling was performed on systems for which experimental data were available and for which canonical CCSD(T)-F12a calculations were feasible.",
+      "The resulting MESMER rates are described as generally closer to experimental values than the CASSCF/TST rates, with the experimental ordering reproduced.",
+      "The article states that quantitative product branching still requires substantial further work."
+    ],
+    "evidence_scope": "These statements establish that experimental data were available during construction/evaluation of the MESMER modeling path. They do not, by themselves, prove that any individual MESMER collision, energy-transfer, density-of-states, long-range, or PES parameter was numerically fitted to the CH3O2 target rate."
+  },
+  "model_provenance_gate": "HOLD_EXPERIMENT_AVAILABLE_DURING_MODEL_BUILD_REQUIRES_PARAMETER_AUDIT",
+  "calibration_status": "UNKNOWN_NOT_LICENSED_AS_INDEPENDENT_VALIDATION",
+  "calibration_firewall_reason": [
+    "A later independent comparator can establish temporal independence from the published PES, but it cannot make an earlier experiment-aware master-equation model automatically independent of the older data used during model construction or evaluation.",
+    "The frozen family-independence rule prohibits using a target that participated in fitting or target-informed model selection as independent validation unless that target is quarantined as calibration.",
+    "Because the main article explicitly conditions the MESMER modeling set on availability of experimental data and evaluates model quality by closeness to experiment, the exact SI S5 parameter-selection lineage must be reconstructed before any MESMER output is licensed as an independent predicted-rate comparator."
+  ],
+  "condition_gate": "HOLD_EXACT_MASTER_EQUATION_STATE_POINT_AND_NETWORK_MAPPING_NOT_RECONSTRUCTED",
+  "condition_gate_preserved_from_parent": true,
+  "representation_gate": "HOLD_NETWORK_RATE_AND_BRANCHING_MAPPING_INCOMPLETE",
+  "independence_gate": "HOLD_MODEL_PROVENANCE_UNTIL_SI_S5_PARAMETER_SELECTION_AUDIT",
+  "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+  "terminal_state": "CONDITION_NETWORK_AND_MODEL_PROVENANCE_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "supporting_information_status": {
+    "section_required": "SI section S5 and Table S5",
+    "reconstructed_in_this_audit": false,
+    "inference_policy": "No claim is made that calibration occurred, and no claim is made that it did not occur, until the exact model inputs and selection lineage are inspected."
+  },
+  "next_gate": [
+    "Recover SI section S5 and Table S5 in an inspectable form.",
+    "Enumerate the exact MeO2+MeO2 MESMER temperature, pressure or pressure-independence treatment, bath gas, collision model, energy-transfer parameters, density-of-states treatment, long-range association treatment, PES energy source, and any fitted or manually selected quantities.",
+    "Determine whether any of those choices were fitted, tuned, screened, or selected using the same MeO2 experimental rate data summarized in the theory paper.",
+    "If same-target tuning occurred, quarantine the corresponding MESMER result as calibration and seek a prospectively independent prediction/observation pair.",
+    "If no same-target tuning occurred, retain the later Onel et al. direct kinetics as the independent comparator and proceed only after exact state-point and network representation matching is demonstrated.",
+    "Keep quantitative product branching as a separate unresolved gate even if the overall-rate provenance gate closes."
+  ],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 4,
+    "ready_classes_unchanged": ["MC04", "MC06", "MC11", "MC14"],
+    "new_hard_provenance_hold": 1,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

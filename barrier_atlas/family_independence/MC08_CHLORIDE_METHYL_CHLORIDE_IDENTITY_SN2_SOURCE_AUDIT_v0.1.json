@@ -1,0 +1,127 @@
+{
+  "schema": "barrier-atlas-mc08-chloride-methyl-chloride-identity-sn2-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_AUDIT_WITHOUT_PROMOTION",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "cross_section_may_be_silently_relabelled_as_rate_constant": false,
+    "estimated_activation_free_energy_may_be_silently_relabelled_as_direct_experiment": false
+  },
+  "trail_id": "FI-MC08-CL-CH3CL-IDENTITY-SN2",
+  "target_class": "MC08",
+  "candidate_family": "gas-phase chloride/methyl-chloride identity nucleophilic substitution",
+  "reaction": "37Cl- + CH3(35Cl) -> 35Cl- + CH3(37Cl)",
+  "classification_gate": "PASS_PROVISIONAL_MC08_EXCHANGE_METATHESIS",
+  "family_independence_gate": "PASS_PHYSICALLY_DISTINCT_FROM_FAM_GAS_H3_EXCHANGE",
+  "barrier_evidence": {
+    "source": {
+      "authors": "S. S. Shaik and co-workers",
+      "title": "Gas-Phase Identity SN2 Reactions of Halide Anions and Methyl Halides with Retention of Configuration",
+      "journal": "Journal of the American Chemical Society",
+      "year": 1996,
+      "doi": "10.1021/ja9620191"
+    },
+    "method": "G2(+) high-level ab initio calculation",
+    "mechanistic_path_for_candidate": "conventional back-side Walden-inversion identity SN2 path",
+    "quantity": {
+      "value_kJ_per_mol": 11.5,
+      "type": "calculated overall gas-phase barrier height for back-side attack, as reported by the source",
+      "not_relabelled_as": [
+        "aqueous activation free energy",
+        "experimental Arrhenius activation energy",
+        "guided-ion-beam translational threshold"
+      ]
+    },
+    "front_side_control": {
+      "overall_barrier_kJ_per_mol": 193.8,
+      "central_barrier_kJ_per_mol": 237.8,
+      "role": "mechanistic alternative only; not substituted for the selected back-side candidate barrier"
+    }
+  },
+  "barrier_gate": "PASS_TYPED_COMPUTED_OVERALL_GAS_PHASE_BARRIER",
+  "direct_experimental_scattering_evidence": {
+    "source": {
+      "authors": "Vincent F. DeTuri, Paul A. Hintz, Kent M. Ervin",
+      "title": "Translational Activation of the SN2 Nucleophilic Displacement Reactions Cl- + CH3Cl (CD3Cl) -> ClCH3 (ClCD3) + Cl-: A Guided Ion Beam Study",
+      "journal": "Journal of Physical Chemistry A",
+      "year": 1997,
+      "doi": "10.1021/jp971452+"
+    },
+    "observable": "isotope-resolved reactive cross section as a function of collision energy",
+    "reported_translational_threshold_kJ_per_mol": {
+      "value": 45.0,
+      "uncertainty": 15.0
+    },
+    "mechanistic_result": "conventional back-side SN2 attack with strong nonstatistical dynamical constraints near threshold",
+    "qualification": "DIRECT_EXPERIMENT_BUT_NOT_AN_OBSERVED_THERMAL_RATE_CONSTANT",
+    "promotion_role": "MECHANISM_AND_SCATTERING_SUPPORT_ONLY"
+  },
+  "thermal_rate_theory_evidence": {
+    "source": {
+      "authors": "Carsten Hennig and Stefan Schmatz",
+      "title": "Reduced-dimensionality calculation of reaction cross sections and rate constant for the complex-forming gas-phase SN2 reaction Cl- + CH3Cl' -> ClCH3 + Cl'-",
+      "journal": "Physical Chemistry Chemical Physics",
+      "year": 2005,
+      "doi": "10.1039/B417288D"
+    },
+    "method": "four-dimensional CCSD(T) potential-energy surface with quantum scattering",
+    "provenance_note": "The source reports that transition-state-theory rate constants fortuitously agree with experiment while reduced-dimensionality quantum calculations deviate; this comparison cannot itself supply the independent primary raw-rate chain required by the campaign.",
+    "promotion_role": "THEORY_ONLY_UNTIL_PRIMARY_EXPERIMENTAL_RATE_CHAIN_IS_PINNED"
+  },
+  "aqueous_candidate_quarantine": {
+    "reaction": "Cl- + CH3Cl identity SN2 in water",
+    "reported_literature_value_kcal_per_mol": 26.6,
+    "frequently_described_as": "experimental estimate or experimentally determined barrier",
+    "direct_measurement_audit": {
+      "source": {
+        "authors": "Hao Hu, Zhenyu Lu, Jerry M. Parks, Steven K. Burger, Weitao Yang",
+        "title": "Quantum mechanics/molecular mechanics minimum free-energy path for accurate reaction energetics in solution and enzymes: Sequential sampling and optimization on the potential of mean force surface",
+        "journal": "Journal of Chemical Physics",
+        "year": 2008,
+        "doi": "10.1063/1.2816557"
+      },
+      "result": "NO_DIRECT_EXPERIMENTAL_MEASUREMENT_REPORTED_FOR_THE_26_6_KCAL_PER_MOL_ESTIMATE",
+      "campaign_consequence": "The 26.6 kcal/mol value may not be used as an independent observed-rate comparator or promoted as raw experiment."
+    },
+    "additional_computational_sources": [
+      {
+        "doi": "10.1021/jp003468x",
+        "reported_corrected_free_energy_barrier_kcal_per_mol": 27.0,
+        "role": "computational barrier only"
+      },
+      {
+        "doi": "10.1021/jp044944c",
+        "reported_free_energy_barrier_kcal_per_mol": 27.1,
+        "role": "computational barrier only"
+      }
+    ]
+  },
+  "comparator_gate": "FAIL_NO_QUALIFYING_INDEPENDENT_OBSERVED_RATE_CONSTANT_PINNED",
+  "condition_gate": "NOT_REACHED",
+  "representation_mode": "COMPLEX_FORMING_IDENTITY_SN2_WITH_NONSTATISTICAL_SCATTERING_DYNAMICS",
+  "representation_gate": "HOLD_UNTIL_THERMAL_RATE_OBSERVABLE_AND_STATE_POINT_ARE_PINNED",
+  "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+  "terminal_state": "COMPARATOR_MISSING",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "next_gate": "Locate a primary experimentally observed thermal rate constant for isotope-resolved chloride exchange under a defined gas-phase temperature and pressure regime, or a primary dataset from which a rate coefficient is reported independently of the barrier model. Do not convert the guided-ion-beam cross section or translational threshold into an Atlas rate without a preregistered kinetic mapping, and do not use the aqueous 26.6 kcal/mol estimate as experimental kinetics.",
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 6,
+    "ready_classes_unchanged": ["MC02", "MC04", "MC06", "MC11", "MC14", "MC16"],
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}
