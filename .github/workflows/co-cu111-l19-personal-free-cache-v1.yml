@@ -1,0 +1,194 @@
+name: CO Cu111 L19 personal free-cache convergence v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [personal-free-compute]
+    paths:
+      - 'systems/co_cu111/PERSONAL_L19_LAUNCH_MARKER_v1.txt'
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: co-cu111-l19-personal-free-cache-v1
+  cancel-in-progress: false
+
+env:
+  POLICY: systems/co_cu111/PERSONAL_ACCOUNT_FREE_COMPUTE_POLICY_v0.1.json
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json
+  RUNNER: systems/co_cu111/pbe_surface_depth_stack_v1.py
+  TEST: systems/co_cu111/test_pbe_surface_depth_stack_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  CACHE_PREFIX: co-cu111-l19-f27ecf8e
+
+jobs:
+  preflight:
+    name: Verify personal zero-paid L19 contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enforce public personal repository and zero-paid policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REPOSITORY}" = 'SymCUniverse/Chemistry'
+          test "${{ github.event.repository.private }}" = 'false'
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['POLICY']))
+          assert p['status']=='FROZEN_BEFORE_PERSONAL_ACCOUNT_COMPUTE'
+          assert p['billing_policy']['github_larger_runners_allowed'] is False
+          assert p['billing_policy']['paid_or_custom_github_hosted_runner_labels_allowed'] is False
+          assert p['billing_policy']['automatic_paid_escalation_allowed'] is False
+          assert p['checkpoint_policy']['new_large_qe_checkpoints_as_actions_artifacts_allowed'] is False
+          assert p['checkpoint_policy']['actions_cache_default_repository_limit_gb']==10
+          assert p['checkpoint_policy']['actions_cache_limit_increase_allowed'] is False
+          print('PERSONAL_PUBLIC_ZERO_PAID_POLICY_PASS')
+          PY
+
+      - name: Verify frozen L19 files and 11-test firewall
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'db0ff7ea1e85c4c709548a81351030d90d1db95b2df7d99659e362aba79a0b4f  systems/co_cu111/SYSTEM2_PBE_SURFACE_DEPTH_STACKING_POLICY_v0.1.json' | sha256sum -c -
+          echo 'f27ecf8ee22776e695b92549c1f2a8a8818df57d8f8f24033d0cd2c49f5f361e  systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json' | sha256sum -c -
+          echo '0cd11a12c5f031197e4cc11880e5b0dd963ee83e5b223b1eae308d5bec9e0401  systems/co_cu111/pbe_surface_depth_stack_v1.py' | sha256sum -c -
+          echo '7dc5f5cbd5592ee9535b471732bfd2c2e459a4221c8b6d1a1fd6b27c8ed1ba6f  systems/co_cu111/test_pbe_surface_depth_stack_v1.py' | sha256sum -c -
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 "$RUNNER" self-test --protocol "$PROTOCOL"
+
+      - name: Download and verify immutable upstream L17 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          fetch_artifact() {
+            id="$1"; expected="$2"; dest="$3"
+            url="https://api.github.com/repos/SymC-Universe/Chemistry/actions/artifacts/${id}/zip"
+            curl --fail --location --retry 3 --retry-all-errors "$url" --output artifact.zip
+            echo "${expected}  artifact.zip" | sha256sum -c -
+            mkdir -p "$dest"
+            unzip -q artifact.zip -d "$dest"
+            rm -f artifact.zip
+          }
+          fetch_artifact 9972622333 d882dbe1b5c69bb980655cd199699dd9631a6b96ec699a502daeeda07f4834d5 source_relax
+          fetch_artifact 9983282108 87bbd0138943a71e9962dd9f952d52ca2d64e7e8dede5e36e5f03f4b9d7462ca source_result
+          fetch_artifact 9056061436 d08bdff49537bc987d741ab6c392a0226ebc71d3c0631f095ee9e1948926349e engine
+          fetch_artifact 9251232108 0d972e729f9b0edbaa31dfbf333d0871b6e2b28b7a73848a0c4b5f1c00921568 stage_a_decision
+          fetch_artifact 9592349315 9e0d336f63f369ba729c55759438950e831935b6acfbc60da550daa17def76f7 selection
+          chmod +x engine/bin/pw.x
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+
+      - name: Re-run frozen L19 preflight against actual L17 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" preflight --protocol "$PROTOCOL" --source-relax-root source_relax --source-result-root source_result --out preflight.json \
+            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l19-personal-preflight-v1
+          path: preflight.json
+          retention-days: 14
+          if-no-files-found: error
+
+  relax_1:
+    needs: preflight
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: relax, segment: 1, output_cache_key: co-cu111-l19-f27ecf8e-relax-01, retention_days: 14}
+  relax_2:
+    needs: relax_1
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: relax, segment: 2, prior_cache_key: co-cu111-l19-f27ecf8e-relax-01, output_cache_key: co-cu111-l19-f27ecf8e-relax-02, retention_days: 14}
+  relax_3:
+    needs: relax_2
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: relax, segment: 3, prior_cache_key: co-cu111-l19-f27ecf8e-relax-02, output_cache_key: co-cu111-l19-f27ecf8e-relax-03, retention_days: 14}
+  relax_4:
+    needs: relax_3
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: relax, segment: 4, prior_cache_key: co-cu111-l19-f27ecf8e-relax-03, output_cache_key: co-cu111-l19-f27ecf8e-relax-04, retention_days: 14}
+  relax_5:
+    needs: relax_4
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: relax, segment: 5, prior_cache_key: co-cu111-l19-f27ecf8e-relax-04, output_cache_key: co-cu111-l19-f27ecf8e-relax-05, retention_days: 14}
+  relax_6:
+    needs: relax_5
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: relax, segment: 6, prior_cache_key: co-cu111-l19-f27ecf8e-relax-05, output_cache_key: co-cu111-l19-f27ecf8e-relax-06, retention_days: 30}
+
+  scf_1:
+    needs: relax_6
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: scf, segment: 1, prior_cache_key: co-cu111-l19-f27ecf8e-relax-06, output_cache_key: co-cu111-l19-f27ecf8e-scf-01, retention_days: 14}
+  scf_2:
+    needs: scf_1
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: scf, segment: 2, prior_cache_key: co-cu111-l19-f27ecf8e-scf-01, output_cache_key: co-cu111-l19-f27ecf8e-scf-02, retention_days: 14}
+  scf_3:
+    needs: scf_2
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: scf, segment: 3, prior_cache_key: co-cu111-l19-f27ecf8e-scf-02, output_cache_key: co-cu111-l19-f27ecf8e-scf-03, retention_days: 14}
+  scf_4:
+    needs: scf_3
+    uses: ./.github/workflows/co-cu111-personal-cache-segment-worker-v1.yml
+    with: {stage: scf, segment: 4, prior_cache_key: co-cu111-l19-f27ecf8e-scf-03, output_cache_key: co-cu111-l19-f27ecf8e-scf-04, retention_days: 30}
+
+  adjudicate:
+    needs: scf_4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce personal public repository
+        run: |
+          test "${GITHUB_REPOSITORY}" = 'SymCUniverse/Chemistry'
+          test "${{ github.event.repository.private }}" = 'false'
+      - name: Download final small relaxation and SCF provenance states
+        uses: actions/download-artifact@v4
+        with:
+          pattern: l19-*-seg*-provenance
+          path: provenance_all
+      - name: Select segment-6 relaxation and segment-4 SCF states
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p relax_final scf_final
+          find provenance_all -path '*l19-relax-seg6-provenance*' -name SURFACE_DEPTH_RESTART_STATE.json -print -quit | xargs -r -I{} cp '{}' relax_final/SURFACE_DEPTH_RESTART_STATE.json
+          find provenance_all -path '*l19-scf-seg4-provenance*' -name SURFACE_DEPTH_RESTART_STATE.json -print -quit | xargs -r -I{} cp '{}' scf_final/SURFACE_DEPTH_RESTART_STATE.json
+          test -f relax_final/SURFACE_DEPTH_RESTART_STATE.json
+          test -f scf_final/SURFACE_DEPTH_RESTART_STATE.json
+      - name: Download pinned upstream L17 result
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-all-errors \
+            'https://api.github.com/repos/SymC-Universe/Chemistry/actions/artifacts/9983282108/zip' \
+            --output source-result.zip
+          echo '87bbd0138943a71e9962dd9f952d52ca2d64e7e8dede5e36e5f03f4b9d7462ca  source-result.zip' | sha256sum -c -
+          mkdir source_result
+          unzip -q source-result.zip -d source_result
+          rm source-result.zip
+      - name: Adjudicate unchanged L19 gates
+        shell: bash
+        run: |
+          set +e
+          python3 "$RUNNER" adjudicate --protocol "$PROTOCOL" --source-result-root source_result --relax-root relax_final --scf-root scf_final --out L19_CONVERGENCE_RESULT.json
+          rc=$?
+          set -e
+          test -f L19_CONVERGENCE_RESULT.json
+          exit "$rc"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l19-personal-convergence-result-v1
+          path: L19_CONVERGENCE_RESULT.json
+          retention-days: 30
+          if-no-files-found: error
