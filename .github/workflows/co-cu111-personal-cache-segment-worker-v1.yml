@@ -67,7 +67,7 @@ jobs:
           key: ${{ inputs.output_cache_key }}
           fail-on-cache-miss: false
 
-      - name: Verify reused current segment state
+      - name: Verify reused current segment state and replay tiny provenance
         if: ${{ steps.restore-current.outputs.cache-hit == 'true' }}
         shell: bash
         env:
@@ -76,12 +76,18 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib, json, os, pathlib
+          import hashlib, json, os, pathlib, shutil
+          def sha256(path):
+              h=hashlib.sha256()
+              with path.open('rb') as f:
+                  for block in iter(lambda:f.read(1<<20), b''):
+                      h.update(block)
+              return h.hexdigest()
           root=pathlib.Path('checkpoint_state_current')
           state=root/'SURFACE_DEPTH_RESTART_STATE.json'
           if not state.is_file(): raise SystemExit('MECHANICAL_HOLD: cached state JSON missing')
           row=json.loads(state.read_text())
-          expected_protocol=hashlib.sha256(pathlib.Path(os.environ['PROTOCOL']).read_bytes()).hexdigest()
+          expected_protocol=sha256(pathlib.Path(os.environ['PROTOCOL']))
           if row.get('stage') != os.environ['STAGE'] or int(row.get('segment',-1)) != int(os.environ['SEGMENT']):
               raise SystemExit('MECHANICAL_HOLD: cached stage/segment identity mismatch')
           if row.get('protocol_sha256') != expected_protocol:
@@ -95,12 +101,19 @@ jobs:
               checkpoint=root/'qe_checkpoint'
               if not manifest.is_file() or not checkpoint.is_dir():
                   raise SystemExit('MECHANICAL_HOLD: cached checkpoint evidence incomplete')
+              if row.get('checkpoint_manifest_sha256') != sha256(manifest):
+                  raise SystemExit('MECHANICAL_HOLD: cached checkpoint manifest hash mismatch')
               for raw in manifest.read_text().splitlines():
                   if not raw.strip(): continue
                   expected, rel=raw.split('  ',1)
                   target=checkpoint/rel
-                  if not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest()!=expected:
+                  if not target.is_file() or sha256(target)!=expected:
                       raise SystemExit(f'MECHANICAL_HOLD: cached checkpoint file drift: {rel}')
+          prov=pathlib.Path('provenance')
+          prov.mkdir(exist_ok=True)
+          shutil.copy2(state, prov/state.name)
+          m=root/'QE_CHECKPOINT_MANIFEST.sha256'
+          if m.is_file(): shutil.copy2(m, prov/m.name)
           print('EXACT_CURRENT_SEGMENT_CACHE_REUSED_WITHOUT_RECOMPUTATION')
           print(f"status={row['status']}")
           PY
@@ -153,11 +166,10 @@ jobs:
             if [[ "$SEGMENT" -gt 1 ]]; then extra+=(--prior-root checkpoint_state); fi
             python3 "$RUNNER" relax-segment "${common[@]}" "${extra[@]}"
           elif [[ "$STAGE" == 'scf' ]]; then
-            extra=(--prior-root checkpoint_state)
             if [[ "$SEGMENT" -eq 1 ]]; then
               python3 "$RUNNER" scf-segment "${common[@]}" --relax-root checkpoint_state
             else
-              python3 "$RUNNER" scf-segment "${common[@]}" "${extra[@]}"
+              python3 "$RUNNER" scf-segment "${common[@]}" --prior-root checkpoint_state
             fi
           else
             echo "MECHANICAL_HOLD: unknown stage $STAGE" >&2
@@ -221,7 +233,6 @@ jobs:
           key: ${{ inputs.output_cache_key }}
 
       - name: Upload only small provenance, never the multi-GB QE checkpoint
-        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: l19-${{ inputs.stage }}-seg${{ inputs.segment }}-provenance
