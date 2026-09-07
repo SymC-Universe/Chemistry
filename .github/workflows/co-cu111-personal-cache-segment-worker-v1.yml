@@ -1,0 +1,182 @@
+name: CO Cu111 personal cache exact segment worker v1
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        required: true
+        type: string
+      segment:
+        required: true
+        type: number
+      prior_cache_key:
+        required: false
+        type: string
+        default: ''
+      output_cache_key:
+        required: true
+        type: string
+      retention_days:
+        required: false
+        type: number
+        default: 14
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  POLICY: systems/co_cu111/PERSONAL_ACCOUNT_FREE_COMPUTE_POLICY_v0.1.json
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json
+  RUNNER: systems/co_cu111/pbe_surface_depth_stack_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  segment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enforce public personal zero-paid-runner policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REPOSITORY}" = 'SymCUniverse/Chemistry'
+          test "${{ github.event.repository.private }}" = 'false'
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['POLICY']))
+          assert p['status']=='FROZEN_BEFORE_PERSONAL_ACCOUNT_COMPUTE'
+          assert p['billing_policy']['github_larger_runners_allowed'] is False
+          assert p['billing_policy']['automatic_paid_escalation_allowed'] is False
+          assert p['checkpoint_policy']['new_large_qe_checkpoints_as_actions_artifacts_allowed'] is False
+          assert p['checkpoint_policy']['actions_cache_limit_increase_allowed'] is False
+          print('PERSONAL_ZERO_PAID_RUNNER_POLICY_VERIFIED')
+          PY
+
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
+      - name: Download and hash-verify small immutable upstream evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          fetch_artifact() {
+            id="$1"; expected="$2"; dest="$3"
+            url="https://api.github.com/repos/SymC-Universe/Chemistry/actions/artifacts/${id}/zip"
+            curl --fail --location --retry 3 --retry-all-errors "$url" --output artifact.zip
+            echo "${expected}  artifact.zip" | sha256sum -c -
+            mkdir -p "$dest"
+            unzip -q artifact.zip -d "$dest"
+            rm -f artifact.zip
+          }
+          fetch_artifact 9972622333 d882dbe1b5c69bb980655cd199699dd9631a6b96ec699a502daeeda07f4834d5 source_relax
+          fetch_artifact 9056061436 d08bdff49537bc987d741ab6c392a0226ebc71d3c0631f095ee9e1948926349e engine
+          fetch_artifact 9251232108 0d972e729f9b0edbaa31dfbf333d0871b6e2b28b7a73848a0c4b5f1c00921568 stage_a_decision
+          fetch_artifact 9592349315 9e0d336f63f369ba729c55759438950e831935b6acfbc60da550daa17def76f7 selection
+          chmod +x engine/bin/pw.x
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+
+      - name: Restore exact prior QE state from included repository cache
+        if: ${{ inputs.prior_cache_key != '' }}
+        id: restore-prior
+        uses: actions/cache/restore@v4
+        with:
+          path: checkpoint_state
+          key: ${{ inputs.prior_cache_key }}
+          fail-on-cache-miss: true
+
+      - name: Run exact-restart segment without paid runner or artifact checkpoint storage
+        shell: bash
+        env:
+          STAGE: ${{ inputs.stage }}
+          SEGMENT: ${{ inputs.segment }}
+          PRIOR_KEY: ${{ inputs.prior_cache_key }}
+        run: |
+          set -euo pipefail
+          common=(--protocol "$PROTOCOL" --segment "$SEGMENT" --out state --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json)
+          if [[ "$STAGE" == 'relax' ]]; then
+            extra=(--source-relax-root source_relax)
+            if [[ "$SEGMENT" -gt 1 ]]; then extra+=(--prior-root checkpoint_state); fi
+            python3 "$RUNNER" relax-segment "${common[@]}" "${extra[@]}"
+          elif [[ "$STAGE" == 'scf' ]]; then
+            if [[ "$SEGMENT" -eq 1 ]]; then extra=(--relax-root checkpoint_state); else extra=(--prior-root checkpoint_state); fi
+            python3 "$RUNNER" scf-segment "${common[@]}" "${extra[@]}"
+          else
+            echo "MECHANICAL_HOLD: unknown stage $STAGE" >&2
+            exit 2
+          fi
+
+      - name: Verify state, build tiny provenance record, and enforce cache ceiling
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, shutil
+          root=pathlib.Path('state')
+          state=root/'SURFACE_DEPTH_RESTART_STATE.json'
+          if not state.is_file():
+              raise SystemExit('MECHANICAL_HOLD: missing restart state')
+          row=json.loads(state.read_text())
+          status=row.get('status')
+          if status not in {'CHECKPOINT','COMPLETE'}:
+              raise SystemExit(f'MECHANICAL_HOLD: inadmissible restart status {status!r}')
+          prov=pathlib.Path('provenance')
+          prov.mkdir(exist_ok=True)
+          shutil.copy2(state, prov/state.name)
+          for name in ('relax.in','relax.out','scf.in','scf.out','QE_CHECKPOINT_MANIFEST.sha256'):
+              p=root/name
+              if p.is_file():
+                  if p.suffix == '.out':
+                      import gzip
+                      with p.open('rb') as src, gzip.open(prov/(p.name+'.gz'),'wb',compresslevel=9) as dst:
+                          shutil.copyfileobj(src,dst)
+                  else:
+                      shutil.copy2(p, prov/p.name)
+          # COMPLETE is terminal for QE. Downstream carry-forward needs only the
+          # verified state JSON, not the multi-GB outdir. Keep the hashes in the
+          # state/provenance record and strip only after COMPLETE is established.
+          if status == 'COMPLETE':
+              shutil.rmtree(root/'qe_checkpoint', ignore_errors=True)
+              m=root/'QE_CHECKPOINT_MANIFEST.sha256'
+              if m.exists(): m.unlink()
+          print(f'status={status}')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as fh:
+              fh.write(f'status={status}\n')
+          PY
+          bytes=$(du -sb state | awk '{print $1}')
+          echo "cache_bytes=${bytes}" | tee -a "$GITHUB_OUTPUT"
+          # Stay materially below the repository's default 10 GB cache ceiling.
+          # If the restart object grows beyond this, STOP. Never spill it into a
+          # billable Actions artifact.
+          if [[ "$bytes" -gt 9500000000 ]]; then
+            echo 'FREE_CACHE_SIZE_HOLD: restart state exceeds 9.5 GB ceiling' >&2
+            exit 3
+          fi
+          prov_bytes=$(du -sb provenance | awk '{print $1}')
+          if [[ "$prov_bytes" -gt 30000000 ]]; then
+            echo 'FREE_ARTIFACT_SIZE_HOLD: provenance bundle exceeds 30 MB' >&2
+            exit 4
+          fi
+          rm -rf checkpoint_state
+          mv state checkpoint_state
+
+      - name: Save newest exact state to included repository cache
+        uses: actions/cache/save@v4
+        with:
+          path: checkpoint_state
+          key: ${{ inputs.output_cache_key }}
+
+      - name: Upload only small provenance, never the multi-GB QE checkpoint
+        uses: actions/upload-artifact@v4
+        with:
+          name: l19-${{ inputs.stage }}-seg${{ inputs.segment }}-provenance
+          path: provenance
+          retention-days: ${{ inputs.retention_days }}
+          if-no-files-found: error
