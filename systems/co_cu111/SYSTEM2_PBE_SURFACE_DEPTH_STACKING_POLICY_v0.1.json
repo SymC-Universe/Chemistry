@@ -1,0 +1,54 @@
+{
+  "schema": "co-cu111-pbe-surface-depth-stacking-policy-v0.1",
+  "status": "FROZEN_BEFORE_L19_RESULTS",
+  "system": "CO/Cu(111)",
+  "authorization": {
+    "date": "2026-09-07",
+    "type": "EXPLICIT_USER_AUTHORIZATION",
+    "scope": "Continue the pre-existing clean-surface odd-layer convergence ladder prospectively, beginning at L19, without retroactively changing the L17 HOLD or any frozen threshold."
+  },
+  "rung_rule": {
+    "layers_increment": 2,
+    "vacuum_angstrom_increment": 4.0,
+    "in_plane_kmesh_increment": 4,
+    "first_new_rung": {"layers": 19, "vacuum_angstrom": 40.0, "kmesh": 36},
+    "source_for_each_new_rung": "Immediately preceding mechanically valid relaxed and independently reproduced rung",
+    "initialization": "Transfer only the symmetric z relaxation offsets of the outer two layers on each face from the immediately preceding rung onto an otherwise ideal target slab. Energies and pass/fail outcomes may not alter the seed."
+  },
+  "unchanged_scientific_gates": {
+    "max_movable_force_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_delta_ev": 0.001,
+    "adjacent_rung_surface_excess_delta_ev_per_surface_atom": 0.001
+  },
+  "continuation_logic": {
+    "close_ladder_when": "The target rung passes force, independent-SCF reproduction, and the unchanged adjacent-rung 1 meV/surface-atom surface-excess gate.",
+    "continue_to_next_rung_when": "The target rung is mechanically valid, relaxation and independent-SCF reproduction pass, but only the unchanged adjacent-rung surface-excess gate remains above 0.001 eV/surface atom.",
+    "stop_for_scientific_review_when": [
+      "force gate fails after a completed relaxation",
+      "independent fixed-geometry SCF reproduction gate fails",
+      "the target cannot complete relaxation or SCF inside its frozen restart runway",
+      "provenance, symmetry, method, or hash verification fails"
+    ],
+    "next_rung_requires_new_hash_binding_before_compute": true,
+    "no_outcome_dependent_threshold_retuning": true,
+    "no_retroactive_reclassification_of_prior_rungs": true
+  },
+  "execution": {
+    "checkpoint_mode": "QE_CLEAN_MAX_SECONDS_EXACT_RESTART",
+    "qe_max_seconds_per_segment": 16200,
+    "github_job_timeout_minutes": 360,
+    "shutdown_and_artifact_reserve_seconds": 5400,
+    "maximum_relax_segments_per_rung": 6,
+    "maximum_scf_segments_per_rung": 4,
+    "standard_runner_first": "ubuntu-24.04",
+    "larger_runner_only_after_demonstrated_resource_failure": true,
+    "prefer_newest_hash_verified_complete_or_checkpoint_state": true,
+    "duplicate_paid_compute_forbidden_when_valid_checkpoint_survives": true
+  },
+  "deadline_policy": {
+    "publication_deadline_is_operational_not_scientific": true,
+    "deadline_may_determine_manuscript_vs_revision_timing": true,
+    "deadline_may_not_change_method_thresholds_or_interpretation": true,
+    "unfinished_valid_checkpoints_are_preserved_for_later_continuation": true
+  }
+}
