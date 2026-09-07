@@ -1,0 +1,120 @@
+{
+  "schema": "co-cu111-pbe-surface-convergence-extension-v0.1",
+  "status": "FROZEN_BEFORE_TARGET_RESULTS",
+  "system": "CO/Cu(111)",
+  "scientific_scope": "PROSPECTIVE_ODD_LAYER_DEPTH_EXTENSION_UNDER_FROZEN_STACKING_POLICY",
+  "purpose": "Test L19/V40/K36 as the next pre-rule-defined clean-surface convergence rung after L17 relaxed and reproduced successfully but missed the unchanged adjacent-depth 1 meV/surface-atom criterion. The L17 HOLD remains a HOLD and no threshold is changed.",
+  "stacking_policy": {
+    "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_DEPTH_STACKING_POLICY_v0.1.json",
+    "sha256": "db0ff7ea1e85c4c709548a81351030d90d1db95b2df7d99659e362aba79a0b4f"
+  },
+  "source_reference": {
+    "run_id": 33956049744,
+    "run_head_sha": "367a3e02591df91540efdf912d684574dcac4697",
+    "relax_artifact_id": 9972622333,
+    "relax_artifact_name": "co-cu111-l17-exact-restart-relax-06",
+    "relax_artifact_digest": "sha256:d882dbe1b5c69bb980655cd199699dd9631a6b96ec699a502daeeda07f4834d5",
+    "relax_state_filename": "L17_RESTART_STATE.json",
+    "relax_state_schema": "co-cu111-pbe-l17-qe-restart-state-v0.1",
+    "relax_state_sha256": "3aaf41c304c4238da5804d095c5724f810ff06f67060dccecb3277efa46a1d15",
+    "result_artifact_id": 9983282108,
+    "result_artifact_name": "co-cu111-l17-convergence-result-v1",
+    "result_artifact_digest": "sha256:87bbd0138943a71e9962dd9f952d52ca2d64e7e8dede5e36e5f03f4b9d7462ca",
+    "result_filename": "L17_CONVERGENCE_RESULT.json",
+    "result_json_sha256": "45eb9c31a954d736f799e70964508c22a2cfb8781e11f171801ad4b4a3681b2d",
+    "required_result_status": "NUMERICAL_HOLD_L17_TERMINAL_UNDER_CURRENT_CONTRACT",
+    "case_id": "L17-V36-K32-extension-audit",
+    "layers": 17,
+    "vacuum_angstrom": 36.0,
+    "kmesh": 32,
+    "surface_excess_ev_per_surface_atom": 0.47904687052505324,
+    "max_movable_force_ev_per_angstrom": 0.0176094870072678,
+    "energy_reproduction_delta_ev": 2.7212081477046013e-07,
+    "force_pass": true,
+    "energy_reproduction_pass": true,
+    "surface_excess_pass": false,
+    "observed_previous_delta_ev_per_surface_atom": 0.001106435876863543,
+    "prior_failure_preserved": true
+  },
+  "extension_audit": {
+    "case_id": "L19-V40-K36-extension-audit",
+    "layers": 19,
+    "vacuum_angstrom": 40.0,
+    "kmesh": 36,
+    "rung_rule": "Continue the pre-existing audit ladder by exactly +2 layers, +4 Angstrom vacuum, and +4 in-plane k points from the immediately preceding L17/V36/K32 rung.",
+    "surface_excess_definition": "(E_slab_fixed_geometry_scf - N_Cu * E_bulk_selected_per_atom) / 2; eV per surface atom per face."
+  },
+  "frozen_method": {
+    "exchange_correlation": "PBE",
+    "ecutwfc_ry": 90,
+    "ecutrho_ry": 900,
+    "bulk_lattice_constant_angstrom": 3.632355796707377,
+    "bulk_e0_ev_per_atom": -2899.3351868909526,
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "assume_isolated": "esm",
+    "esm_bc": "bc1",
+    "ion_dynamics": "bfgs",
+    "movable_components": "outer two layers on each face, z only",
+    "force_gate_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_gate_ev": 0.001,
+    "surface_excess_convergence_max_ev_per_surface_atom": 0.001
+  },
+  "initialization": {
+    "rule": "IMMEDIATELY_PRECEDING_RUNG_SURFACE_RELAXATION_OFFSETS_ONLY",
+    "source_layers": [0, 1, 15, 16],
+    "target_layers": [0, 1, 17, 18],
+    "energy_or_surface_excess_used_to_seed": false,
+    "initialization_only": true,
+    "symmetry_required": true
+  },
+  "execution": {
+    "execution_mode": "DIRECT_ONE_RANK",
+    "mpi_ranks": 1,
+    "runner_label": "ubuntu-24.04",
+    "thread_caps": {"OMP_NUM_THREADS": 1, "OPENBLAS_NUM_THREADS": 1, "MKL_NUM_THREADS": 1},
+    "checkpoint_mode": "QE_CLEAN_MAX_SECONDS_EXACT_RESTART",
+    "restart_contract": "A segment that reaches max_seconds must terminate cleanly and preserve the complete QE outdir. The next segment verifies the checkpoint manifest and resumes with restart_mode='restart'. No geometry-only or density-only approximation is admissible.",
+    "qe_max_seconds_per_segment": 16200,
+    "github_job_timeout_minutes": 360,
+    "shutdown_and_artifact_reserve_seconds": 5400,
+    "full_qe_outdir_preserved": true,
+    "exact_restart_required_after_first_segment": true,
+    "maximum_relax_segments": 6,
+    "maximum_scf_segments": 4,
+    "intermediate_checkpoint_retention_days": 30,
+    "final_evidence_retention_days": 90
+  },
+  "frozen_sources": {
+    "surface_protocol": {"path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json", "sha256": "1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f"},
+    "pseudopotential_bundle": {"path": "systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json", "sha256": "6a2216a776cbe3bf8a08e1f7215bcf0ff77caf96a2f2529875a0157f4bbfed3f"},
+    "stage_a_result_sha256": "2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3",
+    "rank_selection_sha256": "e8b99f660762724922a9be153b374ccf9fc7f269744570b978d5d2e2b15de0a4",
+    "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855"
+  },
+  "decision": {
+    "pass_requires": [
+      "L19 corrected movable force <= 0.020 eV/A",
+      "L19 independent fixed-geometry SCF reproduction delta <= 0.001 eV",
+      "abs(surface_excess_L19 - surface_excess_L17) <= 0.001 eV/surface atom"
+    ],
+    "pass_status": "PASS_SURFACE_DEPTH_CONVERGED_L19",
+    "pass_next_gate": "SURFACE_DEPTH_LADDER_CLOSED_PENDING_DOWNSTREAM_RECONCILIATION",
+    "fail_status": "NUMERICAL_HOLD_L19_CONTINUE_FROZEN_DEPTH_LADDER",
+    "fail_next_gate": "NEXT_ODD_DEPTH_RUNG_AUTHORIZED_BY_FROZEN_STACKING_POLICY",
+    "next_rung_authorized_only_if_force_and_reproduction_pass": true,
+    "automatic_site_ordering_dispatch": false,
+    "no_threshold_retuning_after_results": true
+  },
+  "provenance": {
+    "original_l17_failure_preserved_as_failure": true,
+    "l19_opened_by_explicit_new_authorization_after_l17_result": true,
+    "l17_result_used_only_as_source_evidence_and_to_establish_need_for_next_predefined_rung": true,
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "kinetic_inputs_used": false,
+    "execution_checkpointing_changes_science": false
+  }
+}
