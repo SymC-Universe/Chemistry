@@ -1,0 +1,45 @@
+{
+  "schema": "symc-personal-account-free-compute-policy-v0.1",
+  "status": "FROZEN_BEFORE_PERSONAL_ACCOUNT_COMPUTE",
+  "date_frozen": "2026-09-07",
+  "target_owner": "SymCUniverse",
+  "target_repository": "Chemistry",
+  "repository_visibility_required": "public",
+  "billing_policy": {
+    "github_larger_runners_allowed": false,
+    "paid_or_custom_github_hosted_runner_labels_allowed": false,
+    "automatic_paid_escalation_allowed": false,
+    "standard_github_hosted_runner_labels_allowed": [
+      "ubuntu-24.04",
+      "ubuntu-latest"
+    ],
+    "self_hosted_personal_hardware_allowed_if_explicitly_configured": true,
+    "unexpected_cost_response": "STOP_AND_PRESERVE_STATE"
+  },
+  "checkpoint_policy": {
+    "exact_qe_restart_required_when_scientific_work_is_resumed": true,
+    "prefer_newest_hash_verified_compatible_state": true,
+    "restart_from_scratch_when_valid_checkpoint_exists": false,
+    "overlapping_duplicate_compute_allowed": false,
+    "new_large_qe_checkpoints_as_actions_artifacts_allowed": false,
+    "small_provenance_and_result_artifacts_allowed": true,
+    "actions_cache_default_repository_limit_gb": 10,
+    "actions_cache_limit_increase_allowed": false,
+    "cache_or_storage_design_must_fail_closed_before_exceeding_default_limit": true,
+    "large_checkpoint_that_does_not_fit_default_cache_action": "STOP_AND_ROUTE_TO_NO_COST_PERSISTENT_STORAGE"
+  },
+  "migration_policy": {
+    "preferred_personal_copy": "PUBLIC_FORK_WITH_ALL_BRANCHES",
+    "source_repository": "SymC-Universe/Chemistry",
+    "prepared_branch": "personal-free-compute",
+    "source_actions_artifacts_are_evidence_only_and_are_not_automatically_copied_into_PERSONAL_storage": true,
+    "upstream_paid_compute_may_be_reused_only_after_hash_and_identity_verification": true
+  },
+  "scientific_firewall": {
+    "execution_or_storage_changes_change_science": false,
+    "frozen_physical_settings_may_be_changed_for_cost_reasons": false,
+    "frozen_thresholds_may_be_changed_for_cost_reasons": false,
+    "negative_or_hold_results_may_be_reclassified_for_cost_or_deadline_reasons": false,
+    "deadline_may_change_scientific_settings": false
+  }
+}
