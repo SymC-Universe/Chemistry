@@ -5,11 +5,6 @@ on:
     branches: [agent/na-cu001-integration]
     paths:
       - '.github/workflows/co-cu111-pbe-surface-convergence-l19-v1.yml'
-      - '.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml'
-      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_DEPTH_STACKING_POLICY_v0.1.json'
-      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json'
-      - 'systems/co_cu111/pbe_surface_depth_stack_v1.py'
-      - 'systems/co_cu111/test_pbe_surface_depth_stack_v1.py'
   workflow_dispatch:
 
 permissions:
@@ -18,126 +13,15 @@ permissions:
 
 concurrency:
   group: co-cu111-l19-exact-qe-restart-v1
-  cancel-in-progress: false
-
-env:
-  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json
-  RUNNER: systems/co_cu111/pbe_surface_depth_stack_v1.py
-  TEST: systems/co_cu111/test_pbe_surface_depth_stack_v1.py
-  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
-  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
-  SOURCE_RUN_ID: '33956049744'
-  SOURCE_RELAX_ARTIFACT: co-cu111-l17-exact-restart-relax-06
-  SOURCE_RESULT_ARTIFACT: co-cu111-l17-convergence-result-v1
-  ENGINE_RUN_ID: '31371043888'
-  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
-  STAGE_A_RUN_ID: '31887006685'
-  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
-  SELECTION_RUN_ID: '32915640451'
-  SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  cancel-in-progress: true
 
 jobs:
-  preflight:
-    name: Freeze and verify L19 stacking contract
+  halt:
+    name: Cost-control halt marker
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Verify frozen files and 11-test firewall
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo 'db0ff7ea1e85c4c709548a81351030d90d1db95b2df7d99659e362aba79a0b4f  systems/co_cu111/SYSTEM2_PBE_SURFACE_DEPTH_STACKING_POLICY_v0.1.json' | sha256sum -c -
-          echo 'f27ecf8ee22776e695b92549c1f2a8a8818df57d8f8f24033d0cd2c49f5f361e  systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json' | sha256sum -c -
-          echo '0cd11a12c5f031197e4cc11880e5b0dd963ee83e5b223b1eae308d5bec9e0401  systems/co_cu111/pbe_surface_depth_stack_v1.py' | sha256sum -c -
-          echo '7dc5f5cbd5592ee9535b471732bfd2c2e459a4221c8b6d1a1fd6b27c8ed1ba6f  systems/co_cu111/test_pbe_surface_depth_stack_v1.py' | sha256sum -c -
-          python3 -m py_compile "$RUNNER" "$TEST"
-          python3 "$TEST" -v
-          python3 "$RUNNER" self-test --protocol "$PROTOCOL"
-      - uses: actions/download-artifact@v4
-        with: {name: '${{ env.SOURCE_RELAX_ARTIFACT }}', path: source_relax, repository: SymC-Universe/Chemistry, run-id: '${{ env.SOURCE_RUN_ID }}', github-token: '${{ github.token }}'}
-      - uses: actions/download-artifact@v4
-        with: {name: '${{ env.SOURCE_RESULT_ARTIFACT }}', path: source_result, repository: SymC-Universe/Chemistry, run-id: '${{ env.SOURCE_RUN_ID }}', github-token: '${{ github.token }}'}
-      - uses: actions/download-artifact@v4
-        with: {name: '${{ env.ENGINE_ARTIFACT }}', path: engine, repository: SymC-Universe/Chemistry, run-id: '${{ env.ENGINE_RUN_ID }}', github-token: '${{ github.token }}'}
-      - uses: actions/download-artifact@v4
-        with: {name: '${{ env.STAGE_A_ARTIFACT }}', path: stage_a_decision, repository: SymC-Universe/Chemistry, run-id: '${{ env.STAGE_A_RUN_ID }}', github-token: '${{ github.token }}'}
-      - uses: actions/download-artifact@v4
-        with: {name: '${{ env.SELECTION_ARTIFACT }}', path: selection, repository: SymC-Universe/Chemistry, run-id: '${{ env.SELECTION_RUN_ID }}', github-token: '${{ github.token }}'}
-      - name: Verify actual pinned L17 evidence and unchanged runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x engine/bin/pw.x
-          python3 "$RUNNER" preflight --protocol "$PROTOCOL" --source-relax-root source_relax --source-result-root source_result --out preflight.json \
-            --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
-            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json
-      - uses: actions/upload-artifact@v4
-        with: {name: co-cu111-l19-preflight-v1, path: preflight.json, retention-days: 90, if-no-files-found: error}
-
-  relax_1:
-    needs: preflight
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: relax, segment: 1, source_relax_run_id: '33956049744', source_relax_artifact: co-cu111-l17-exact-restart-relax-06, output_artifact: co-cu111-l19-exact-restart-relax-01, retention_days: 30}
-  relax_2:
-    needs: relax_1
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: relax, segment: 2, source_relax_run_id: '33956049744', source_relax_artifact: co-cu111-l17-exact-restart-relax-06, prior_artifact: co-cu111-l19-exact-restart-relax-01, output_artifact: co-cu111-l19-exact-restart-relax-02, retention_days: 30}
-  relax_3:
-    needs: relax_2
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: relax, segment: 3, source_relax_run_id: '33956049744', source_relax_artifact: co-cu111-l17-exact-restart-relax-06, prior_artifact: co-cu111-l19-exact-restart-relax-02, output_artifact: co-cu111-l19-exact-restart-relax-03, retention_days: 30}
-  relax_4:
-    needs: relax_3
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: relax, segment: 4, source_relax_run_id: '33956049744', source_relax_artifact: co-cu111-l17-exact-restart-relax-06, prior_artifact: co-cu111-l19-exact-restart-relax-03, output_artifact: co-cu111-l19-exact-restart-relax-04, retention_days: 30}
-  relax_5:
-    needs: relax_4
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: relax, segment: 5, source_relax_run_id: '33956049744', source_relax_artifact: co-cu111-l17-exact-restart-relax-06, prior_artifact: co-cu111-l19-exact-restart-relax-04, output_artifact: co-cu111-l19-exact-restart-relax-05, retention_days: 30}
-  relax_6:
-    needs: relax_5
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: relax, segment: 6, source_relax_run_id: '33956049744', source_relax_artifact: co-cu111-l17-exact-restart-relax-06, prior_artifact: co-cu111-l19-exact-restart-relax-05, output_artifact: co-cu111-l19-exact-restart-relax-06, retention_days: 90}
-
-  scf_1:
-    needs: relax_6
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: scf, segment: 1, relax_final_artifact: co-cu111-l19-exact-restart-relax-06, output_artifact: co-cu111-l19-exact-restart-scf-01, retention_days: 30}
-  scf_2:
-    needs: scf_1
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: scf, segment: 2, prior_artifact: co-cu111-l19-exact-restart-scf-01, output_artifact: co-cu111-l19-exact-restart-scf-02, retention_days: 30}
-  scf_3:
-    needs: scf_2
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: scf, segment: 3, prior_artifact: co-cu111-l19-exact-restart-scf-02, output_artifact: co-cu111-l19-exact-restart-scf-03, retention_days: 30}
-  scf_4:
-    needs: scf_3
-    uses: ./.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml
-    with: {stage: scf, segment: 4, prior_artifact: co-cu111-l19-exact-restart-scf-03, output_artifact: co-cu111-l19-exact-restart-scf-04, retention_days: 90}
-
-  adjudicate:
-    needs: scf_4
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with: {name: '${{ env.SOURCE_RESULT_ARTIFACT }}', path: source_result, repository: SymC-Universe/Chemistry, run-id: '${{ env.SOURCE_RUN_ID }}', github-token: '${{ github.token }}'}
-      - uses: actions/download-artifact@v4
-        with: {name: co-cu111-l19-exact-restart-relax-06, path: relax_final}
-      - uses: actions/download-artifact@v4
-        with: {name: co-cu111-l19-exact-restart-scf-04, path: scf_final}
-      - name: Adjudicate L19 without retuning
-        shell: bash
-        run: |
-          set +e
-          python3 "$RUNNER" adjudicate --protocol "$PROTOCOL" --source-result-root source_result --relax-root relax_final --scf-root scf_final --out L19_CONVERGENCE_RESULT.json
-          rc=$?
-          set -e
-          test -f L19_CONVERGENCE_RESULT.json
-          exit "$rc"
-      - if: always()
-        uses: actions/upload-artifact@v4
-        with: {name: co-cu111-l19-convergence-result-v1, path: L19_CONVERGENCE_RESULT.json, retention-days: 90, if-no-files-found: error}
+      - run: |
+          echo 'PAUSED_BY_USER_COST_CONTROL'
+          echo 'NO_SCIENTIFIC_COMPUTE_AUTHORIZED'
+          echo 'NO_LARGER_RUNNERS_AUTHORIZED'
