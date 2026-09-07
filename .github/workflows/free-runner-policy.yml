@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Reject unapproved paid, larger, dynamic, or custom runner labels
+      - name: Enforce personal-account standard-runner-only policy
         shell: bash
         run: |
           set -euo pipefail
@@ -32,44 +32,32 @@ jobs:
           from pathlib import Path
           import re
 
+          # Hard personal-account infrastructure policy, frozen by user on
+          # 2026-09-07 after unexpected larger-runner charges.
+          # There are intentionally NO paid-runner exceptions.
           standard = re.compile(
               r"(?:ubuntu-(?:latest|24\.04|22\.04|20\.04)|"
               r"windows-(?:latest|2025|2022|2019)|"
               r"macos-(?:latest|15|14|13))"
           )
 
-          # The user explicitly authorized paid larger-runner usage on
-          # 2026-09-06 for the CO/Cu(111) L15-vs-L17 resource and
-          # observable-sufficiency route. Keep the exception path-scoped so
-          # unrelated workflows cannot silently move onto paid compute.
-          paid_exceptions = {
-              ".github/workflows/co-cu111-l15-l17-resource-probe-v1.yml": {"ubuntu-latest-m"},
-              ".github/workflows/co-cu111-l15-l17-site-depth-diagnostic-v2.yml": {"ubuntu-latest-m"},
-              ".github/workflows/co-cu111-l15-l17-restart-qualification-v1.yml": {"ubuntu-latest-m"},
-          }
-
           violations = []
-          paid_uses = []
-          for path in sorted(Path(".github/workflows").glob("*.y*ml")):
+          for path in sorted(Path('.github/workflows').glob('*.y*ml')):
               rel = path.as_posix()
               for line_number, line in enumerate(path.read_text().splitlines(), 1):
                   match = re.match(r"^\s*runs-on:\s*(.*?)\s*(?:#.*)?$", line)
                   if not match:
                       continue
                   label = match.group(1).strip().strip("'\"")
-                  if standard.fullmatch(label):
-                      continue
-                  if label in paid_exceptions.get(rel, set()):
-                      paid_uses.append(f"{rel}:{line_number}: runs-on: {label}")
-                      continue
-                  violations.append(f"{rel}:{line_number}: runs-on: {label}")
+                  if not standard.fullmatch(label):
+                      violations.append(f"{rel}:{line_number}: runs-on: {label}")
 
           if violations:
               raise SystemExit(
-                  "PAID_OR_UNAPPROVED_RUNNER_BLOCKED\n" + "\n".join(violations)
+                  'NONSTANDARD_OR_PAID_RUNNER_BLOCKED\n' + '\n'.join(violations)
               )
-          if paid_uses:
-              print("EXPLICITLY_AUTHORIZED_PAID_RUNNER_USES")
-              print("\n".join(paid_uses))
-          print("GITHUB_HOSTED_RUNNER_POLICY_PASS")
+
+          print('PERSONAL_ACCOUNT_STANDARD_RUNNERS_ONLY')
+          print('PAID_RUNNER_EXCEPTIONS=0')
+          print('GITHUB_HOSTED_RUNNER_POLICY_PASS')
           PY
