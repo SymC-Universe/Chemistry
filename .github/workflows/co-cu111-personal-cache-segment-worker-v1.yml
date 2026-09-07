@@ -59,10 +59,58 @@ jobs:
           print('PERSONAL_ZERO_PAID_RUNNER_POLICY_VERIFIED')
           PY
 
+      - name: Reuse this segment if an exact compatible cache already exists
+        id: restore-current
+        uses: actions/cache/restore@v4
+        with:
+          path: checkpoint_state_current
+          key: ${{ inputs.output_cache_key }}
+          fail-on-cache-miss: false
+
+      - name: Verify reused current segment state
+        if: ${{ steps.restore-current.outputs.cache-hit == 'true' }}
+        shell: bash
+        env:
+          STAGE: ${{ inputs.stage }}
+          SEGMENT: ${{ inputs.segment }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          root=pathlib.Path('checkpoint_state_current')
+          state=root/'SURFACE_DEPTH_RESTART_STATE.json'
+          if not state.is_file(): raise SystemExit('MECHANICAL_HOLD: cached state JSON missing')
+          row=json.loads(state.read_text())
+          expected_protocol=hashlib.sha256(pathlib.Path(os.environ['PROTOCOL']).read_bytes()).hexdigest()
+          if row.get('stage') != os.environ['STAGE'] or int(row.get('segment',-1)) != int(os.environ['SEGMENT']):
+              raise SystemExit('MECHANICAL_HOLD: cached stage/segment identity mismatch')
+          if row.get('protocol_sha256') != expected_protocol:
+              raise SystemExit('MECHANICAL_HOLD: cached protocol hash mismatch')
+          if row.get('status') not in {'CHECKPOINT','COMPLETE'}:
+              raise SystemExit('MECHANICAL_HOLD: cached state status inadmissible')
+          if row.get('scientific_settings_changed') is not False or row.get('thresholds_changed') is not False:
+              raise SystemExit('SCIENTIFIC_HOLD: cached state scientific settings drift')
+          if row.get('status') == 'CHECKPOINT':
+              manifest=root/'QE_CHECKPOINT_MANIFEST.sha256'
+              checkpoint=root/'qe_checkpoint'
+              if not manifest.is_file() or not checkpoint.is_dir():
+                  raise SystemExit('MECHANICAL_HOLD: cached checkpoint evidence incomplete')
+              for raw in manifest.read_text().splitlines():
+                  if not raw.strip(): continue
+                  expected, rel=raw.split('  ',1)
+                  target=checkpoint/rel
+                  if not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest()!=expected:
+                      raise SystemExit(f'MECHANICAL_HOLD: cached checkpoint file drift: {rel}')
+          print('EXACT_CURRENT_SEGMENT_CACHE_REUSED_WITHOUT_RECOMPUTATION')
+          print(f"status={row['status']}")
+          PY
+
       - name: Install unchanged QE runtime dependencies
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
 
       - name: Download and hash-verify small immutable upstream evidence
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -83,7 +131,7 @@ jobs:
           sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
 
       - name: Restore exact prior QE state from included repository cache
-        if: ${{ inputs.prior_cache_key != '' }}
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' && inputs.prior_cache_key != '' }}
         id: restore-prior
         uses: actions/cache/restore@v4
         with:
@@ -92,11 +140,11 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Run exact-restart segment without paid runner or artifact checkpoint storage
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         shell: bash
         env:
           STAGE: ${{ inputs.stage }}
           SEGMENT: ${{ inputs.segment }}
-          PRIOR_KEY: ${{ inputs.prior_cache_key }}
         run: |
           set -euo pipefail
           common=(--protocol "$PROTOCOL" --segment "$SEGMENT" --out state --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json)
@@ -105,20 +153,25 @@ jobs:
             if [[ "$SEGMENT" -gt 1 ]]; then extra+=(--prior-root checkpoint_state); fi
             python3 "$RUNNER" relax-segment "${common[@]}" "${extra[@]}"
           elif [[ "$STAGE" == 'scf' ]]; then
-            if [[ "$SEGMENT" -eq 1 ]]; then extra=(--relax-root checkpoint_state); else extra=(--prior-root checkpoint_state); fi
-            python3 "$RUNNER" scf-segment "${common[@]}" "${extra[@]}"
+            extra=(--prior-root checkpoint_state)
+            if [[ "$SEGMENT" -eq 1 ]]; then
+              python3 "$RUNNER" scf-segment "${common[@]}" --relax-root checkpoint_state
+            else
+              python3 "$RUNNER" scf-segment "${common[@]}" "${extra[@]}"
+            fi
           else
             echo "MECHANICAL_HOLD: unknown stage $STAGE" >&2
             exit 2
           fi
 
       - name: Verify state, build tiny provenance record, and enforce cache ceiling
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         id: classify
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os, pathlib, shutil
+          import gzip, json, os, pathlib, shutil
           root=pathlib.Path('state')
           state=root/'SURFACE_DEPTH_RESTART_STATE.json'
           if not state.is_file():
@@ -134,14 +187,10 @@ jobs:
               p=root/name
               if p.is_file():
                   if p.suffix == '.out':
-                      import gzip
                       with p.open('rb') as src, gzip.open(prov/(p.name+'.gz'),'wb',compresslevel=9) as dst:
                           shutil.copyfileobj(src,dst)
                   else:
                       shutil.copy2(p, prov/p.name)
-          # COMPLETE is terminal for QE. Downstream carry-forward needs only the
-          # verified state JSON, not the multi-GB outdir. Keep the hashes in the
-          # state/provenance record and strip only after COMPLETE is established.
           if status == 'COMPLETE':
               shutil.rmtree(root/'qe_checkpoint', ignore_errors=True)
               m=root/'QE_CHECKPOINT_MANIFEST.sha256'
@@ -152,9 +201,6 @@ jobs:
           PY
           bytes=$(du -sb state | awk '{print $1}')
           echo "cache_bytes=${bytes}" | tee -a "$GITHUB_OUTPUT"
-          # Stay materially below the repository's default 10 GB cache ceiling.
-          # If the restart object grows beyond this, STOP. Never spill it into a
-          # billable Actions artifact.
           if [[ "$bytes" -gt 9500000000 ]]; then
             echo 'FREE_CACHE_SIZE_HOLD: restart state exceeds 9.5 GB ceiling' >&2
             exit 3
@@ -168,12 +214,14 @@ jobs:
           mv state checkpoint_state
 
       - name: Save newest exact state to included repository cache
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
           path: checkpoint_state
           key: ${{ inputs.output_cache_key }}
 
       - name: Upload only small provenance, never the multi-GB QE checkpoint
+        if: ${{ steps.restore-current.outputs.cache-hit != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: l19-${{ inputs.stage }}-seg${{ inputs.segment }}-provenance
