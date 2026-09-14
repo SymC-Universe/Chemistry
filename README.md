@@ -9,10 +9,10 @@ The present scientific scope is **generator first**. A scalar stability coordina
 For an identified stable second-order damped mode,
 
 ```math
-\chi = \frac{\Gamma}{2\Omega}
+\chi = \frac{\Gamma}{2\Omega_0}
 ```
 
-is a legitimate mechanical damping ratio. In that restricted setting, `chi < 1`, `chi = 1`, and `chi > 1` describe underdamped, repeated-root/critical, and overdamped modal morphology.
+is a legitimate mechanical damping ratio when `Omega_0` is the licensed undamped natural frequency of that second-order factor and the damping convention for `Gamma` is explicit. In that restricted setting, `chi < 1`, `chi = 1`, and `chi > 1` describe underdamped, repeated-root/critical, and overdamped modal morphology.
 
 ChemSA does **not** treat this scalar as a universal reaction-rate coordinate or a system-wide stability number. For a general first-order or coupled generator, the engine withholds mechanical `chi` unless the required scalar or proportionally damped modal reduction is independently licensed.
 
@@ -24,18 +24,19 @@ A repeated eigenvalue is not automatically an exceptional point. A semisimple de
 
 ChemSA therefore distinguishes eigenvalue coincidence from eigenvector deficiency and scopes every exceptional-point interpretation to the declared provenance of the supplied equation. Crowded or numerically unresolved neighborhoods are returned as unresolved rather than promoted.
 
-## Scalar-modal reporting discipline
+## Scalar-modal-system reporting discipline
 
-Future promoted chemistry stability results follow a coupled scalar-modal record:
+Future promoted chemistry stability results preserve complementary starting layers rather than collapsing them into one omnibus score:
 
 - governing generator, Hessian/dynamical object, response operator, or justified reduced model;
 - licensed scalar coordinate set and applicable competing margins;
 - modal, eigenvector, reaction-coordinate, or subspace geometry;
 - explicit scalar-to-mode/subspace assignment;
+- embedded/conglomerate organization and coupling where the native system supports it;
 - inter-channel or cross-description relation when applicable;
-- uncertainty, conditioning, provenance, admissibility, and refusal state.
+- uncertainty, conditioning, provenance, admissibility, information loss, and refusal state.
 
-A scalar is not selected because it happens to lie near a preferred value, and a mode is not selected after inspecting the desired outcome.
+A scalar is not selected because it happens to lie near a preferred value, and a mode is not selected after inspecting the desired outcome. Local dynamical identity and embedded realized behavior are reported separately unless a justified closure relation connects them.
 
 The frozen inheritance contract is:
 
@@ -67,25 +68,31 @@ The Barrier-Height/Rate Atlas is maintained as a separate evidence structure for
 
 Its validation rules explicitly forbid substituting well-side ChemSA `chi` for barrier-local friction. Barrier height, reaction rate, damping morphology, transmission, friction regime, and exceptional-point proximity remain distinct quantities unless a separately frozen comparison establishes a relation.
 
+Barrier-Height/Rate Atlas v0.9 is independently closed and reproducible under the current dated project state. Its closure does not depend on resolving the present System 2 or System 3 clean-surface HOLDs.
+
 ## Current prospective computational systems
 
 ### System 2: CO/Cu(111)
 
-The active CO/Cu(111) program is a frozen, staged first-principles workflow. Numerical convergence, clean-surface validation, adsorption-site ordering, reaction-path construction, and later dissipation validation are separated so that kinetic outcomes cannot tune upstream electronic-structure choices.
+CO/Cu(111) is a frozen, staged first-principles workflow. Numerical convergence, clean-surface validation, adsorption-site ordering, reaction-path construction, and later dissipation validation are separated so that kinetic outcomes cannot tune upstream electronic-structure choices.
 
-The current clean-surface audit and its no-recompute site-ordering handoff remain unchanged by the scalar-modal reporting update.
+Current scientific disposition: **`NUMERICAL_HOLD_EXTENSION_AUDIT`**. The completed L15 extension did not close the frozen clean-surface convergence gate. Adsorption-site ordering and downstream kinetic progression therefore remain blocked under the current protocol. A same-input rerun is not a scientific repair; a deeper numerical rung requires a new prospective scientific decision before affected results are inspected.
 
 ### System 3: H/Ru(0001)
 
 H/Ru(0001) is the selected contrast/limit system. Its prospective protocol treats nuclear quantum effects explicitly and refuses a full rate claim if the required quantum tier, coordinate matching, or dissipation provenance is not established.
 
+Current scientific disposition: **`CLEAN_SURFACE_NUMERICAL_HOLD`**. The frozen layer ladder did not satisfy the suffix convergence rule, so automatic adsorption progression remains prohibited. A higher-layer extension requires a new prospective scientific decision before affected results are inspected.
+
 No ChemSA `chi` is assigned until a physically matched projected damping/friction quantity and the corresponding mode or reaction coordinate pass their validators.
 
 ## Reproducibility
 
-Repository code and deposited data are the canonical computational sources for numerical results. Published figures and tables should be reproducible from preserved scripts and source data, with hashes and validation records retained where material.
+Repository code and deposited data are the canonical computational sources for numerical results. Published figures and tables should be reproducible from preserved scripts and source data, with hashes and semantic validation records retained where material.
 
 Historical failures, refusals, numerical holds, and superseded mechanical execution routes remain part of the provenance record and are not rewritten as successes.
+
+Current deployment capability and current execution state are tracked separately in `governance/IMPLEMENTATION_STATUS_v1.1.json`; historical `IMPLEMENTATION_STATUS_v1.0.json` is preserved rather than rewritten.
 
 ## Scope and nonclaims
 
@@ -97,9 +104,16 @@ The current program does not claim that:
 - a linewidth by itself is a mechanical damping coefficient;
 - a repeated eigenvalue by itself establishes an exceptional point;
 - local spectral architecture determines reaction rate, yield, selectivity, or commitment probability;
+- local modal identity automatically determines embedded/system behavior;
 - quantities from different physical modes, generator classes, temperatures, media, or coordinate definitions may be pooled without an explicit matching contract.
 
 Refusal or nonidentifiability is a valid result when the required reduction or provenance is absent.
+
+## Work that can continue without a new numerical rung
+
+The numerical HOLDs do not stop the chemistry program. Current non-compute work includes manuscript/reproducibility reconciliation, chi provenance/convention and linewidth audits, open-channel/HOLD consolidation, reproducibility readiness, native-comparator/prior-art review, attribution/novelty accounting, Function/Limit Map balance, experimental-opportunity/literature-collision work, future scalar-to-carrier reporting design, and monitoring/control-surface cleanup.
+
+The active worklist is `CHEMISTRY_NONCOMPUTE_WORKLIST_2026-09-14.md`.
 
 ## Repository contents
 
@@ -117,6 +131,7 @@ Current pointers:
 - Chemistry project guardrails: `governance/CHEMISTRY_PROJECT_GUARDRAILS_GOM_V0_8_0.md`
 - current project-state pointer: `CHEMISTRY_PROJECT_STATE_2026-09-14.md`
 - work that can proceed independently of long computation: `CHEMISTRY_NONCOMPUTE_WORKLIST_2026-09-14.md`
+- current implementation/execution registry: `governance/IMPLEMENTATION_STATUS_v1.1.json`
 - frozen scalar-modal inheritance contract: `systems/CHEMISTRY_STABILITY_ARC_INHERITANCE_v0.1.json`
 - historical consolidated closure snapshot: `PROGRAM_CLOSURE_STATUS_2026-09-04.md`
 
