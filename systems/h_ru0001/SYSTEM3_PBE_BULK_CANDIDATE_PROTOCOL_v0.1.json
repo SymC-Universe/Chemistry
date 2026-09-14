@@ -1,0 +1,115 @@
+{
+  "schema": "h-ru0001-pbe-bulk-candidate-protocol-v0.1",
+  "status": "FROZEN_BEFORE_SYSTEM3_PBE_BULK_RESULTS",
+  "effective_date": "2026-08-30",
+  "system": "H/Ru(0001)",
+  "scope": "NON_KINETIC_METHOD_CANDIDATE_AUDIT",
+  "purpose": "Qualify or reject PBE/SSSP-v2 as the first low-cost H/Ru(0001) electronic-structure candidate using only pseudopotential provenance, Ru bulk numerical convergence, and Ru bulk structural fidelity. No kinetic, barrier, diffusion-rate, published adsorption-site energy, chi, or expected ChemSA outcome may influence selection.",
+  "parallel_authorization": {
+    "system3_nonkinetic_qualification_may_run_before_system2_closure": true,
+    "cross_system_inference_before_system2_closure": false,
+    "system2_result_used_to_choose_system3_settings": false
+  },
+  "candidate": {
+    "id": "PBE_SSSP_EFF_V2_A",
+    "exchange_correlation": "PBE",
+    "selection_role": "first lowest-cost candidate only",
+    "candidate_is_not_fully_selected_by_this_gate": true,
+    "full_method_selection_still_requires": [
+      "clean Ru(0001) slab convergence",
+      "H top/bridge/fcc/hcp site screen without imposing the published minimum",
+      "local H vibrational-mode stability for the numerically selected adsorption minimum",
+      "pseudopotential transferability and reproduction gates"
+    ]
+  },
+  "provenance": {
+    "qe_source_run_id": 30949901790,
+    "qe_source_artifact": "na-cu001-c7-qe",
+    "qe_source_artifact_id": 8909205032,
+    "qe_source_artifact_digest": "sha256:65f0f0e8a2f7b9a3528e2d78734fa114f6703401ac0aeaac02cf31d7853a66ae",
+    "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "sssp_archive_sha256": "67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2",
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "acceptance_rule_changed": false,
+    "kinetic_inputs_used": false,
+    "prior_failure_preserved": true,
+    "prospective_before_results": true
+  },
+  "pseudopotentials": {
+    "Ru": {
+      "filename": "Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf",
+      "sha256": "ed637e8481a2fddda6a93863a92f8b0b857379b9db23325a4664e3df0a6f45bd",
+      "sssp_efficiency_recommended_cutoff_wfc_ry": 35,
+      "sssp_efficiency_recommended_cutoff_rho_ry": 70
+    },
+    "H": {
+      "filename": "H.us.pbe.z_1.uspp.gbrv.v1.4.upf",
+      "sha256": "f4e1cad6afe24cfaa879aed5d8f4ce716102b626a4e3a622a303419624960036",
+      "sssp_efficiency_recommended_cutoff_wfc_ry": 30,
+      "sssp_efficiency_recommended_cutoff_rho_ry": 120
+    }
+  },
+  "bulk_reference": {
+    "phase": "hcp Ru, P63/mmc",
+    "a_angstrom": 2.7059,
+    "c_angstrom": 4.2815,
+    "role": "non-kinetic room-temperature structural comparator and center of a symmetric predeclared grid; not a kinetic fit target",
+    "source": "WebElements Ru crystal structure table, citing V. A. Finkel, M. I. Palatnik, and G. P. Kovtun, Phys. Met. Metall. 32, 231 (1971)"
+  },
+  "frozen_electronic_settings": {
+    "occupations": "smearing",
+    "smearing": "mv",
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "spin_polarization": "none for bulk Ru candidate screen"
+  },
+  "cutoff_grid": {
+    "pairs_ry": [[40,160],[50,200],[60,240],[70,280],[80,320]],
+    "fixed_kmesh": [20,20,12],
+    "selection_rule": "Choose the lowest pair whose absolute total-energy difference per atom from the highest 80/320 Ry reference is <= 0.001 eV/atom."
+  },
+  "kmesh_grid": [[12,12,8],[16,16,10],[20,20,12],[24,24,16]],
+  "kmesh_selection_rule": "At the selected cutoff pair, choose the lowest mesh whose absolute total-energy difference per atom from 24x24x16 is <= 0.001 eV/atom.",
+  "structure_grid": {
+    "scale_factors": [0.97,0.985,1.0,1.015,1.03],
+    "rule": "Evaluate the full 5x5 Cartesian product of a and c scale factors around the external structural comparator using selected numerical settings. Fit a two-dimensional quadratic energy surface. The stationary point must lie inside the frozen grid and have a positive-definite Hessian."
+  },
+  "numerical_gates": {
+    "energy_convergence_ev_per_atom": 0.001
+  },
+  "structural_gate": {
+    "relative_error_max": 0.01,
+    "applies_independently_to": ["a", "c"],
+    "reason": "A deliberately simple one-percent structural screen is frozen prospectively as a method-candidate gate; it is not retuned to the PBE result."
+  },
+  "execution": {
+    "execution_mode": "DIRECT_ONE_RANK",
+    "mpi_ranks": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "per_scf_timeout_seconds": 1200,
+    "native_restart_required_for_this_bulk_grid": false,
+    "reason_native_restart_not_required": "Each bulk SCF is an independent two-atom calculation with its own bounded 1200-second timeout; partial completed cases are retained if a later case fails."
+  },
+  "evidence_firewall": {
+    "published_H_Ru_kinetic_values_may_select_settings": false,
+    "published_H_Ru_barriers_may_select_settings": false,
+    "published_H_Ru_site_energy_ordering_may_select_settings": false,
+    "chi_may_select_settings": false,
+    "expected_ChemSA_agreement_may_select_settings": false,
+    "known_System2_result_may_select_settings": false
+  },
+  "decision": {
+    "pass_status": "PBE_CANDIDATE_BULK_PASS",
+    "pass_next_gate": "H_RU0001_CLEAN_SURFACE_PROTOCOL_FREEZE",
+    "hold_status": "PBE_CANDIDATE_BULK_HOLD",
+    "hold_next_gate": "SYSTEM3_METHOD_CANDIDATE_B_REVIEW",
+    "automatic_method_promotion": false,
+    "automatic_kinetic_comparison": false,
+    "automatic_chi_calculation": false
+  }
+}

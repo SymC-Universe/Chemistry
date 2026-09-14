@@ -1,0 +1,76 @@
+{
+  "schema": "barrier-atlas-family-independence-candidate-trails-v0.1",
+  "status": "CANDIDATE_GENERATION_ONLY",
+  "parent_campaign": "FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "trails": [
+    {
+      "trail_id": "FI-MC01-TRYPSIN-BENZAMIDINE",
+      "provisional_target_classes": ["MC01"],
+      "candidate_family": "trypsin-benzamidine binding/unbinding",
+      "state": "COMPUTATIONAL_TRAIL_PINNED",
+      "source_kind": "public_reproducibility_repository",
+      "repository": "narjesansari/LigandBinding_Trypsin_FES_RATE",
+      "commit": "fe2ee38a58bc8ed3b7dcae23f2be70ad0fefba9f",
+      "evidence_available": ["FES inputs", "RATE inputs", "PLUMED collective-variable definitions", "GROMACS production inputs"],
+      "next_gate": "Extract the paper-defined association/unbinding observable, free-energy barrier or kinetic bottleneck, numerical calculated rate, experimental comparator, and determine whether the comparator is independent of model calibration.",
+      "automatic_admission": false
+    },
+    {
+      "trail_id": "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK",
+      "provisional_target_classes": ["MC02"],
+      "candidate_family": "cyclobutene to 1,3-butadiene ring opening",
+      "state": "CLASSIFICATION_HOLD",
+      "source_kind": "existing_v0.9_held_candidate",
+      "existing_candidate_id": "CAND-GAS-CYCLOBUTENE-RING-OPENING",
+      "reason": "The frozen candidate is described as thermal electrocyclic ring opening, so it may belong to the pericyclic class rather than supplying an independent dissociation/fragmentation family. It must not be reassigned merely to fill MC02.",
+      "next_gate": "Independent mechanistic-class adjudication followed, if appropriate, by condition-matched barrier/rate pairing.",
+      "automatic_admission": false
+    },
+    {
+      "trail_id": "FI-MC06-CYCLOPROPANE-PROPENE",
+      "provisional_target_classes": ["MC06"],
+      "candidate_family": "cyclopropane to propene isomerization",
+      "state": "EXISTING_HOLD_REOPENABLE",
+      "source_kind": "existing_v0.9_held_candidate",
+      "existing_candidate_id": "CAND-GAS-CYCLOPROPANE-ISOMERIZATION",
+      "source_doi": "10.1080/00268976.2017.1317112",
+      "next_gate": "Resolve the multistep diradical network and identify which transition state or effective kinetic model corresponds to the condition-matched measured rate before defining one Atlas coordinate.",
+      "automatic_admission": false
+    },
+    {
+      "trail_id": "FI-ENZYME-DB-INVENTORY",
+      "provisional_target_classes": ["MC11", "MC13"],
+      "candidate_family": "unassigned enzyme reaction families from public barrier database",
+      "state": "COMPUTATIONAL_TRAIL_PINNED",
+      "source_kind": "public_reproducibility_repository",
+      "repository": "jensengroup/db-enzymes",
+      "commit": "22afe1913e973096be9c2a72385035b296619eba",
+      "evidence_available": ["protein-specific reactant structures", "transition-state structures", "product structures", "model CSV barrier records", "per-system readmes"],
+      "next_gate": "Inventory reaction identities and published experimental context; only then provisionally assign hydride-transfer or PCET classes and search for independent matched rates.",
+      "automatic_admission": false
+    },
+    {
+      "trail_id": "FI-LIPRED-2026-SCREEN",
+      "provisional_target_classes": [],
+      "candidate_family": "unassigned liquid-phase reaction families from LiPRED-2026",
+      "state": "COMPUTATIONAL_TRAIL_PINNED",
+      "source_kind": "public_machine_readable_dataset",
+      "zenodo_record": "16358189",
+      "filename": "supplementary_material_v3.zip",
+      "md5": "7934b25adb63b520ac504db615874bb3",
+      "evidence_available": ["machine-readable activation Gibbs free energies", "reaction identifiers", "solvent conditions", "multiple computational methods"],
+      "next_gate": "Inventory distinct reaction families and cross-reference only those that can supply an independent experimental rate or primary kinetic comparator. Do not treat method replicas as family depth.",
+      "automatic_admission": false
+    },
+    {
+      "trail_id": "FI-BARRIER-ONLY-REPOSITORY-SCREEN",
+      "provisional_target_classes": [],
+      "candidate_family": "unassigned barrier-only benchmark families",
+      "state": "BARRIER_HALF_TRAIL",
+      "source_kind": "candidate_generation_only",
+      "repositories": ["heid-lab/reaction_database", "lcmd-epfl/benchmark-barrier-learning", "JiashuLiang/GSCDB"],
+      "next_gate": "Use only to identify reaction families. A separate independent observed-rate trail with condition and quantity matching is mandatory before any promotion.",
+      "automatic_admission": false
+    }
+  ]
+}

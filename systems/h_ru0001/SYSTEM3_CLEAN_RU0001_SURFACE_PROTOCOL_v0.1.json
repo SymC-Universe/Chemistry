@@ -1,0 +1,162 @@
+{
+  "decision": {
+    "automatic_adsorption_progression": false,
+    "coupled_hold_status": "CLEAN_SURFACE_COUPLED_CONVERGENCE_HOLD",
+    "hold_status": "CLEAN_SURFACE_NUMERICAL_HOLD",
+    "pass_next_gate": "H_RU0001_CLEAN_SURFACE_RELAXATION_AND_REPRODUCTION",
+    "pass_status": "CLEAN_SURFACE_FIXED_GRID_PASS"
+  },
+  "effective_date": "2026-08-30",
+  "electronic_settings": {
+    "degauss_ry": 0.02,
+    "ecutrho_ry": "INHERIT_FROM_BULK_ADJUDICATION",
+    "ecutwfc_ry": "INHERIT_FROM_BULK_ADJUDICATION",
+    "electron_conv_thr": 1e-10,
+    "electron_maxstep": 200,
+    "exchange_correlation": "PBE",
+    "mixing_beta": 0.3,
+    "occupations": "smearing",
+    "smearing": "mv",
+    "spin_polarization": "none for clean Ru surface qualification"
+  },
+  "entry_gate": {
+    "bulk_adjudication_path": "systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json",
+    "bulk_protocol_path": "systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json",
+    "inherit_only": [
+      "selected ecutwfc",
+      "selected ecutrho",
+      "fitted Ru a",
+      "fitted Ru c",
+      "exact pw.x hash",
+      "exact Ru pseudopotential hash",
+      "predeclared highest bulk kmesh endpoint for the fresh bulk chemical-potential reference"
+    ],
+    "required_bulk_status": "PBE_CANDIDATE_BULK_PASS",
+    "required_original_artifact_digest": "sha256:1e06abd3f5563aa24d316f5dac311039154c0f0a8dc67d2bf3b35d589e0a0cf5",
+    "required_original_artifact_id": 9742623887,
+    "required_original_run_id": 33345475633,
+    "required_recovery_run_id": 33351800093
+  },
+  "evidence_firewall": {
+    "System2_surface_settings_may_be_imported": false,
+    "chi_may_select_settings": false,
+    "expected_ChemSA_agreement_may_select_settings": false,
+    "known_System2_result_may_select_settings": false,
+    "published_H_Ru_barriers_may_select_settings": false,
+    "published_H_Ru_kinetic_values_may_select_settings": false,
+    "published_H_Ru_site_energy_ordering_may_select_settings": false,
+    "rate_agreement_may_rescue_surface_failure": false
+  },
+  "execution": {
+    "MKL_NUM_THREADS": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "completed_independent_cases_must_be_persisted": true,
+    "execution_mode": "DIRECT_ONE_RANK",
+    "mpi_ranks": 1,
+    "native_restart_required_for_independent_fixed_grid_scfs": false,
+    "per_scf_timeout_seconds": 1800,
+    "scientific_parameter_autotuning_after_failure": false
+  },
+  "fresh_bulk_reference": {
+    "a_angstrom": "INHERIT_FITTED_A",
+    "atoms": 2,
+    "c_angstrom": "INHERIT_FITTED_C",
+    "ecutrho_ry": "INHERIT_SELECTED",
+    "ecutwfc_ry": "INHERIT_SELECTED",
+    "kmesh": [
+      24,
+      24,
+      16
+    ],
+    "kmesh_role": "Use the already predeclared terminal bulk kmesh endpoint as the clean-surface chemical-potential reference so the selected 16x16x10 per-atom error is not multiplied by slab atom count in the layer-convergence gate. This does not change the selected production surface kmesh.",
+    "required": true,
+    "surface_excess_definition": "gamma_excess_eV_per_surface_atom=(E_slab-N_Ru*E_bulk_per_atom)/2"
+  },
+  "numerical_gate": {
+    "absolute_surface_excess_tolerance_ev_per_surface_atom": 0.001,
+    "joint_endpoint_recheck": {
+      "required": true,
+      "rule": "At the jointly selected layer/vacuum/kmesh point, independently substitute the terminal kmesh, terminal vacuum, and terminal layer count one axis at a time. Every absolute surface-excess change must be <= the frozen tolerance. Any disagreement is CLEAN_SURFACE_COUPLED_CONVERGENCE_HOLD."
+    },
+    "kmesh_stage": {
+      "layers": 7,
+      "surface_kmeshes": [
+        [
+          12,
+          12,
+          1
+        ],
+        [
+          16,
+          16,
+          1
+        ],
+        [
+          20,
+          20,
+          1
+        ]
+      ],
+      "terminal_reference": [
+        20,
+        20,
+        1
+      ],
+      "total_vacuum_angstrom": 20.0
+    },
+    "layer_stage": {
+      "layers": [
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "minimum_eligible_layers": 7,
+      "selected_kmesh": "FROM_KMESH_STAGE",
+      "selected_total_vacuum": "FROM_VACUUM_STAGE",
+      "terminal_reference_layers": 13
+    },
+    "selection_rule": "For each ordered ladder, select the lowest non-terminal candidate for which that candidate and every finer or larger candidate differ from the terminal endpoint by no more than the frozen tolerance. Endpoint-only agreement is not convergence and returns HOLD.",
+    "vacuum_stage": {
+      "layers": 7,
+      "selected_kmesh": "FROM_KMESH_STAGE",
+      "terminal_reference_angstrom": 25.0,
+      "total_vacuum_angstrom": [
+        15.0,
+        20.0,
+        25.0
+      ]
+    }
+  },
+  "provenance": {
+    "kinetic_inputs_used": false,
+    "prospective_before_surface_results": true,
+    "scientific_settings_changed_after_results": false,
+    "selection_origin": "Minimal generic numerical convergence ladder frozen after the bulk PASS and before any clean-surface calculation; no System 2 numerical outcome or H/Ru kinetic/site-ordering outcome was consulted.",
+    "thresholds_changed_after_results": false
+  },
+  "purpose": "Select the smallest numerically adequate clean Ru(0001) slab for System 3 without using H/Ru kinetic, barrier, published adsorption-site ordering, chi, expected ChemSA, or System 2 outcome information.",
+  "relaxation_gate": {
+    "must_not_execute_inside_fixed_grid_numerical_workflow": true,
+    "protocol_path": "systems/h_ru0001/SYSTEM3_CLEAN_RU0001_RELAXATION_PROTOCOL_v0.1.json",
+    "required_after_numerical_pass": true
+  },
+  "schema": "h-ru0001-clean-ru0001-surface-protocol-v0.1",
+  "scope": "NON_KINETIC_CLEAN_SURFACE_QUALIFICATION",
+  "status": "FROZEN_BEFORE_SYSTEM3_CLEAN_SURFACE_RESULTS",
+  "surface_model": {
+    "crystal": "hcp Ru",
+    "electrostatics": "ordinary 3D periodic symmetric slab; no ESM and no dipole correction",
+    "facet": "(0001)",
+    "fixed_grid_stage": "all Ru coordinates fixed at bulk-truncated positions",
+    "layer_parity": "odd",
+    "slab_center": "z=0",
+    "slab_stacking": "bulk-truncated ABAB sequence",
+    "surface_cell": "1x1 primitive",
+    "surface_symmetry": "same termination on both faces",
+    "total_vacuum_definition": "cell z length minus outermost-Ru to outermost-Ru slab thickness; divided equally above and below the centered slab"
+  },
+  "system": "H/Ru(0001)"
+}

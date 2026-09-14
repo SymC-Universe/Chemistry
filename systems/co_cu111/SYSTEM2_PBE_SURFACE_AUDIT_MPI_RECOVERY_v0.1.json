@@ -1,0 +1,150 @@
+{
+  "schema": "co-cu111-pbe-surface-audit-mpi-recovery-v0.1",
+  "status": "FROZEN_MECHANICAL_MPI_RECOVERY_AFTER_RELAY_EXHAUSTION_BEFORE_RESULTS",
+  "system": "CO/Cu(111)",
+  "purpose": "Mechanically continue only the frozen L13/V28/K24 clean-surface audit after proposal-relay segments 5-8 made real geometric progress but exhausted their bounded one-rank wall-clock budget. Correct the previously identified force-parser ambiguity, prove 4-rank numerical parity against the immutable one-rank segment-8 input geometry, and only then use the already-qualified four-core larger runner for at most two additional bounded BFGS continuation segments. No electronic-structure, slab, force, surface-energy, or kinetic setting is changed.",
+  "scientific_scope": "NO_SCIENTIFIC_CONFIGURATION_CHANGE",
+  "parent_relay": {
+    "run_id": 32545223290,
+    "workflow_name": "CO Cu111 PBE surface audit proposal relay v1",
+    "workflow_head_sha": "4429c6fded6b62b05d4ce170c19c657147ad4b2c",
+    "conclusion": "failure",
+    "failure_class": "MECHANICAL_INCOMPLETE_AFTER_BOUNDED_RELAY_SEGMENTS",
+    "scientific_gate_executed": false,
+    "completed_jobs": [
+      "prepare",
+      "relay-1",
+      "relay-2",
+      "relay-3",
+      "relay-4"
+    ],
+    "failed_job": "reproduce-audit",
+    "failure_message": "MECHANICAL_INCOMPLETE: L13 audit relaxation did not complete within frozen proposal-relay segments"
+  },
+  "segment8_seed": {
+    "artifact_name": "co-cu111-pbe-clean-audit-proposal-relay-L13-V28-K24-seg8",
+    "artifact_id": 9481470766,
+    "artifact_digest": "sha256:d7010a3aa5a5086cd5e13c21be83e8e573aa851325ed42420ba4555ac3b55188",
+    "relay_segment_sha256": "9e31bf164abb23545613a29c389b75e43243bcf54b636d2a79d036ffec5a8997",
+    "relax_input_sha256": "aa8827003720a64c73e070eb2ef15e799e453ff44d023d15181d4b701f9bad40",
+    "relax_output_sha256": "1fdb56224acf736128d77b46aaff458e1764ae688298275b069eb6e57b344b03",
+    "required_status": "CONTINUE",
+    "required_logical_segment": 8,
+    "next_trial_semantics": "PROPOSED_NOT_YET_EVALUATED"
+  },
+  "parser_correction": {
+    "problem": "The inherited generic force regex selected the final nat atom-force rows anywhere in verbose QE output, which can be a force-decomposition block rather than the total-force block under 'Forces acting on atoms'.",
+    "authoritative_parser": "Read exactly nat atom rows immediately following each 'Forces acting on atoms' header and use the final complete total-force block associated with an evaluated geometry.",
+    "changes_scientific_force_gate": false,
+    "unchanged_force_gate_ev_per_angstrom": 0.02,
+    "segment8_true_input_max_movable_force_ev_per_angstrom": 0.0514611482476079,
+    "segment8_true_second_evaluated_max_movable_force_ev_per_angstrom": 0.04778961262979822,
+    "segment8_legacy_summary_value_is_not_authoritative": true,
+    "segment8_true_input_energy_ev": -37690.402787825384,
+    "segment8_true_second_evaluated_energy_ev": -37690.40289313345,
+    "segment8_legacy_evaluated_input_energy_field_is_last_segment_energy_not_input_energy": true
+  },
+  "frozen_sources": {
+    "surface_protocol": {
+      "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json",
+      "sha256": "1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f"
+    },
+    "surface_runner": {
+      "path": "systems/co_cu111/pbe_surface_site_ordering_v1.py",
+      "sha256": "f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b"
+    },
+    "proposal_relay_protocol": {
+      "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_AUDIT_PROPOSAL_RELAY_v0.1.json",
+      "sha256": "921505fa9cd881f3d6b5dd160b4d6365e2ebb220eaa90920cc863b075c92390b"
+    },
+    "proposal_relay_runner": {
+      "path": "systems/co_cu111/pbe_surface_audit_proposal_relay_v1.py",
+      "sha256": "33d1620e3af2a072e1f14e4f2fefa72cf7c5f53ff247b0fb394aa72130764696"
+    },
+    "stage_a_run_id": 31887006685,
+    "stage_a_result_artifact": "co-cu111-pbe-stage-a-numerical-extension-decision-v1",
+    "stage_a_result_sha256": "2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3",
+    "engine_run_id": 31371043888,
+    "engine_artifact": "co-cu111-pbe-stage-a-engine-v2",
+    "pw_x_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855"
+  },
+  "execution_amendment": {
+    "runner_label": "ubuntu-latest-m",
+    "qualified_smoke_run_id": 31563024608,
+    "qualified_smoke_job_id": 94009144768,
+    "runner_architecture": "x64",
+    "runner_cpu_count": 4,
+    "mpi_rank_count_before": 1,
+    "mpi_rank_count_proposed": 4,
+    "thread_caps": {
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1
+    },
+    "parallelization_change_is_execution_only": true,
+    "continuation_segment_runtime_cap_seconds": 16200,
+    "maximum_new_continuation_segments": 2,
+    "logical_segment_numbers": [
+      9,
+      10
+    ],
+    "restart_claim": "NOT_EXACT_QE_RESTART",
+    "continuation_mode": "EVALUATE_PRIOR_BFGS_PROPOSED_TRIAL_FROM_SCRATCH",
+    "electronic_scratch_reused": false
+  },
+  "mpi_parity_gate": {
+    "required_before_continuation": true,
+    "reference_geometry": "immutable segment-8 input_atoms evaluated at one rank",
+    "test_geometry": "same coordinates, cell, kmesh, pseudopotentials, pw.x, electronic settings, ESM convention and SCF thresholds at four MPI ranks",
+    "energy_absolute_difference_max_ev": 0.0001,
+    "force_component_absolute_difference_max_ev_per_angstrom": 0.0001,
+    "force_parser": "authoritative total-force block only",
+    "failure_state": "MECHANICAL_MPI_PARITY_HOLD"
+  },
+  "unchanged_science": {
+    "case_id": "L13-V28-K24-audit",
+    "layers": 13,
+    "vacuum_angstrom": 28.0,
+    "kmesh": 24,
+    "role": "audit",
+    "executable": "exact Stage A pw.x",
+    "pseudopotentials": "exact Stage A Cu/C/O bundle",
+    "ecutwfc_ry": 90,
+    "ecutrho_ry": 900,
+    "input_dft": "PBE",
+    "occupations": "smearing",
+    "smearing": "mv",
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "assume_isolated": "esm",
+    "esm_bc": "bc1",
+    "ion_dynamics": "bfgs",
+    "movable_components": "outer two layers on each face, z only",
+    "force_gate_ev_per_angstrom": 0.02,
+    "independent_scf_reproduction_gate_ev": 0.001,
+    "surface_excess_convergence_max_ev_per_surface_atom": 0.001,
+    "reference_audit_rule": "unchanged",
+    "candidate_selection_rule": "unchanged"
+  },
+  "reuse_contract": {
+    "completed_reference_run_id": 32435777875,
+    "completed_reference_artifact": "co-cu111-pbe-clean-timeout-recovery-repro1-L11-V24-K20-reference",
+    "completed_reference_summary_sha256": "88b0df1455d2d34963b6503a980fb79260e93c3785b94ba4cefab110fcfc0245",
+    "eight_candidate_source_run_id": 31922544540,
+    "eight_completed_candidates_recomputed": false,
+    "reference_recomputed": false,
+    "audit_only_recomputed": true,
+    "clean_gate_implementation": "unchanged pbe_surface_site_ordering_v1.py clean-gate",
+    "site_ordering_dispatched_by_this_recovery": false
+  },
+  "provenance": {
+    "scientific_settings_changed": false,
+    "execution_resource_changed": true,
+    "mpi_rank_count_changed_only_after_parity_gate": true,
+    "kinetic_inputs_used": false,
+    "surface_energy_or_kinetic_result_used_to_choose_execution_change": false,
+    "mechanical_runtime_and_parser_evidence_only": true
+  }
+}

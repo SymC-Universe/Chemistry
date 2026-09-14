@@ -1,0 +1,519 @@
+name: CO Cu111 PBE clean surface timeout recovery v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-pbe-surface-timeout-recovery-v1.yml'
+      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_TIMEOUT_RECOVERY_v0.1.json'
+      - 'systems/co_cu111/pbe_surface_timeout_recovery_v1.py'
+      - 'systems/co_cu111/test_pbe_surface_timeout_recovery_v1.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-clean-surface-timeout-recovery-v1
+  cancel-in-progress: false
+
+env:
+  RECOVERY_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_TIMEOUT_RECOVERY_v0.1.json
+  RECOVERY_RUNNER: systems/co_cu111/pbe_surface_timeout_recovery_v1.py
+  RECOVERY_TEST: systems/co_cu111/test_pbe_surface_timeout_recovery_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  SURFACE_RUNNER: systems/co_cu111/pbe_surface_site_ordering_v1.py
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  SOURCE_RUN_ID: '31922544540'
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  STAGE_A_RESULT_SHA256: 2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  SEGMENT_RUNTIME_CAP_S: '16200'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen recovery source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$SURFACE_RUNNER" "$RECOVERY_RUNNER" "$RECOVERY_TEST"
+          echo '8fa1fefb20162bc29af10c3df0d502872e84711409bb66aeec302a3a998b1466  '"$RECOVERY_PROTOCOL" | sha256sum -c -
+          echo '45a1427de9e0e450291b795f9d98159a43e51879f0d7958f222db7bb85314fd2  '"$RECOVERY_RUNNER" | sha256sum -c -
+          echo 'd50ab4055de6e4f6659ceaf8b4fe16a197644d84622abc6d9af035e1bd6b16b7  '"$RECOVERY_TEST" | sha256sum -c -
+          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '"$SURFACE_PROTOCOL" | sha256sum -c -
+          echo 'f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b  '"$SURFACE_RUNNER" | sha256sum -c -
+          python3 "$RECOVERY_RUNNER" self-test --recovery-protocol "$RECOVERY_PROTOCOL"
+
+      - name: Download immutable timed-out reference source
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-v1-L11-V24-K20-reference
+          path: source_reference
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download immutable timed-out audit source
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-v1-L13-V28-K24-audit
+          path: source_audit
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify real timeout artifacts and unit tests
+        shell: bash
+        env:
+          CO_CU111_REFERENCE_SOURCE: ${{ github.workspace }}/source_reference
+          CO_CU111_AUDIT_SOURCE: ${{ github.workspace }}/source_audit
+        run: |
+          set -euo pipefail
+          python3 "$RECOVERY_RUNNER" verify-source --recovery-protocol "$RECOVERY_PROTOCOL" --target reference --source-root source_reference
+          python3 "$RECOVERY_RUNNER" verify-source --recovery-protocol "$RECOVERY_PROTOCOL" --target audit --source-root source_audit
+          python3 "$RECOVERY_TEST" -v
+
+      - name: Download authorizing Stage A PASS decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify authorizing Stage A decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${STAGE_A_RESULT_SHA256}  stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json" | sha256sum -c -
+          python3 - <<'PY'
+          import json
+          r=json.load(open('stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json'))
+          assert r['status']=='PASS'
+          assert r['next_gate']=='PBE_CU111_CLEAN_SURFACE_AND_SITE_ORDERING_SCREEN'
+          assert r['provenance']['kinetic_inputs_used'] is False
+          assert r['provenance']['scientific_settings_changed'] is False
+          PY
+
+      - name: Download exact Stage A QE engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify exact engine and pseudopotentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          chmod +x engine/bin/pw.x
+          test -x engine/bin/pw.x
+          echo 'SCIENTIFIC_SETTINGS_CHANGED=false'
+          echo 'KINETIC_INPUTS_USED=false'
+          echo 'MPI_RANK_COUNT=1'
+
+      - name: Publish exact engine for recovery segments
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-timeout-recovery-engine-v1
+          path: engine
+          retention-days: 30
+          if-no-files-found: error
+
+  relax-segment-1:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: reference, case_id: L11-V24-K20-reference, source_artifact: co-cu111-pbe-clean-v1-L11-V24-K20-reference}
+          - {target: audit, case_id: L13-V28-K24-audit, source_artifact: co-cu111-pbe-clean-v1-L13-V28-K24-audit}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-surface-timeout-recovery-engine-v1
+          path: engine
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.source_artifact }}
+          path: source_case
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Recover frozen relaxation segment 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RECOVERY_RUNNER" recover-relax \
+            --recovery-protocol "$RECOVERY_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --target '${{ matrix.target }}' --source-root source_case --segment 1 \
+            --runtime-cap-s "$SEGMENT_RUNTIME_CAP_S" --out recovery_out
+      - name: Upload segment 1 checkpoint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg1
+          path: recovery_out
+          retention-days: 90
+          if-no-files-found: error
+
+  relax-segment-2:
+    needs: relax-segment-1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: reference, case_id: L11-V24-K20-reference, source_artifact: co-cu111-pbe-clean-v1-L11-V24-K20-reference}
+          - {target: audit, case_id: L13-V28-K24-audit, source_artifact: co-cu111-pbe-clean-v1-L13-V28-K24-audit}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-timeout-recovery-engine-v1, path: engine}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.source_artifact }}
+          path: source_case
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg1
+          path: prior
+      - name: Recover frozen relaxation segment 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RECOVERY_RUNNER" recover-relax \
+            --recovery-protocol "$RECOVERY_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --target '${{ matrix.target }}' --source-root source_case --prior-root prior --segment 2 \
+            --runtime-cap-s "$SEGMENT_RUNTIME_CAP_S" --out recovery_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg2
+          path: recovery_out
+          retention-days: 90
+          if-no-files-found: error
+
+  relax-segment-3:
+    needs: relax-segment-2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: reference, case_id: L11-V24-K20-reference, source_artifact: co-cu111-pbe-clean-v1-L11-V24-K20-reference}
+          - {target: audit, case_id: L13-V28-K24-audit, source_artifact: co-cu111-pbe-clean-v1-L13-V28-K24-audit}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-timeout-recovery-engine-v1, path: engine}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.source_artifact }}
+          path: source_case
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg2
+          path: prior
+      - name: Recover frozen relaxation segment 3
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RECOVERY_RUNNER" recover-relax \
+            --recovery-protocol "$RECOVERY_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --target '${{ matrix.target }}' --source-root source_case --prior-root prior --segment 3 \
+            --runtime-cap-s "$SEGMENT_RUNTIME_CAP_S" --out recovery_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg3
+          path: recovery_out
+          retention-days: 90
+          if-no-files-found: error
+
+  relax-segment-4:
+    needs: relax-segment-3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: reference, case_id: L11-V24-K20-reference, source_artifact: co-cu111-pbe-clean-v1-L11-V24-K20-reference}
+          - {target: audit, case_id: L13-V28-K24-audit, source_artifact: co-cu111-pbe-clean-v1-L13-V28-K24-audit}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-timeout-recovery-engine-v1, path: engine}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.source_artifact }}
+          path: source_case
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg3
+          path: prior
+      - name: Recover frozen relaxation segment 4
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RECOVERY_RUNNER" recover-relax \
+            --recovery-protocol "$RECOVERY_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --target '${{ matrix.target }}' --source-root source_case --prior-root prior --segment 4 \
+            --runtime-cap-s "$SEGMENT_RUNTIME_CAP_S" --out recovery_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg4
+          path: recovery_out
+          retention-days: 90
+          if-no-files-found: error
+
+  reproduce-1:
+    needs: relax-segment-4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: reference, case_id: L11-V24-K20-reference}
+          - {target: audit, case_id: L13-V28-K24-audit}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-timeout-recovery-engine-v1, path: engine}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg4
+          path: relax_final
+      - name: Independent fixed-geometry reproduction attempt 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$RECOVERY_RUNNER" reproduce \
+            --recovery-protocol "$RECOVERY_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --target '${{ matrix.target }}' --relax-root relax_final \
+            --runtime-cap-s "$SEGMENT_RUNTIME_CAP_S" --out reproduce_out
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-repro1-${{ matrix.case_id }}
+          path: reproduce_out
+          retention-days: 90
+          if-no-files-found: error
+
+  reproduce-2:
+    needs: reproduce-1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: reference, case_id: L11-V24-K20-reference}
+          - {target: audit, case_id: L13-V28-K24-audit}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with: {name: co-cu111-pbe-surface-timeout-recovery-engine-v1, path: engine}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-${{ matrix.case_id }}-seg4
+          path: relax_final
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-repro1-${{ matrix.case_id }}
+          path: prior_repro
+      - name: Reuse completed reproduction or perform attempt 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find prior_repro -name summary.json -type f -print -quit | grep -q .; then
+            mkdir -p reproduce_out
+            cp -a prior_repro/. reproduce_out/
+            echo 'REPRODUCTION_ALREADY_COMPLETE=true'
+          else
+            chmod +x engine/bin/pw.x
+            python3 "$RECOVERY_RUNNER" reproduce \
+              --recovery-protocol "$RECOVERY_PROTOCOL" --surface-protocol "$SURFACE_PROTOCOL" \
+              --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+              --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+              --target '${{ matrix.target }}' --relax-root relax_final \
+              --runtime-cap-s "$SEGMENT_RUNTIME_CAP_S" --out reproduce_out
+          fi
+      - name: Upload recovered terminal clean case
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-timeout-recovery-final-${{ matrix.case_id }}
+          path: reproduce_out
+          retention-days: 90
+          if-no-files-found: error
+
+  clean-gate:
+    needs: reproduce-2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Re-verify unchanged gate implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '"$SURFACE_PROTOCOL" | sha256sum -c -
+          echo 'f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b  '"$SURFACE_RUNNER" | sha256sum -c -
+
+      - name: Download all immutable source clean cases
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: clean_collected/source
+          merge-multiple: false
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download both recovered terminal cases
+        uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-timeout-recovery-final-*
+          path: clean_collected/recovered
+          merge-multiple: false
+
+      - name: Download authorizing Stage A PASS decision
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Apply unchanged ten-case clean-surface gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p clean_gate
+          python3 "$SURFACE_RUNNER" clean-gate \
+            --protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --root clean_collected \
+            --out clean_gate/CLEAN_SURFACE_GATE.json \
+            > clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          cat clean_gate/CLEAN_SURFACE_GATE_STDOUT.txt
+          python3 - <<'PY'
+          import json
+          r=json.load(open('clean_gate/CLEAN_SURFACE_GATE.json'))
+          print('CLEAN_SURFACE_STATUS='+r['status'])
+          print('NEXT_GATE='+r['next_gate'])
+          print('KINETIC_INPUTS_USED='+str(r['provenance']['kinetic_inputs_used']).lower())
+          PY
+
+      - name: Upload recovered clean-surface gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-pbe-clean-surface-timeout-recovery-gate-v1
+          path: clean_gate
+          retention-days: 90
+          if-no-files-found: error

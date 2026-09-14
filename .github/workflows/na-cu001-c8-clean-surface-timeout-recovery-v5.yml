@@ -1,0 +1,245 @@
+name: Na Cu001 C8 clean surface timeout recovery v5
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c8-clean-surface-timeout-recovery-v5.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c8-clean-surface-timeout-recovery-v5
+  cancel-in-progress: false
+
+env:
+  SOURCE_C7_RUN_ID: '30949901790'
+  SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'
+  PARITY_RUN_ID: '31230166557'
+  PARITY_COMMIT: '66a3409469dd8559d11b145fb01c8e097bb693f2'
+  PARITY_ARTIFACT: 'na-cu001-c7-electrostatic-consistency-recovery-v1'
+  ROOT_ORIGINAL_CLEAN_RUN_ID: '31230183860'
+  ROOT_ORIGINAL_CLEAN_COMMIT: '3cd72619a5cbf4b6d2b428525ede75bd9812fd06'
+  PRIOR_CLEAN_RUN_ID: '31284020948'
+  PRIOR_CLEAN_COMMIT: '5a5490e7fa4dc1e25d4414308de68598f28e84fe'
+  PRIOR_CLEAN_ARTIFACT: 'na-cu001-c8-clean-surface-timeout-recovery-v4'
+
+jobs:
+  continue-clean-surface:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout recovery control
+        uses: actions/checkout@v4
+        with:
+          path: control
+
+      - name: Checkout exact frozen C7 source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_C7_COMMIT }}
+          path: source_code
+
+      - name: Verify frozen contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C control rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C source_code rev-parse HEAD)" = "$SOURCE_C7_COMMIT"
+          python3 -m py_compile control/na_cu001_ci/clean_surface_centered_v1.py control/na_cu001_ci/clean_surface_timeout_recovery_v1.py source_code/na_cu001_ci/closure_engine.py source_code/na_cu001_ci/closure_engine_v2.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('source_code/na_cu001_ci/method_protocol_v0.2.json').read_text())
+          s=p['surface']; e=s['registered_electrostatic_convention']
+          assert p['schema']=='na-cu001-method-protocol-v0.2'
+          assert p['status']=='FROZEN_BEFORE_DOWNSTREAM_RESULTS'
+          assert float(s['force_tolerance_ev_per_angstrom'])==0.02
+          assert float(s['energy_reproduction_tolerance_ev'])==0.001
+          assert e['assume_isolated']=='esm' and e['esm_bc']=='bc1'
+          assert e['scope']=='all 64 slab cases and all downstream surface calculations'
+          PY
+
+      - name: Install QE runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gh openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
+
+      - name: Verify prior mechanical checkpoint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run_meta
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PRIOR_CLEAN_RUN_ID}" > run_meta/prior.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PARITY_RUN_ID}" > run_meta/parity.json
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads(Path('run_meta/prior.json').read_text())
+          p=json.loads(Path('run_meta/parity.json').read_text())
+          assert r['status']=='completed' and r['conclusion']=='failure' and r['head_sha']==os.environ['PRIOR_CLEAN_COMMIT']
+          assert p['status']=='completed' and p['conclusion']=='success' and p['head_sha']==os.environ['PARITY_COMMIT']
+          PY
+
+      - name: Download prior clean checkpoint
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PRIOR_CLEAN_ARTIFACT }}
+          path: prior_clean
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.PRIOR_CLEAN_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download electrostatic PASS evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARITY_ARTIFACT }}
+          path: parity_upstream
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.PARITY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download frozen QE bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Bind prior geometry and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bound runtime
+          prior_input=$(find prior_clean -type f -name clean_relax_continuation.in -print -quit)
+          prior_output=$(find prior_clean -type f -name clean_relax_continuation.out -print -quit)
+          prior_record=$(find prior_clean -type f -name CLEAN_RELAX_CONTINUATION.json -print -quit)
+          parity=$(find parity_upstream -type f -name ELECTROSTATIC_CONSISTENCY.json -print -quit)
+          slab=$(find parity_upstream -type f -name SLAB_HANDOFF.json -print -quit)
+          test -n "$prior_input" && test -n "$prior_output" && test -n "$prior_record" && test -n "$parity" && test -n "$slab"
+          cp "$prior_input" bound/PRIOR_CLEAN_RELAX.in
+          cp "$prior_output" bound/PRIOR_CLEAN_RELAX.out
+          cp "$prior_record" bound/PRIOR_CLEAN_CONTINUATION.json
+          cp "$parity" bound/ELECTROSTATIC_CONSISTENCY.json
+          cp "$slab" bound/SLAB_HANDOFF.json
+          python3 - <<'PY'
+          import hashlib,json,os,re
+          from pathlib import Path
+          r=json.loads(Path('bound/PRIOR_CLEAN_CONTINUATION.json').read_text())
+          p=json.loads(Path('bound/ELECTROSTATIC_CONSISTENCY.json').read_text())
+          s=json.loads(Path('bound/SLAB_HANDOFF.json').read_text())
+          assert r['schema']=='na-cu001-clean-surface-timeout-continuation-v0.1'
+          assert r['status']=='CHECKPOINT' and r['mechanical_recovery_only'] is True
+          assert r['scientific_settings_changed'] is False and r['bfgs_finished'] is False
+          assert r['returncode']==0 and r['job_done'] is True
+          assert float(r['max_unconstrained_force_ev_per_angstrom']) > 0.02
+          assert int(r['provenance']['original_clean_run_id'])==int(os.environ['ROOT_ORIGINAL_CLEAN_RUN_ID'])
+          assert r['provenance']['original_clean_commit']==os.environ['ROOT_ORIGINAL_CLEAN_COMMIT']
+          assert r['provenance']['control_commit']==os.environ['PRIOR_CLEAN_COMMIT']
+          assert p['schema']=='na-cu001-electrostatic-consistency-v0.3' and p['status']=='PASS'
+          assert p['selected_slab']=={'layers':11,'vacuum_angstrom':12.0,'kmesh_inplane':16}
+          assert p['selected_convention']=={'assume_isolated':'esm','esm_bc':'bc1'}
+          assert p['coordinate_convention']=={'atomic_position_card':'angstrom','origin':'cartesian_z_zero'}
+          assert float(p['tolerance_mev_per_surface_atom'])==1.0 and s['status']=='PASS'
+          inp=Path('bound/PRIOR_CLEAN_RELAX.in').read_text()
+          out=Path('bound/PRIOR_CLEAN_RELAX.out').read_text(errors='replace')
+          assert "calculation = 'relax'" in inp and "assume_isolated = 'esm'" in inp and "esm_bc = 'bc1'" in inp
+          assert 'ATOMIC_POSITIONS angstrom' in inp and '90.00000000' in inp and '270.00000000' in inp
+          assert re.search(r'^16 16 1 0 0 0$',inp,re.M)
+          assert 'End of BFGS Geometry Optimization' not in out
+          sha=lambda q: hashlib.sha256(Path(q).read_bytes()).hexdigest()
+          chain={'schema':'na-cu001-clean-surface-chain-recovery-provenance-v0.1','prior_clean_recovery_run_id':int(os.environ['PRIOR_CLEAN_RUN_ID']),'prior_clean_recovery_commit':os.environ['PRIOR_CLEAN_COMMIT'],'prior_continuation_record_sha256':sha('bound/PRIOR_CLEAN_CONTINUATION.json'),'prior_input_sha256':sha('bound/PRIOR_CLEAN_RELAX.in'),'prior_output_sha256':sha('bound/PRIOR_CLEAN_RELAX.out'),'scientific_settings_changed':False}
+          Path('bound/CHAIN_RECOVERY_PROVENANCE.json').write_text(json.dumps(chain,indent=2)+'\n')
+          src=Path('control/na_cu001_ci/clean_surface_timeout_recovery_v1.py').read_text()
+          old='if "JOB DONE." in partial_text or "End of BFGS Geometry Optimization" in partial_text:'
+          new='if "End of BFGS Geometry Optimization" in partial_text:'
+          assert src.count(old)==1
+          Path('runtime/clean_surface_timeout_recovery_chain.py').write_text(src.replace(old,new,1))
+          PY
+          python3 -m py_compile runtime/clean_surface_timeout_recovery_chain.py
+          chmod +x qe_bundle/bin/pw.x
+          sha256sum -c qe_bundle/meta/engine_binaries.sha256
+          echo 'b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d  qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' | sha256sum -c -
+          sha256sum bound/PRIOR_CLEAN_RELAX.in bound/PRIOR_CLEAN_RELAX.out bound/PRIOR_CLEAN_CONTINUATION.json bound/CHAIN_RECOVERY_PROVENANCE.json bound/ELECTROSTATIC_CONSISTENCY.json bound/SLAB_HANDOFF.json runtime/clean_surface_timeout_recovery_chain.py > bound/CHAIN_RECOVERY_INPUTS.sha256
+          find prior_clean -type d -name tmp -prune -exec rm -rf {} + 2>/dev/null || true
+
+      - name: Continue exact accepted geometry
+        id: recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p clean_recovery
+          set +e
+          python3 runtime/clean_surface_timeout_recovery_chain.py \
+            --source-dir source_code/na_cu001_ci \
+            --control-dir control/na_cu001_ci \
+            --partial-output bound/PRIOR_CLEAN_RELAX.out \
+            --partial-input bound/PRIOR_CLEAN_RELAX.in \
+            --slab-handoff bound/SLAB_HANDOFF.json \
+            --parity-handoff bound/ELECTROSTATIC_CONSISTENCY.json \
+            --protocol source_code/na_cu001_ci/method_protocol_v0.2.json \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --out-dir clean_recovery/raw \
+            --out clean_recovery/RELAXED_CLEAN_SURFACE_HANDOFF.json \
+            --np 2 \
+            --max-seconds 12000 \
+            --source-run-id "$SOURCE_C7_RUN_ID" \
+            --source-commit "$SOURCE_C7_COMMIT" \
+            --parity-run-id "$PARITY_RUN_ID" \
+            --parity-commit "$PARITY_COMMIT" \
+            --original-clean-run-id "$ROOT_ORIGINAL_CLEAN_RUN_ID" \
+            --original-clean-commit "$ROOT_ORIGINAL_CLEAN_COMMIT" \
+            --control-commit "$GITHUB_SHA"
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > clean_recovery/RECOVERY_EXIT_CODE.txt
+          cp bound/CHAIN_RECOVERY_PROVENANCE.json clean_recovery/CHAIN_RECOVERY_PROVENANCE.json
+          find clean_recovery/raw -type d -name tmp -prune -exec rm -rf {} + 2>/dev/null || true
+          find clean_recovery/raw -type f \( -name '*.in' -o -name '*.out' -o -name '*.json' \) -print0 | sort -z | xargs -0 -r sha256sum > clean_recovery/CLEAN_RECOVERY_RAW_MANIFEST.sha256
+          exit 0
+
+      - name: Upload chained checkpoint or PASS
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c8-clean-surface-timeout-recovery-v5
+          path: |
+            clean_recovery
+            bound
+            run_meta
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Enforce result
+        shell: bash
+        run: |
+          set -euo pipefail
+          rc=$(cat clean_recovery/RECOVERY_EXIT_CODE.txt)
+          if [[ "$rc" -eq 75 ]]; then
+            echo 'Mechanical chained continuation checkpointed before the frozen 0.02 eV/A force gate converged.' >&2
+            exit 75
+          fi
+          test "$rc" -eq 0
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('clean_recovery/RELAXED_CLEAN_SURFACE_HANDOFF.json').read_text())
+          assert r['schema']=='na-cu001-relaxed-clean-surface-handoff-v0.2' and r['status']=='PASS'
+          assert r['method']['electrostatics']=={'assume_isolated':'esm','esm_bc':'bc1'}
+          assert r['method']['coordinate_convention']=={'atomic_position_card':'angstrom','origin':'cartesian_z_zero'}
+          assert r['pass_checks']['max_force_le_0p02_ev_per_angstrom'] is True
+          assert r['pass_checks']['mirror_pair_error_le_0p01_angstrom'] is True
+          assert r['pass_checks']['independent_energy_reproduction_le_0p001_ev'] is True
+          assert r['provenance']['scientific_settings_changed'] is False
+          assert r['next_gate']=='adsorption_site_screening'
+          PY

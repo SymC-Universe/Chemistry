@@ -1,0 +1,221 @@
+name: Na Cu001 C8 clean surface v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/clean_surface_centered_v1.py'
+      - '.github/workflows/na-cu001-c8-clean-surface-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c8-clean-surface-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_C7_RUN_ID: '30949901790'
+  SOURCE_C7_COMMIT: '8ca3f708537886050ef18210315e79a43595d3f3'
+  PARITY_RUN_ID: '31202274429'
+  PARITY_COMMIT: '8d1399358f4ce5561f4ff3c4c6e9cb434d646bd1'
+  PARITY_ARTIFACT: 'na-cu001-c7-electrostatic-consistency-v1'
+
+jobs:
+  clean-surface:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout clean-gate control commit
+        uses: actions/checkout@v4
+        with:
+          path: control
+
+      - name: Checkout exact frozen C7 source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_C7_COMMIT }}
+          path: source_code
+
+      - name: Verify clean-gate control and frozen protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C control rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C source_code rev-parse HEAD)" = "$SOURCE_C7_COMMIT"
+          python3 -m py_compile control/na_cu001_ci/clean_surface_centered_v1.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('source_code/na_cu001_ci/method_protocol_v0.2.json').read_text())
+          assert p['schema']=='na-cu001-method-protocol-v0.2'
+          assert p['status']=='FROZEN_BEFORE_DOWNSTREAM_RESULTS'
+          assert float(p['surface']['force_tolerance_ev_per_angstrom'])==0.02
+          assert float(p['surface']['energy_reproduction_tolerance_ev'])==0.001
+          assert p['surface']['registered_electrostatic_convention']['assume_isolated']=='esm'
+          assert p['surface']['registered_electrostatic_convention']['esm_bc']=='bc1'
+          PY
+
+      - name: Install QE runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gh openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
+
+      - name: Await and verify electrostatic consistency PASS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p upstream
+          completed=0
+          for attempt in $(seq 1 360); do
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PARITY_RUN_ID}" > upstream/PARITY_RUN.json
+            state=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('upstream/PARITY_RUN.json').read_text())
+          print(r['status'])
+          PY
+          )
+            if [[ "$state" == "completed" ]]; then
+              completed=1
+              break
+            fi
+            sleep 30
+          done
+          test "$completed" -eq 1
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads(Path('upstream/PARITY_RUN.json').read_text())
+          assert r['status']=='completed'
+          assert r['conclusion']=='success'
+          assert r['head_sha']==os.environ['PARITY_COMMIT']
+          PY
+
+      - name: Download electrostatic consistency evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARITY_ARTIFACT }}
+          path: parity_upstream
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.PARITY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download original C7 QE bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-qe
+          path: qe_bundle
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_C7_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify parity handoff and QE provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bound
+          parity=$(find parity_upstream -type f -name ELECTROSTATIC_CONSISTENCY.json -print -quit)
+          slab=$(find parity_upstream -type f -name SLAB_HANDOFF.json -print -quit)
+          test -n "$parity" && test -n "$slab"
+          cp "$parity" bound/ELECTROSTATIC_CONSISTENCY.json
+          cp "$slab" bound/SLAB_HANDOFF.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=json.loads(Path('bound/ELECTROSTATIC_CONSISTENCY.json').read_text())
+          s=json.loads(Path('bound/SLAB_HANDOFF.json').read_text())
+          assert p['schema']=='na-cu001-electrostatic-consistency-v0.3'
+          assert p['status']=='PASS'
+          assert p['selected_slab']=={'layers':11,'vacuum_angstrom':12.0,'kmesh_inplane':16}
+          assert p['selected_convention']=={'assume_isolated':'esm','esm_bc':'bc1'}
+          assert p['coordinate_convention']=={'atomic_position_card':'angstrom','origin':'cartesian_z_zero'}
+          assert float(p['tolerance_mev_per_surface_atom'])==1.0
+          assert p['pass_checks']['periodic_diagnostic_nonselecting'] is True
+          assert p['next_gate']=='clean_surface_relaxation'
+          assert int(p['provenance']['source_c7_run_id'])==int(os.environ['SOURCE_C7_RUN_ID'])
+          assert p['provenance']['source_c7_commit']==os.environ['SOURCE_C7_COMMIT']
+          assert int(p['provenance']['definitive_audit_run_id'])==31200916291
+          assert p['provenance']['control_commit']==os.environ['PARITY_COMMIT']
+          assert p['provenance']['scientific_settings_changed'] is False
+          assert s['status']=='PASS' and s['next_gate']=='electrostatic_parity'
+          assert s['selected_slab_settings']['coordinate_convention']['origin']=='cartesian_z_zero'
+          PY
+          chmod +x qe_bundle/bin/pw.x
+          sha256sum -c qe_bundle/meta/engine_binaries.sha256
+          echo 'b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d  qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' | sha256sum -c -
+
+      - name: Execute centered clean-surface relaxation gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p clean clean_raw
+          set +e
+          python3 control/na_cu001_ci/clean_surface_centered_v1.py \
+            --source-dir source_code/na_cu001_ci \
+            --slab-handoff bound/SLAB_HANDOFF.json \
+            --parity-handoff bound/ELECTROSTATIC_CONSISTENCY.json \
+            --protocol source_code/na_cu001_ci/method_protocol_v0.2.json \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --out-dir clean_raw \
+            --out clean/RELAXED_CLEAN_SURFACE_HANDOFF.json \
+            --np 2 \
+            --source-run-id "$SOURCE_C7_RUN_ID" \
+            --source-commit "$SOURCE_C7_COMMIT" \
+            --parity-run-id "$PARITY_RUN_ID" \
+            --parity-commit "$PARITY_COMMIT" \
+            --control-commit "$GITHUB_SHA"
+          gate_rc=$?
+          set -e
+          printf '%s\n' "$gate_rc" > clean/GATE_EXIT_CODE.txt
+          find clean_raw -type d -name tmp -prune -exec rm -rf {} + 2>/dev/null || true
+          find clean_raw -type f \( -name '*.in' -o -name '*.out' -o -name '*.json' \) -print0 \
+            | sort -z | xargs -0 -r sha256sum > clean/CLEAN_RAW_MANIFEST.sha256
+          sha256sum bound/ELECTROSTATIC_CONSISTENCY.json bound/SLAB_HANDOFF.json source_code/na_cu001_ci/method_protocol_v0.2.json control/na_cu001_ci/clean_surface_centered_v1.py \
+            > clean/CLEAN_CONTROL_MANIFEST.sha256
+          if test -f clean/RELAXED_CLEAN_SURFACE_HANDOFF.json; then
+            sha256sum clean/RELAXED_CLEAN_SURFACE_HANDOFF.json > clean/RELAXED_CLEAN_SURFACE_HANDOFF.sha256
+          fi
+
+      - name: Upload clean-surface evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-c8-clean-surface-v1
+          path: |
+            clean
+            clean_raw
+            bound
+            upstream/PARITY_RUN.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Enforce clean-surface gate result
+        shell: bash
+        run: |
+          set -euo pipefail
+          rc=$(cat clean/GATE_EXIT_CODE.txt)
+          test "$rc" -eq 0
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('clean/RELAXED_CLEAN_SURFACE_HANDOFF.json').read_text())
+          assert r['schema']=='na-cu001-relaxed-clean-surface-handoff-v0.2'
+          assert r['status']=='PASS'
+          assert r['method']['electrostatics']=={'assume_isolated':'esm','esm_bc':'bc1'}
+          assert r['method']['coordinate_convention']=={'atomic_position_card':'angstrom','origin':'cartesian_z_zero'}
+          assert r['constraint_protocol']=='symmetric clean slab; outer two layer pairs z-only; inner layers fixed'
+          assert r['pass_checks']['max_force_le_0p02_ev_per_angstrom'] is True
+          assert r['pass_checks']['mirror_pair_error_le_0p01_angstrom'] is True
+          assert r['pass_checks']['independent_energy_reproduction_le_0p001_ev'] is True
+          assert r['provenance']['scientific_settings_changed'] is False
+          assert r['provenance']['coordinate_origin_correction_only'] is True
+          assert r['next_gate']=='adsorption_site_screening'
+          PY
