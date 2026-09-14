@@ -26,14 +26,14 @@
   ],
   "components": {
     "program_governance": {
-      "deployment_state": "WIRED",
+      "deployment_state": "ACTIVE",
       "protocol": "governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.1.json",
       "workflow": ".github/workflows/program-governance-audit.yml",
-      "latest_successful_audit_run_id": 34840981401,
-      "latest_successful_audit_commit": "ceb3bfaecf741833343ea1cc63a8f2ad2d0c3055",
+      "v1_1_registry_qualification_run_id": 34841401307,
+      "v1_1_registry_qualification_commit": "6c30e54b31ef1f49766c6b2b58c91ece49f5eb4c",
+      "v1_1_registry_qualification_conclusion": "success",
       "execution_state": "IDLE",
-      "promotion_candidate": "ACTIVE_AFTER_V1_1_REGISTRY_CI_PASS",
-      "claim_allowed": "Governance v1.1 is frozen, previously audit-passing, and wired. This v1.1 registry remains WIRED until CI independently validates the new registry/verifier pair."
+      "claim_allowed": "Governance v1.1 and the v1.1 deployment/execution registry pair have passed CI. The governance deployment is ACTIVE while current execution remains IDLE."
     },
     "qe_native_checkpoint_restart": {
       "deployment_state": "ACTIVE",
