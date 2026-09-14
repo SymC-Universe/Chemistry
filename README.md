@@ -106,3 +106,18 @@ Refusal or nonidentifiability is a valid result when the required reduction or p
 The repository includes current and historical manuscript assets, reproducibility packages, Barrier Atlas data and validation tools, and prospective computational workflows for chemistry systems under test.
 
 See the individual protocol, README, validation, and reproducibility files associated with each release or system for the exact scientific contract that applies to that object.
+
+## Governance and current state
+
+The current program-level governance baseline is **SymC General Operations Manual v0.8.0**. Chemistry-specific scientific safeguards remain local rather than being duplicated into the program manual.
+
+Current pointers:
+
+- GOM adoption record: `governance/CHEMISTRY_GOM_V0_8_0_ADOPTION_2026-09-14.md`
+- Chemistry project guardrails: `governance/CHEMISTRY_PROJECT_GUARDRAILS_GOM_V0_8_0.md`
+- current project-state pointer: `CHEMISTRY_PROJECT_STATE_2026-09-14.md`
+- work that can proceed independently of long computation: `CHEMISTRY_NONCOMPUTE_WORKLIST_2026-09-14.md`
+- frozen scalar-modal inheritance contract: `systems/CHEMISTRY_STABILITY_ARC_INHERITANCE_v0.1.json`
+- historical consolidated closure snapshot: `PROGRAM_CLOSURE_STATUS_2026-09-04.md`
+
+The governance reconciliation does not reopen numerical HOLDs, change scientific settings, or promote any claim. Before inheriting an active computation, verify the actual workflow/run/checkpoint source of truth rather than inferring activity from the existence of a workflow or monitor.
