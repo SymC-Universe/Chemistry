@@ -21,6 +21,12 @@ The existing frozen scalar-modal inheritance contract remains:
 
 `systems/CHEMISTRY_STABILITY_ARC_INHERITANCE_v0.1.json`
 
+Current deployment capability and current execution state are tracked separately in:
+
+`governance/IMPLEMENTATION_STATUS_v1.1.json`
+
+Historical `governance/IMPLEMENTATION_STATUS_v1.0.json` is retained as earlier deployment-state evidence rather than rewritten. The v1.1 registry separates a deployed/qualified capability from whether a computation is actually queued or running.
+
 No scientific threshold, numerical setting, method, result, or interpretation is changed by the GOM reconciliation.
 
 ## 2. Execution-state check at capture
@@ -29,7 +35,7 @@ A GitHub Actions repository audit on 14 September 2026 found **no in-progress an
 
 This statement is deliberately narrow. It does not assert that no local, external, manually hosted, or otherwise non-GitHub computation exists. Any such active computation must be tracked from its own source of truth.
 
-Monitoring is not counted as scientific computation.
+Monitoring or an `ACTIVE` deployment capability is not counted as scientific computation. Execution state must be read separately.
 
 ## 3. Existing scientific state retained from the latest consolidated closure record
 
