@@ -63,11 +63,15 @@ def main() -> None:
 
     pg = comps.get("program_governance", {})
     require(pg.get("protocol") == "governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.1.json", "program-governance pointer drift")
-    require(pg.get("deployment_state") == "WIRED", "new v1.1 registry must remain WIRED until this registry passes CI")
+    require(pg.get("deployment_state") == "ACTIVE", "CI-qualified governance deployment is not ACTIVE")
     require(pg.get("workflow") == ".github/workflows/program-governance-audit.yml", "program-governance workflow drift")
-    require(pg.get("latest_successful_audit_run_id") == 34840981401, "prior successful governance audit identity drift")
-    require(pg.get("execution_state") == "IDLE", "governance audit incorrectly claims running execution")
-    require(pg.get("promotion_candidate") == "ACTIVE_AFTER_V1_1_REGISTRY_CI_PASS", "governance promotion boundary drift")
+    require(pg.get("v1_1_registry_qualification_run_id") == 34841401307, "v1.1 registry qualification run drift")
+    require(
+        pg.get("v1_1_registry_qualification_commit") == "6c30e54b31ef1f49766c6b2b58c91ece49f5eb4c",
+        "v1.1 registry qualification commit drift",
+    )
+    require(pg.get("v1_1_registry_qualification_conclusion") == "success", "v1.1 registry qualification PASS lost")
+    require(pg.get("execution_state") == "IDLE", "governance deployment incorrectly claims running execution")
 
     qe = comps.get("qe_native_checkpoint_restart", {})
     require(qe.get("deployment_state") == "ACTIVE", "qualified/wired QE restart deployment state drift")
@@ -151,7 +155,7 @@ def main() -> None:
     print("SYSTEM3_STATUS=CLEAN_SURFACE_NUMERICAL_HOLD")
     print("QE_DEPLOYMENT_STATE=ACTIVE")
     print("QE_EXECUTION_STATE=IDLE")
-    print("PROGRAM_GOVERNANCE_DEPLOYMENT_STATE=WIRED")
+    print("PROGRAM_GOVERNANCE_DEPLOYMENT_STATE=ACTIVE")
 
 
 if __name__ == "__main__":
