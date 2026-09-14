@@ -2,6 +2,8 @@
 
 This repository contains the current ChemSA chemistry program, its reproducibility assets, the Barrier-Height/Rate Atlas, and prospective computational system tests.
 
+Program-wide governance follows the **SymC General Operations Manual v0.8.0**. Chemistry-specific equations, thresholds, system definitions, evidence contracts, and frozen scientific settings remain governed by their versioned project-local protocols.
+
 The present scientific scope is **generator first**. A scalar stability coordinate is reported only when the physical and mathematical reduction that licenses it has been established. Scalar quantities remain attached to the mode, reaction coordinate, subspace, or generator from which they are derived.
 
 ## Current core
@@ -67,17 +69,19 @@ The Barrier-Height/Rate Atlas is maintained as a separate evidence structure for
 
 Its validation rules explicitly forbid substituting well-side ChemSA `chi` for barrier-local friction. Barrier height, reaction rate, damping morphology, transmission, friction regime, and exceptional-point proximity remain distinct quantities unless a separately frozen comparison establishes a relation.
 
-## Current prospective computational systems
+## Current prospective computational systems and adjudicated holds
 
 ### System 2: CO/Cu(111)
 
-The active CO/Cu(111) program is a frozen, staged first-principles workflow. Numerical convergence, clean-surface validation, adsorption-site ordering, reaction-path construction, and later dissipation validation are separated so that kinetic outcomes cannot tune upstream electronic-structure choices.
+The CO/Cu(111) program is a frozen, staged first-principles workflow. Numerical convergence, clean-surface validation, adsorption-site ordering, reaction-path construction, and later dissipation validation are separated so that kinetic outcomes cannot tune upstream electronic-structure choices.
 
-The current clean-surface audit and its no-recompute site-ordering handoff remain unchanged by the scalar-modal reporting update.
+The current adjudicated state is **`NUMERICAL_HOLD_EXTENSION_AUDIT`**. The frozen L15 extension did not satisfy the frozen clean-surface convergence rule, so adsorption-site ordering and downstream kinetic progression remain blocked. An identical rerun cannot convert the HOLD into PASS. Any deeper layer extension is a new scientific rung and requires a prospectively frozen protocol plus explicit authorization.
 
 ### System 3: H/Ru(0001)
 
 H/Ru(0001) is the selected contrast/limit system. Its prospective protocol treats nuclear quantum effects explicitly and refuses a full rate claim if the required quantum tier, coordinate matching, or dissipation provenance is not established.
+
+The current adjudicated state is **`CLEAN_SURFACE_NUMERICAL_HOLD`** because the frozen layer-suffix convergence rule was not satisfied. Automatic adsorption progression remains blocked. The lawful next scientific choices are either terminal closure at the HOLD or a prospectively frozen bounded higher-layer extension.
 
 No ChemSA `chi` is assigned until a physically matched projected damping/friction quantity and the corresponding mode or reaction coordinate pass their validators.
 
@@ -86,6 +90,8 @@ No ChemSA `chi` is assigned until a physically matched projected damping/frictio
 Repository code and deposited data are the canonical computational sources for numerical results. Published figures and tables should be reproducible from preserved scripts and source data, with hashes and validation records retained where material.
 
 Historical failures, refusals, numerical holds, and superseded mechanical execution routes remain part of the provenance record and are not rewritten as successes.
+
+The current program-level status record is `PROGRAM_CLOSURE_STATUS_2026-09-04.md`. GOM v0.8.0 migration/congruency is recorded in `governance/GOM_v0.8.0_CHEMISTRY_CONGRUENCY_AUDIT_2026-09-14.md`.
 
 ## Scope and nonclaims
 
