@@ -1,0 +1,69 @@
+{
+  "schema": "h-ru0001-clean-surface-layer-extension-v0.1",
+  "status": "FROZEN_BEFORE_EXTENSION_RESULTS",
+  "effective_date": "2026-09-16",
+  "system": "H/Ru(0001)",
+  "scope": "BOUNDED_NON_KINETIC_CLEAN_SURFACE_LAYER_EXTENSION",
+  "purpose": "Test whether the non-monotonic L5-L13 fixed-grid Ru(0001) layer sequence enters a stable asymptotic regime when extended prospectively to L15, L17, and L19. This is not a search for a passing layer; all three new rungs are evaluated against one unchanged suffix rule.",
+  "source_evidence": {
+    "workflow_run_id": 33389260021,
+    "artifact_id": 9762681665,
+    "artifact_name": "system3-h-ru0001-clean-surface-numerical-v2",
+    "artifact_digest": "sha256:998bc25b602048ef1709eaccb232342648f83b00f6bcd0b6678960937570cf7a",
+    "required_source_status": "CLEAN_SURFACE_NUMERICAL_HOLD",
+    "required_failed_gate": "layer_stage",
+    "prior_layers": [5, 7, 9, 11, 13],
+    "prior_terminal_layers": 13,
+    "prior_layer_deltas_to_terminal_ev_per_surface_atom": [0.006105622814175149, 0.00023748736930429004, 0.002743519986324827, 0.003122234460533946, 0.0]
+  },
+  "extension": {
+    "new_layers": [15, 17, 19],
+    "minimum_eligible_layers": 7,
+    "terminal_reference_layers": 19,
+    "parallel_case_execution_allowed": true,
+    "selection_rule": "Using the complete ordered layer ladder 5,7,9,11,13,15,17,19, select the lowest non-terminal layer >=7 for which that layer and every larger tested layer differ from the L19 terminal surface excess by no more than 0.001 eV per surface atom. If no such suffix exists, return HOLD. No single isolated in-tolerance rung is a PASS.",
+    "automatic_further_extension": false
+  },
+  "frozen_method": {
+    "exchange_correlation": "PBE",
+    "ecutwfc_ry": 70,
+    "ecutrho_ry": 280,
+    "bulk_a_angstrom": 2.7252915734660723,
+    "bulk_c_angstrom": 4.294686728521268,
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "occupations": "smearing",
+    "smearing": "mv",
+    "surface_geometry": "bulk-truncated symmetric Ru(0001), fixed coordinates",
+    "vacuum_and_surface_kmesh": "inherit exactly from the adjudicated source result; no retuning",
+    "fresh_bulk_reference": "reuse the source run's independently computed high-k bulk chemical potential",
+    "absolute_surface_excess_tolerance_ev_per_surface_atom": 0.001
+  },
+  "runtime": {
+    "execution_mode": "DIRECT_ONE_RANK",
+    "mpi_ranks": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "per_scf_timeout_seconds": 14400,
+    "case_timeout_is_mechanical_only": true
+  },
+  "evidence_firewall": {
+    "H_Ru_kinetic_values_used": false,
+    "H_Ru_barriers_used": false,
+    "published_site_ordering_used": false,
+    "chi_used": false,
+    "capital_Chi_outcome_used": false,
+    "System2_result_used": false,
+    "threshold_retuning_after_results_allowed": false
+  },
+  "decision": {
+    "pass_status": "PASS_FIXED_GRID_LAYER_ASYMPTOTIC_REGIME",
+    "pass_next_gate": "H_RU0001_CLEAN_SURFACE_RELAXATION_AND_REPRODUCTION",
+    "hold_status": "CLEAN_SURFACE_LAYER_EXTENSION_HOLD",
+    "hold_next_gate": "STOP_AND_ADJUDICATE_BEFORE_ANY_FURTHER_LAYER_EXTENSION",
+    "automatic_adsorption_progression": false
+  }
+}
