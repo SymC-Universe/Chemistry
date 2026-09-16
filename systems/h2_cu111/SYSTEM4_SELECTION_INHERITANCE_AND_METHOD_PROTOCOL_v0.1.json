@@ -1,0 +1,97 @@
+{
+  "schema": "symc-chemistry-system4-h2-cu111-selection-inheritance-method-v0.1",
+  "status": "FROZEN_BEFORE_SYSTEM4_TARGET_SURFACE_RESULTS",
+  "system": "H2/Cu(111)",
+  "system_role": "cross_reaction_same_substrate_bridge_test",
+  "frozen_on": "2026-09-16",
+  "governing_program_baseline": "General Cross-Project Research Protocol v0.8.0",
+  "purpose": "Test whether independently established Cu(111) substrate evidence can be inherited across a different reaction while all H2-specific adsorption, dissociation, saddle, mode, dissipation and kinetic quantities remain independently established and separately typed.",
+  "capital_chi_scope": {
+    "target_record": "typed partial-or-full system record only to the extent independently licensed evidence exists",
+    "no_universal_scalar_chi": true,
+    "no_lowercase_chi_from_barrier_or_rate_alone": true,
+    "friction_tensor_or_projected_friction_must_not_be_relabelled_as_mechanical_chi_without_a_valid_reduction": true
+  },
+  "known_external_outcomes_quarantined_before_target_computation": {
+    "primary_thermal_rate_source": {
+      "citation": "Nitz et al., Thermal Rates and High-Temperature Tunneling from Surface Reaction Dynamics and First-Principles, J. Am. Chem. Soc. 146, 31538-31546 (2024)",
+      "doi": "10.1021/jacs.4c09017",
+      "license": "CC-BY-4.0",
+      "known_comparator_facts": [
+        "thermal adsorption and recombinative-desorption rates are reported over 200-1000 K",
+        "reported dissociative adsorption barrier is 0.619 +/- 0.020 eV",
+        "reported adsorption energy is 0.348 +/- 0.026 eV",
+        "nuclear quantum tunneling is reported to remain important into the several-hundred-kelvin regime"
+      ],
+      "allowed_role": "held-out external comparator after method and numerical choices are frozen",
+      "forbidden_role": "must not select or tune XC functional, pseudopotential, cutoff, slab depth, vacuum, k mesh, supercell, adsorption geometry, reaction path, barrier threshold, quantum-treatment settings, friction model or acceptance threshold"
+    },
+    "electronic_friction_source": {
+      "citation": "Spiering and Meyer, Testing Electronic Friction Models: Vibrational De-excitation in Scattering of H2 and D2 from Cu(111), J. Phys. Chem. Lett. 9, 1803-1808 (2018)",
+      "doi": "10.1021/acs.jpclett.7b03182",
+      "known_exposure": "LDFA and orbital-dependent friction are published for the six-dimensional H2/Cu(111) problem; anisotropic reaction-coordinate friction can differ substantially near the transition state while sticking probabilities can be comparatively insensitive.",
+      "allowed_role": "define candidate dissipation observables and later external comparison only",
+      "forbidden_role": "must not tune the new barrier/path calculation to match published friction-dependent outcomes"
+    }
+  },
+  "substrate_inheritance_contract": {
+    "state": "PENDING_CO_CU111_L19_FINAL_ADJUDICATION",
+    "source_system": "CO/Cu(111)",
+    "inheritance_allowed_only_if": [
+      "CO/Cu(111) clean Cu(111) L19 extension reaches its frozen scientific PASS state",
+      "the accepted Cu(111) substrate artifact and all relevant numerical identities are preserved by hash/provenance",
+      "System 4 uses a compatible Cu pseudopotential family, bulk reference, electrostatic convention and slab construction or explicitly revalidates any changed item"
+    ],
+    "may_inherit": [
+      "clean Cu bulk lattice/numerical reference where method-compatible",
+      "clean Cu(111) slab depth/vacuum/k-density evidence where method-compatible",
+      "clean-surface provenance and exact runtime identities where applicable"
+    ],
+    "must_not_inherit": [
+      "CO adsorption geometry or site ordering",
+      "CO reaction energetics",
+      "CO vibrational modes",
+      "CO friction or damping quantities",
+      "CO barriers or rates",
+      "any H2-specific supercell/coverage convergence",
+      "any H2 dissociation path or saddle"
+    ],
+    "failure_rule": "If the CO/Cu(111) substrate gate remains HOLD or if System 4 changes a substrate-defining method choice, System 4 must perform its own prospectively frozen clean Cu(111) substrate convergence rather than treating the CO result as inherited evidence."
+  },
+  "work_authorized_before_substrate_inheritance_resolves": [
+    "literature evidence-lineage and comparator registration",
+    "H pseudopotential provenance and transferability qualification independent of target rate/barrier agreement",
+    "isolated H2 molecular-reference numerical checks independent of surface target outcomes",
+    "exact QE/runtime identity qualification",
+    "supercell/coverage discovery-plan freeze without inspecting H2/Cu target energies",
+    "reaction-coordinate and saddle-validation rules freeze",
+    "nuclear-quantum-treatment decision rules freeze",
+    "dissipation-provenance/refusal rules freeze",
+    "build code/tests/workflow in dry-run or non-target preflight mode"
+  ],
+  "target_surface_work_blocked_until_substrate_dependency_resolves": [
+    "H2/Cu(111) adsorption/dissociation production energies",
+    "target surface path or saddle search",
+    "target surface vibrational analysis",
+    "surface rate calculation used for comparator evaluation"
+  ],
+  "method_selection_rule": {
+    "principle": "Choose and freeze the lowest-cost method that passes non-kinetic numerical, pseudopotential, gas-phase molecular and clean-substrate structural gates.",
+    "kinetic_or_barrier_closeness_tiebreaker": "FORBIDDEN",
+    "note": "The 2024 comparator paper used experimentally derived barrier information to validate/select its production PES. That is valuable published science but cannot be reused as an independent method-selection route for this prospectively tested System 4 record."
+  },
+  "planned_system4_sequence": [
+    "S4-0 evidence firewall and provenance freeze",
+    "S4-1 H pseudopotential plus isolated-H2 numerical qualification",
+    "S4-2 resolve Cu(111) substrate inheritance or launch independent substrate convergence",
+    "S4-3 prospectively frozen H2 coverage/supercell screen",
+    "S4-4 dissociative adsorption path and saddle",
+    "S4-5 mode/reaction-coordinate characterization",
+    "S4-6 independently sourced dissipation mapping with refusal if projection is not licensed",
+    "S4-7 classical baseline rate",
+    "S4-8 nuclear-quantum rate tier if compute and convergence gates are satisfied",
+    "S4-9 held-out experimental comparison and typed capital-Chi assembly"
+  ],
+  "current_next_gate": "S4-1_H_PSEUDOPOTENTIAL_AND_ISOLATED_H2_QUALIFICATION_FREEZE",
+  "scientific_settings_changed_after_target_results": false
+}
