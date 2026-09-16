@@ -1,0 +1,102 @@
+name: System3 H Ru0001 layer-extension adjudication recovery v1
+
+on:
+  push:
+    branches: [bridge/h-ru0001-l15-l19-20260916]
+    paths:
+      - '.github/workflows/system3-h-ru0001-layer-extension-adjudication-recovery-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: h-ru0001-layer-extension-adjudication-recovery-v1
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: systems/h_ru0001/SYSTEM3_CLEAN_RU0001_LAYER_EXTENSION_L15_L19_v0.1.json
+  RUNNER: systems/h_ru0001/system3_ru_layer_extension_v1.py
+  TEST: systems/h_ru0001/test_system3_ru_layer_extension_v1.py
+  BULK_ADJUDICATION: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json
+  SOURCE_RUN_ID: '33389260021'
+  SOURCE_ARTIFACT: system3-h-ru0001-clean-surface-numerical-v2
+  EXTENSION_RUN_ID: '35060420908'
+
+jobs:
+  adjudicate-recovered-artifacts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify mechanical-only recovery contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['PROTOCOL']))
+          assert p['status']=='FROZEN_BEFORE_EXTENSION_RESULTS'
+          assert p['source_evidence']['prior_layers']==[5,7,9,11,13]
+          assert p['extension']['new_layers']==[15,17,19]
+          assert p['extension']['terminal_reference_layers']==19
+          assert p['extension']['automatic_further_extension'] is False
+          assert p['frozen_method']['absolute_surface_excess_tolerance_ev_per_surface_atom']==0.001
+          assert all(v is False for v in p['evidence_firewall'].values())
+          print('MECHANICAL_ONLY_ADJUDICATION_RECOVERY_VERIFIED')
+          PY
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ARTIFACT }}
+          path: source
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: h-ru0001-layer-extension-v2-L15
+          path: cases/L15
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.EXTENSION_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: h-ru0001-layer-extension-v2-L17
+          path: cases/L17
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.EXTENSION_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: h-ru0001-layer-extension-v2-L19
+          path: cases/L19
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.EXTENSION_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Adjudicate preserved L5-L19 ladder without recomputation or retuning
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" adjudicate \
+            --protocol "$PROTOCOL" \
+            --source-root source \
+            --bulk-adjudication "$BULK_ADJUDICATION" \
+            --case-root cases \
+            --out H_RU0001_LAYER_EXTENSION_ADJUDICATION.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: h-ru0001-layer-extension-adjudication-recovery-v1
+          path: H_RU0001_LAYER_EXTENSION_ADJUDICATION.json
+          retention-days: 90
+          if-no-files-found: error
