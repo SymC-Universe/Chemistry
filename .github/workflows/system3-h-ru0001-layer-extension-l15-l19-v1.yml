@@ -26,8 +26,8 @@ env:
   BULK_PROTOCOL: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json
   SOURCE_RUN_ID: '33389260021'
   SOURCE_ARTIFACT: system3-h-ru0001-clean-surface-numerical-v2
-  ENGINE_RUN_ID: '30949901790'
-  ENGINE_ARTIFACT: na-cu001-c7-qe
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
 
 jobs:
   preflight:
