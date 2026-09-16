@@ -49,6 +49,40 @@ def source_layer_rows(src):
                 "surface_excess_ev_per_surface_atom": float(r["surface_excess_ev_per_surface_atom"]),
                 "origin": "source_run",
             }
+
+    # The source convergence ladder reuses the already selected L7 slab from the
+    # k-mesh/vacuum stages rather than recomputing L7 in the later layer stage.
+    # Recover that exact selected baseline record when it is therefore absent
+    # from first_stage_requested == "layers". This changes only record routing;
+    # no energy, threshold, geometry, method, or acceptance rule is changed.
+    selected_kmesh = src.get("selected_kmesh")
+    selected_vacuum = src.get("selected_total_vacuum_angstrom")
+    if selected_kmesh and selected_vacuum is not None:
+        candidates = []
+        for r in src.get("raw_records", []):
+            if r.get("kind") != "slab_scf":
+                continue
+            if list(r.get("kmesh") or []) != [int(x) for x in selected_kmesh]:
+                continue
+            if abs(float(r.get("total_vacuum_angstrom")) - float(selected_vacuum)) > 1e-12:
+                continue
+            candidates.append(r)
+        by_layer = {}
+        for r in candidates:
+            by_layer.setdefault(int(r["layers"]), []).append(r)
+        for layer, matches in by_layer.items():
+            if layer in rows:
+                continue
+            if len(matches) != 1:
+                raise SystemExit(
+                    f"MECHANICAL_HOLD: selected source condition has {len(matches)} records for L{layer}"
+                )
+            r = matches[0]
+            rows[layer] = {
+                "layers": layer,
+                "surface_excess_ev_per_surface_atom": float(r["surface_excess_ev_per_surface_atom"]),
+                "origin": "source_selected_baseline",
+            }
     return [rows[k] for k in sorted(rows)]
 
 
