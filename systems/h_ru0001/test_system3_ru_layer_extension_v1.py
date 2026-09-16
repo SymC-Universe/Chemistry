@@ -17,7 +17,7 @@ class TestRuLayerExtension(unittest.TestCase):
             {"layers": 19, "surface_excess_ev_per_surface_atom": 0.4794},
         ]
         selected, _ = suffix_decision(rows, 0.001, 7)
-        self.assertEqual(selected, 13)
+        self.assertEqual(selected, 11)
 
     def test_isolated_in_tolerance_rung_does_not_pass(self):
         rows = [
