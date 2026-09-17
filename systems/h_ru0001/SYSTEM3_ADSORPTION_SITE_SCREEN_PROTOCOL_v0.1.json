@@ -1,0 +1,115 @@
+{
+  "schema": "symc-system3-h-ru0001-adsorption-site-screen-protocol-v0.1",
+  "status": "FROZEN_BEFORE_ADSORPTION_RESULTS",
+  "effective_date": "2026-09-17",
+  "system": "H/Ru(0001)",
+  "scope": "NON_KINETIC_ADSORPTION_SITE_ORDERING",
+  "purpose": "Determine the numerically preferred H adsorption basin on the accepted relaxed Ru(0001) substrate without using published H/Ru site ordering, barriers, kinetics, chi, or expected downstream agreement as selectors.",
+  "entry_gate": {
+    "required_result": "systems/h_ru0001/SYSTEM3_CLEAN_RU0001_RELAXATION_LOCAL_RESULT_20260917.json",
+    "required_status": "CLEAN_SURFACE_RELAX_PASS",
+    "required_readiness_state": "SURFACE_READY",
+    "selected_layers": 17,
+    "required_source_package_sha256": "a90aa30b2742d82227516cc2997bf42d4f2f5ba4785db72ad4e770fcf48cb5ba"
+  },
+  "substrate_model": {
+    "facet": "Ru(0001)",
+    "layers": 17,
+    "base_geometry": "exact final relaxed coordinates from SYSTEM3_CLEAN_RU0001_RELAXATION_LOCAL_RESULT_20260917.json",
+    "exchange_correlation": "PBE",
+    "ecutwfc_ry": 70,
+    "ecutrho_ry": 280,
+    "occupations": "smearing",
+    "smearing": "mv",
+    "degauss_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "total_vacuum_angstrom": 15.0,
+    "electrostatics": "ordinary 3D periodic symmetric slab; no ESM and no dipole correction"
+  },
+  "hydrogen_entry_gate": {
+    "required_before_production": true,
+    "requirements": [
+      "exact H pseudopotential identity and SHA-256 recorded",
+      "H pseudopotential provenance/transferability qualification completed without using target adsorption or kinetic agreement",
+      "same exact H pseudopotential used in every site-screen case"
+    ],
+    "production_authorized_now": false,
+    "reason": "The clean-surface PASS licenses protocol freeze, but H-specific production remains gated on independent pseudopotential qualification."
+  },
+  "screen_model": {
+    "surface_supercell": "2x2",
+    "coverage_role": "site-ordering screen only",
+    "hydrogen_count": 2,
+    "coverage_per_face_ml": 0.25,
+    "adsorption_symmetry": "one H on each face at symmetry-related instances of the same candidate site to preserve a nominally symmetric slab",
+    "surface_kmesh": [8, 8, 1],
+    "kmesh_basis": "density-preserving scaling of the accepted primitive-surface 16x16x1 mesh",
+    "candidate_sites": ["top", "bridge", "fcc_hollow", "hcp_hollow"],
+    "starting_heights_angstrom": [1.0, 1.5, 2.0],
+    "stage_A_constrained_screen": {
+      "H_motion": "z_only at the registered high-symmetry x-y site",
+      "Ru_motion": "outer two Ru layers on each face z_only; interior Ru fixed",
+      "ion_dynamics": "bfgs",
+      "force_threshold_ev_per_angstrom": 0.02,
+      "purpose": "Find the lowest converged vertical basin for each registered site without allowing immediate lateral migration to erase site identity."
+    },
+    "stage_B_stability_release": {
+      "cases": "one lowest-energy converged Stage-A geometry per registered site",
+      "H_motion": "xyz free",
+      "Ru_motion": "outer two Ru layers on each face z_only; interior Ru fixed",
+      "force_threshold_ev_per_angstrom": 0.02,
+      "migration_rule": "If a released H migrates into another registered basin, record the starting site as unstable rather than constraining it back or calling it a separate minimum."
+    }
+  },
+  "numerical_reproduction": {
+    "required": true,
+    "rule": "For each final candidate minimum retained for ordering, perform a fresh SCF at the frozen final geometry with no restart state inherited from the ionic relaxation.",
+    "absolute_total_energy_difference_max_ev": 0.001,
+    "failure_status": "ADSORPTION_SITE_REPRODUCTION_HOLD"
+  },
+  "selection_rule": {
+    "primary": "Rank only reproduced converged minima by total energy per symmetric 2-H supercell under identical settings.",
+    "unstable_sites": "A site that relaxes laterally into another basin is not retained as a distinct minimum.",
+    "near_degeneracy": "If the energy separation of retained minima is not larger than the independently established numerical uncertainty, carry all unresolved minima forward; do not force a unique winner.",
+    "adsorption_energy_claim": "Do not promote a thermodynamic adsorption energy until the isolated-H/H2 reference route and coverage interpretation are separately qualified."
+  },
+  "coverage_boundary": {
+    "two_by_two_is_not_declared_low_coverage": true,
+    "experimental_low_coverage_equivalence_not_assumed": true,
+    "coverage_sensitivity_required_before_external_rate_comparison": true,
+    "larger_cell_result_may_not_be_inferred_from_2x2": true
+  },
+  "evidence_firewall": {
+    "published_site_ordering_may_select_settings": false,
+    "published_barrier_may_select_settings": false,
+    "published_rate_may_select_settings": false,
+    "published_quantum_rate_agreement_may_select_settings": false,
+    "chi_or_capital_Chi_may_select_settings": false,
+    "System2_or_System4_outcomes_may_select_settings": false,
+    "rate_agreement_may_rescue_a_failed_site_or_numerical_gate": false
+  },
+  "execution": {
+    "execution_mode": "DIRECT_ONE_RANK",
+    "mpi_ranks": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "clean_checkpoint_restart_allowed": true,
+    "scientific_parameter_autotuning_after_failure": false,
+    "completed_valid_cases_must_be_persisted": true
+  },
+  "decision_states": [
+    "ADSORPTION_SITE_SCREEN_PASS",
+    "ADSORPTION_SITE_NUMERICAL_HOLD",
+    "ADSORPTION_SITE_REPRODUCTION_HOLD",
+    "ADSORPTION_SITE_ORDERING_UNRESOLVED",
+    "H_PSEUDOPOTENTIAL_QUALIFICATION_HOLD"
+  ],
+  "pass_next_gate": "H_RU0001_ADSORPTION_COVERAGE_SENSITIVITY_AND_PATH_PROTOCOL_FREEZE",
+  "automatic_path_or_rate_progression": false,
+  "kinetic_inputs_used_to_freeze_this_protocol": false,
+  "scientific_settings_changed_after_target_results": false,
+  "thresholds_changed_after_target_results": false
+}
