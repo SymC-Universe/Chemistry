@@ -1,0 +1,79 @@
+{
+  "schema": "symc-system3-h-ru0001-local-relaxation-intake-v0.1",
+  "status": "CLEAN_SURFACE_RELAX_PASS",
+  "readiness_state": "SURFACE_READY",
+  "next_gate": "H_RU0001_ADSORPTION_SITE_SCREEN_PROTOCOL_FREEZE",
+  "source_branch_head": "19f5d63fa5741b590e4c2e262f5ba4a3ba6116f1",
+  "local_return_package": {
+    "filename": "H_Ru0001_L17_Relax_complete_20260917_024541.zip",
+    "sha256": "a90aa30b2742d82227516cc2997bf42d4f2f5ba4785db72ad4e770fcf48cb5ba",
+    "adjudication_sha256": "3611288c07f78d6663041d90955db68152c60de8dc0a78b34393fd8252b3d51a",
+    "relax_result_sha256": "ba096b4fbf8a1c43ddf2e4de9ac840a886d65535b4163485a5cb3f3fb9f40a66",
+    "relax_final_output_sha256": "16843e1518584cc49673daca3eee09b79710a89e261070e777e54a2ee20e6ad7",
+    "repro_final_output_sha256": "c88a126afb9c421c736eb5b26c8f745ad80264843bf80584c97a6248c139ee68"
+  },
+  "entry_gate": {
+    "selected_layers": 17,
+    "layer_adjudication_status": "PASS_FIXED_GRID_LAYER_ASYMPTOTIC_REGIME",
+    "required_next_gate": "H_RU0001_CLEAN_SURFACE_RELAXATION_AND_REPRODUCTION"
+  },
+  "execution": {
+    "runtime_segmentation_scientific_role": "mechanical only",
+    "segment_seconds": 3600,
+    "automatic_restart": true,
+    "relax_segments": 13,
+    "relax_cumulative_elapsed_s": 44720.17459607124,
+    "reproduction_segments": 3,
+    "reproduction_cumulative_elapsed_s": 8380.85537147522,
+    "false_complete_parser_bug_repaired_at_segment": 3
+  },
+  "relaxation": {
+    "status": "RELAX_COMPLETE",
+    "layers": 17,
+    "final_energy_ev": -43626.621186679746,
+    "max_movable_force_ev_per_angstrom": 0.0005723276110115071,
+    "force_threshold_ev_per_angstrom": 0.02,
+    "force_pass": true,
+    "final_coordinates_angstrom": [
+      ["Ru", 0.0, 0.0, 7.5859728375],
+      ["Ru", 1.3626457867, 0.7867239118, 9.6446893742],
+      ["Ru", 0.0, 0.0, 11.7946867285],
+      ["Ru", 1.3626457867, 0.7867239118, 13.9420300928],
+      ["Ru", 0.0, 0.0, 16.0893734570],
+      ["Ru", 1.3626457867, 0.7867239118, 18.2367168213],
+      ["Ru", 0.0, 0.0, 20.3840601856],
+      ["Ru", 1.3626457867, 0.7867239118, 22.5314035498],
+      ["Ru", 0.0, 0.0, 24.6787469141],
+      ["Ru", 1.3626457867, 0.7867239118, 26.8260902783],
+      ["Ru", 0.0, 0.0, 28.9734336426],
+      ["Ru", 1.3626457867, 0.7867239118, 31.1207770069],
+      ["Ru", 0.0, 0.0, 33.2681203711],
+      ["Ru", 1.3626457867, 0.7867239118, 35.4154637354],
+      ["Ru", 0.0, 0.0, 37.5628070996],
+      ["Ru", 1.3626457867, 0.7867239118, 39.7128044540],
+      ["Ru", 0.0, 0.0, 41.7715209907]
+    ]
+  },
+  "reproduction": {
+    "status": "COMPLETE",
+    "energy_ev": -43626.62118669199,
+    "absolute_total_energy_difference_ev": 1.2245436664670706e-8,
+    "threshold_ev": 0.001,
+    "pass": true
+  },
+  "raw_output_crosscheck": {
+    "relax_qe_bfgs_converged": true,
+    "relax_qe_scf_converged": true,
+    "relax_qe_job_done": true,
+    "repro_qe_scf_converged": true,
+    "repro_qe_job_done": true,
+    "fresh_scf_movable_surface_forces_consistent_with_relaxed_geometry": true
+  },
+  "firewall": {
+    "kinetic_inputs_used": false,
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "this_is_not_independent_physical_evidence": true,
+    "automatic_adsorption_execution": false
+  }
+}
