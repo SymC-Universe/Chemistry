@@ -1,0 +1,49 @@
+name: CO Cu111 L19 post-HOLD provenance hash probe
+
+on:
+  push:
+    branches: [bridge/co-cu111-l19-20260916]
+    paths:
+      - '.github/workflows/co-cu111-l19-post-hold-provenance-hash-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify reporting-only patch and compute binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNNER=systems/co_cu111/pbe_surface_depth_stack_v1.py
+          TEST=systems/co_cu111/test_pbe_surface_depth_stack_v1.py
+          PROTOCOL=systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json
+          echo "RUNNER_SHA256=$(sha256sum "$RUNNER" | awk '{print $1}')"
+          echo "PROTOCOL_SHA256=$(sha256sum "$PROTOCOL" | awk '{print $1}')"
+          echo "TEST_SHA256=$(sha256sum "$TEST" | awk '{print $1}')"
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 "$RUNNER" self-test --protocol "$PROTOCOL"
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=json.loads(Path('systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json').read_text())
+          assert p['execution']['maximum_scf_segments']==4
+          assert p['execution']['maximum_relax_segments']==6
+          assert p['frozen_method']['electron_conv_thr']==1e-10
+          assert p['frozen_method']['mixing_beta']==0.3
+          assert p['decision']['no_threshold_retuning_after_results'] is True
+          assert p['decision']['automatic_site_ordering_dispatch'] is False
+          hold=json.loads(Path('systems/co_cu111/L19_SCIENTIFIC_HOLD_RECORD_20260918.json').read_text())
+          assert hold['scientific_disposition']=='SCIENTIFIC_HOLD'
+          assert hold['frozen_maximum_scf_segments']==4
+          assert hold['additional_scientific_rung_authorized'] is False
+          assert hold['frozen_science_preserved']['additional_scf_runway_added'] is False
+          assert hold['frozen_science_preserved']['hold_reclassified_as_pass'] is False
+          print('POST_HOLD_PROVENANCE_PROBE_PASS')
+          PY
