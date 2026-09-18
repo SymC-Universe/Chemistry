@@ -1,0 +1,178 @@
+name: System3 H Ru0001 adsorption site screen Stage B v1
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - 'systems/h_ru0001/TRIGGER_SYSTEM3_H_RU_ADSORPTION_STAGE_B_V1.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: system3-h-ru0001-adsorption-site-screen-stage-b-v1
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: systems/h_ru0001/SYSTEM3_ADSORPTION_SITE_SCREEN_PROTOCOL_v0.1.json
+  RUNNER: systems/h_ru0001/system3_h_ru_adsorption_site_stage_b_v1.py
+  TEST: systems/h_ru0001/test_system3_h_ru_adsorption_site_stage_b_v1.py
+  BULK_ADJUDICATION: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json
+  STAGE_A_WORKFLOW: system3-h-ru0001-adsorption-site-screen-stage-a-v1.yml
+  STAGE_A_SELECTION_ARTIFACT: h-ru0001-stage-a-selection-v1
+  STAGE_A_COMMON_ARTIFACT: system3-h-ru0001-site-screen-common-v1
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      stage_a_run_id: ${{ steps.locate.outputs.stage_a_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Stage-B runner and frozen protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['PROTOCOL']))
+          assert p['status']=='FROZEN_BEFORE_ADSORPTION_RESULTS'
+          assert p['automatic_path_or_rate_progression'] is False
+          assert 'spin-polarized sensitivity' in p['screen_model']['spin_treatment']['robustness_boundary']
+          print('STAGE_B_PROTOCOL_READY')
+          PY
+      - name: Locate latest successful Stage-A workflow run
+        id: locate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, urllib.request
+          repo=os.environ['REPO']; branch=os.environ['BRANCH']; token=os.environ['GH_TOKEN']
+          wf=os.environ['STAGE_A_WORKFLOW']
+          url=f"https://api.github.com/repos/{repo}/actions/workflows/{wf}/runs?branch={branch}&status=success&per_page=20"
+          req=urllib.request.Request(url,headers={
+            'Authorization':f'Bearer {token}',
+            'Accept':'application/vnd.github+json',
+            'X-GitHub-Api-Version':'2022-11-28'})
+          with urllib.request.urlopen(req) as r: data=json.load(r)
+          runs=[x for x in data.get('workflow_runs',[]) if x.get('conclusion')=='success']
+          if not runs: raise SystemExit('No successful Stage-A workflow run found')
+          print(f"stage_a_run_id={runs[0]['id']}")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_SELECTION_ARTIFACT }}
+          path: selection
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.locate.outputs.stage_a_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify Stage-A selection PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          hits=list(pathlib.Path('selection').rglob('H_RU0001_STAGE_A_SELECTION.json'))
+          assert len(hits)==1,hits
+          r=json.load(open(hits[0]))
+          assert r['status']=='STAGE_A_SELECTION_PASS',r['status']
+          assert set(r['selected'])=={'top','bridge','fcc_hollow','hcp_hollow'}
+          print('STAGE_A_SELECTION_PASS')
+          PY
+
+  stage_b:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_SELECTION_ARTIFACT }}
+          path: selection
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.prepare.outputs.stage_a_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_COMMON_ARTIFACT }}
+          path: common
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.prepare.outputs.stage_a_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify common inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd common && sha256sum -c SHA256SUMS.txt)
+          chmod +x common/bin/pw.x
+          ldd common/bin/pw.x | tee pw_ldd.txt
+          ! grep -q 'not found' pw_ldd.txt
+      - name: Release selected basin and reproduce final energy
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          selection_file="$(find selection -name H_RU0001_STAGE_A_SELECTION.json -print -quit)"
+          python3 "$RUNNER" stage-b             --protocol "$PROTOCOL"             --selection "$selection_file"             --bulk-adjudication "$BULK_ADJUDICATION"             --pw common/bin/pw.x             --ru-pseudo common/pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf             --h-pseudo common/pseudos/H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf             --site '${{ matrix.site }}'             --out case_${{ matrix.site }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: h-ru0001-stage-b-${{ matrix.site }}
+          path: case_${{ matrix.site }}
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Enforce Stage-B case disposition
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, glob
+          hits=glob.glob('case_*/STAGE_B_RESULT.json')
+          assert len(hits)==1,hits
+          r=json.load(open(hits[0]))
+          print('STAGE_B_STATUS',r['start_site'],r['status'])
+          if r['status']!='STAGE_B_PASS':
+              raise SystemExit(2)
+          PY
+
+  adjudicate:
+    needs: stage_b
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: h-ru0001-stage-b-*
+          path: cases
+          merge-multiple: false
+      - name: Adjudicate retained adsorption basins without published ordering
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" adjudicate             --protocol "$PROTOCOL"             --cases-root cases             --out H_RU0001_ADSORPTION_SITE_ADJUDICATION.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: h-ru0001-adsorption-site-adjudication-v1
+          path: H_RU0001_ADSORPTION_SITE_ADJUDICATION.json
+          retention-days: 90
+          if-no-files-found: warn
