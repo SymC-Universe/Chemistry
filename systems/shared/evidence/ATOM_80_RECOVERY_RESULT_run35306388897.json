@@ -1,0 +1,33 @@
+{
+  "basis_tag": "80",
+  "ecutrho_ry": 320.0,
+  "ecutwfc_ry": 80.0,
+  "electronic_settings": {
+    "conv_thr": 1e-12,
+    "electron_maxstep_per_segment": 200,
+    "input_dft": "PBE",
+    "mixing_beta": 0.3,
+    "occupations": "fixed"
+  },
+  "energy_ev": null,
+  "pseudo_md5": "39a7d154f04d65093d603a437119a874",
+  "pw_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+  "schema": "symc-shared-h-atom-recovery-result-v0.2",
+  "segments": [
+    {"converged": false, "convergence_not_achieved": true, "energy_ev": null, "job_done": true, "output": "H_atom_80_recovery_seg1.out", "returncode": 0, "segment": 1},
+    {"converged": false, "convergence_not_achieved": true, "energy_ev": null, "job_done": true, "output": "H_atom_80_recovery_seg2.out", "returncode": 0, "segment": 2},
+    {"converged": false, "convergence_not_achieved": true, "energy_ev": null, "job_done": true, "output": "H_atom_80_recovery_seg3.out", "returncode": 0, "segment": 3},
+    {"converged": false, "convergence_not_achieved": true, "energy_ev": null, "job_done": true, "output": "H_atom_80_recovery_seg4.out", "returncode": 0, "segment": 4}
+  ],
+  "source_parent_hold_preserved": true,
+  "source_parent_run_id": 35295414137,
+  "status": "ATOM_RECOVERY_HOLD",
+  "_provenance": {
+    "workflow_run_id": 35306388897,
+    "job_id": 105561727271,
+    "artifact_id": 10532911942,
+    "artifact_name": "shared-h-v02-atom-80",
+    "artifact_digest": "sha256:9ef889408f6da36d1eec2e4b4f50645979278be883ad45222391a07871b1b649",
+    "note": "Exact scientific disposition transcribed from the completed job log. The known parser defect affected energy extraction only; all four independent convergence flags were false, so ATOM_RECOVERY_HOLD is unaffected."
+  }
+}
