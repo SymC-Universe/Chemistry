@@ -25,7 +25,7 @@
     "electron_conv_thr": 1e-10,
     "mixing_beta": 0.3,
     "electron_maxstep": 200,
-    "total_vacuum_angstrom": 15.0,
+    "total_vacuum_angstrom": 15,
     "electrostatics": "ordinary 3D periodic symmetric slab; no ESM and no dipole correction"
   },
   "hydrogen_entry_gate": {
@@ -44,10 +44,23 @@
     "hydrogen_count": 2,
     "coverage_per_face_ml": 0.25,
     "adsorption_symmetry": "one H on each face at symmetry-related instances of the same candidate site to preserve a nominally symmetric slab",
-    "surface_kmesh": [8, 8, 1],
+    "surface_kmesh": [
+      8,
+      8,
+      1
+    ],
     "kmesh_basis": "density-preserving scaling of the accepted primitive-surface 16x16x1 mesh",
-    "candidate_sites": ["top", "bridge", "fcc_hollow", "hcp_hollow"],
-    "starting_heights_angstrom": [1.0, 1.5, 2.0],
+    "candidate_sites": [
+      "top",
+      "bridge",
+      "fcc_hollow",
+      "hcp_hollow"
+    ],
+    "starting_heights_angstrom": [
+      1,
+      1.5,
+      2
+    ],
     "stage_A_constrained_screen": {
       "H_motion": "z_only at the registered high-symmetry x-y site",
       "Ru_motion": "outer two Ru layers on each face z_only; interior Ru fixed",
@@ -61,6 +74,12 @@
       "Ru_motion": "outer two Ru layers on each face z_only; interior Ru fixed",
       "force_threshold_ev_per_angstrom": 0.02,
       "migration_rule": "If a released H migrates into another registered basin, record the starting site as unstable rather than constraining it back or calling it a separate minimum."
+    },
+    "spin_treatment": {
+      "nspin": 1,
+      "production_role": "site-ordering screen only",
+      "rationale": "The accepted clean Ru(0001) substrate was qualified non-spin-polarized and the symmetric production cell contains two equivalent H adsorbates with an even total electron count. This choice is frozen before adsorption results.",
+      "robustness_boundary": "Before any retained minimum is promoted into path/barrier work, repeat the selected minimum with a separately frozen spin-polarized sensitivity calculation. If the minimum identity or energy ordering changes beyond numerical uncertainty, return SPIN_SENSITIVITY_HOLD and refreeze the downstream method before path production."
     }
   },
   "numerical_reproduction": {
@@ -105,7 +124,8 @@
     "ADSORPTION_SITE_NUMERICAL_HOLD",
     "ADSORPTION_SITE_REPRODUCTION_HOLD",
     "ADSORPTION_SITE_ORDERING_UNRESOLVED",
-    "H_PSEUDOPOTENTIAL_QUALIFICATION_HOLD"
+    "H_PSEUDOPOTENTIAL_QUALIFICATION_HOLD",
+    "SPIN_SENSITIVITY_HOLD"
   ],
   "pass_next_gate": "H_RU0001_ADSORPTION_COVERAGE_SENSITIVITY_AND_PATH_PROTOCOL_FREEZE",
   "automatic_path_or_rate_progression": false,
