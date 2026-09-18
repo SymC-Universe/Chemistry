@@ -185,7 +185,7 @@ jobs:
 
   select_stage_a:
     needs: stage_a
-    if: always()
+    if: ${{ always() && needs.stage_a.result != 'skipped' && needs.stage_a.result != 'cancelled' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
