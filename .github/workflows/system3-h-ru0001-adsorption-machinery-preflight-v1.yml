@@ -1,0 +1,27 @@
+name: System3 H Ru0001 adsorption machinery preflight v1
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - '.github/workflows/system3-h-ru0001-adsorption-machinery-preflight-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run adsorption regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile             systems/h_ru0001/system3_h_ru_adsorption_site_screen_v1.py             systems/h_ru0001/system3_h_ru_adsorption_site_stage_b_v1.py             systems/h_ru0001/test_system3_h_ru_adsorption_site_screen_v1.py             systems/h_ru0001/test_system3_h_ru_adsorption_site_stage_b_v1.py
+          python3 systems/h_ru0001/test_system3_h_ru_adsorption_site_screen_v1.py -v
+          python3 systems/h_ru0001/test_system3_h_ru_adsorption_site_stage_b_v1.py -v
+          python3 -m json.tool systems/h_ru0001/SYSTEM3_ADSORPTION_SITE_SCREEN_PROTOCOL_v0.1.json >/dev/null
+          echo ADSORPTION_MACHINERY_PREFLIGHT_PASS
