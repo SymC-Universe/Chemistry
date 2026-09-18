@@ -1,0 +1,114 @@
+name: System3 shared H pseudopotential qualification v1
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - '.github/workflows/system3-shared-h-pseudopotential-qualification-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: system3-shared-h-pseudopotential-qualification-v1
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: systems/shared/H_PSEUDOPOTENTIAL_QUALIFICATION_v0.1.json
+  RUNNER: systems/shared/shared_h_qualification_v1.py
+  TEST: systems/shared/test_shared_h_qualification_v1.py
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  PW_SHA256: 2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855
+  H_SOURCE_COMMIT: 0fb07d89d13407b0f00a0a3b8c21d7e387fb56f9
+  H_SOURCE_PATH: libraries-pbe/nc-sg15-oncvpsp4/H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf
+  H_MD5: 39a7d154f04d65093d603a437119a874
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen non-target H qualification contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$PROTOCOL" >/dev/null
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['PROTOCOL']))
+          assert p['status']=='FROZEN_BEFORE_QUALIFICATION_RESULTS'
+          assert p['candidate']['source_commit']==os.environ['H_SOURCE_COMMIT']
+          assert p['candidate']['source_path']==os.environ['H_SOURCE_PATH']
+          assert p['candidate']['expected_md5']==os.environ['H_MD5']
+          assert p['independent_convergence_evidence']['wavefunction_cutoff_ry']==70.0
+          assert p['independent_convergence_evidence']['charge_density_cutoff_ry']==140.0
+          assert p['production_basis_compatibility']['h_ru0001_basis']=={'ecutwfc_ry':70.0,'ecutrho_ry':280.0}
+          assert all(v is False for v in p['firewall'].values())
+          print('SHARED_H_PROTOCOL_FROZEN')
+          PY
+
+  qualify:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y curl libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Recover exact frozen QE runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$PW_SHA256  engine/bin/pw.x" | sha256sum -c -
+          chmod +x engine/bin/pw.x
+          ldd engine/bin/pw.x | tee pw_ldd.txt
+          ! grep -q 'not found' pw_ldd.txt
+      - name: Fetch and verify prospectively selected SG15 H pseudopotential
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://raw.githubusercontent.com/unkcpz/sssp-verify-scripts/$H_SOURCE_COMMIT/$H_SOURCE_PATH"
+          curl -L --fail --retry 5 --retry-delay 3 "$url" -o H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf
+          echo "$H_MD5  H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf" | md5sum -c -
+          sha256sum H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf | tee H_PSEUDO_SHA256.txt
+      - name: Run non-target H and H2 compatibility qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          python3 "$RUNNER"             --protocol "$PROTOCOL"             --pw engine/bin/pw.x             --pseudo H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf             --out h_qualification             --timeout-seconds 1800
+          cp H_PSEUDO_SHA256.txt h_qualification/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: system3-shared-h-pseudopotential-qualification-v1
+          path: h_qualification
+          retention-days: 90
+          if-no-files-found: error
+      - name: Enforce frozen H qualification disposition
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          r=json.load(open('h_qualification/H_PSEUDOPOTENTIAL_QUALIFICATION_RESULT.json'))
+          print('H_QUALIFICATION_STATUS',r['status'])
+          print('H_PSEUDO_SHA256',r['pseudo']['sha256'])
+          print('H2_BOND_DELTA_A',r['crosscheck']['bond_delta_angstrom'])
+          print('H2_BINDING_DELTA_EV',r['crosscheck']['binding_energy_delta_ev'])
+          if r['status']!='SHARED_H_PSEUDOPOTENTIAL_PASS':
+              raise SystemExit(2)
+          PY
