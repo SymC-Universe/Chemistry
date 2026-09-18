@@ -1,15 +1,9 @@
-name: CO Cu111 L19 exact QE restart convergence v1
+name: SUPERSEDED - CO Cu111 L19 exact QE restart convergence v1
 
+# Superseded after checkpoint-preserving recovery run 35112369188 reached the
+# frozen L19 scientific HOLD. Manual-only archival workflow; maintenance commits
+# must never relaunch expensive L19 production.
 on:
-  push:
-    branches: [bridge/co-cu111-l19-20260916]
-    paths:
-      - '.github/workflows/co-cu111-pbe-surface-convergence-l19-v1.yml'
-      - '.github/workflows/co-cu111-surface-depth-exact-segment-worker-v1.yml'
-      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_DEPTH_STACKING_POLICY_v0.1.json'
-      - 'systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json'
-      - 'systems/co_cu111/pbe_surface_depth_stack_v1.py'
-      - 'systems/co_cu111/test_pbe_surface_depth_stack_v1.py'
   workflow_dispatch:
 
 permissions:
