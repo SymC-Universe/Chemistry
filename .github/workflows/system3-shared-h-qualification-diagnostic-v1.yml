@@ -1,0 +1,66 @@
+name: System3 shared H qualification atom diagnostic v1
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - '.github/workflows/system3-shared-h-qualification-diagnostic-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      SOURCE_RUN_ID: '35295414137'
+      SOURCE_ARTIFACT: system3-shared-h-pseudopotential-qualification-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ARTIFACT }}
+          path: source
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Inspect preserved isolated-H outputs only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, json
+          roots = list(Path('source').rglob('H_atom_70.out')) + list(Path('source').rglob('H_atom_80.out'))
+          if len(roots) != 2:
+              raise SystemExit(f'Expected exactly two isolated-H outputs, found {len(roots)}: {roots}')
+          result = {}
+          for p in sorted(roots, key=lambda x: x.name):
+              txt = p.read_text(encoding='utf-8', errors='replace')
+              low = txt.lower()
+              energies = re.findall(r'!\\s+total energy\\s+=\\s+([-+0-9.Ee]+)\\s+Ry', txt)
+              iterations = re.findall(r'iteration\\s+#\\s*([0-9]+)', txt, flags=re.I)
+              result[p.name] = {
+                  'path': str(p),
+                  'bytes': p.stat().st_size,
+                  'job_done': 'JOB DONE.' in txt,
+                  'convergence_achieved': 'convergence has been achieved' in low,
+                  'convergence_not_achieved': 'convergence not achieved' in low,
+                  'energy_count': len(energies),
+                  'last_energy_ry': float(energies[-1]) if energies else None,
+                  'last_iteration': int(iterations[-1]) if iterations else None,
+                  'diagnostic_lines': [ln.strip() for ln in txt.splitlines() if ('error' in ln.lower() or 'convergence' in ln.lower() or 'job done' in ln.lower() or 'total energy' in ln.lower())][-80:],
+                  'tail': txt.splitlines()[-120:],
+              }
+          Path('H_ATOM_DIAGNOSTIC.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: system3-shared-h-atom-diagnostic-v1
+          path: H_ATOM_DIAGNOSTIC.json
+          retention-days: 90
+          if-no-files-found: error
