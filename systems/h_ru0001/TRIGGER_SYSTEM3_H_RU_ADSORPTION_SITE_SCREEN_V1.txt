@@ -1,0 +1,9 @@
+AUTHORIZED_TRIGGER
+date=2026-09-17
+system=H/Ru(0001)
+gate=adsorption_site_screen_stage_A
+entry_clean_surface=CLEAN_SURFACE_RELAX_PASS
+entry_h_qualification_run=35295414137
+rule=workflow_must_wait_for_and_verify_SHARED_H_PSEUDOPOTENTIAL_PASS_before_any_target_adsorption_case
+scientific_settings_changed=false
+thresholds_changed=false
