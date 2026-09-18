@@ -652,8 +652,58 @@ def command_adjudicate(args: argparse.Namespace) -> None:
     relax = load_prior(Path(args.relax_root).resolve(), "relax", int(p["execution"]["maximum_relax_segments"]), p)
     scf = load_prior(Path(args.scf_root).resolve(), "scf", int(p["execution"]["maximum_scf_segments"]), p)
     if relax["status"] != "COMPLETE":
+        hold = {
+            "schema": RESULT_SCHEMA,
+            "status": p["decision"]["fail_status"],
+            "disposition": "SCIENTIFIC_HOLD",
+            "hold_reason": "target relaxation incomplete inside frozen runway",
+            "next_gate": "SCIENTIFIC_REVIEW_REQUIRED_BEFORE_MORE_DEPTH",
+            "case_id": p["extension_audit"]["case_id"],
+            "layers": int(p["extension_audit"]["layers"]),
+            "vacuum_angstrom": float(p["extension_audit"]["vacuum_angstrom"]),
+            "kmesh": int(p["extension_audit"]["kmesh"]),
+            "relax_status": relax.get("status"),
+            "scf_status": scf.get("status"),
+            "additional_scientific_rung_authorized": False,
+            "automatic_site_ordering_dispatch": False,
+            "source_failure_preserved": True,
+            "scientific_settings_changed": False,
+            "thresholds_changed": False,
+            "kinetic_inputs_used": False,
+            "protocol_sha256": sha256(pp),
+            "final_relax_state_sha256": sha256(state_path(Path(args.relax_root).resolve())),
+            "final_scf_state_sha256": sha256(state_path(Path(args.scf_root).resolve())),
+        }
+        write_json(Path(args.out).resolve(), hold)
+        print(json.dumps(hold, indent=2, sort_keys=True))
         raise SystemExit("SCIENTIFIC_HOLD: target relaxation incomplete inside frozen runway")
     if scf["status"] != "COMPLETE" or scf.get("fixed_geometry_scf_energy_ev") is None:
+        hold = {
+            "schema": RESULT_SCHEMA,
+            "status": p["decision"]["fail_status"],
+            "disposition": "SCIENTIFIC_HOLD",
+            "hold_reason": "target independent SCF incomplete inside frozen runway",
+            "next_gate": "SCIENTIFIC_REVIEW_REQUIRED_BEFORE_MORE_DEPTH",
+            "case_id": p["extension_audit"]["case_id"],
+            "layers": int(p["extension_audit"]["layers"]),
+            "vacuum_angstrom": float(p["extension_audit"]["vacuum_angstrom"]),
+            "kmesh": int(p["extension_audit"]["kmesh"]),
+            "relax_status": relax.get("status"),
+            "scf_status": scf.get("status"),
+            "fixed_geometry_scf_energy_ev": scf.get("fixed_geometry_scf_energy_ev"),
+            "maximum_scf_segments": int(p["execution"]["maximum_scf_segments"]),
+            "additional_scientific_rung_authorized": False,
+            "automatic_site_ordering_dispatch": False,
+            "source_failure_preserved": True,
+            "scientific_settings_changed": False,
+            "thresholds_changed": False,
+            "kinetic_inputs_used": False,
+            "protocol_sha256": sha256(pp),
+            "final_relax_state_sha256": sha256(state_path(Path(args.relax_root).resolve())),
+            "final_scf_state_sha256": sha256(state_path(Path(args.scf_root).resolve())),
+        }
+        write_json(Path(args.out).resolve(), hold)
+        print(json.dumps(hold, indent=2, sort_keys=True))
         raise SystemExit("SCIENTIFIC_HOLD: target independent SCF incomplete inside frozen runway")
 
     dst = p["extension_audit"]
