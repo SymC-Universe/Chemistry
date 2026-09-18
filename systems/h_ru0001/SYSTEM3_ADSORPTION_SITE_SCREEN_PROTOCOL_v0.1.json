@@ -86,7 +86,9 @@
     "required": true,
     "rule": "For each final candidate minimum retained for ordering, perform a fresh SCF at the frozen final geometry with no restart state inherited from the ionic relaxation.",
     "absolute_total_energy_difference_max_ev": 0.001,
-    "failure_status": "ADSORPTION_SITE_REPRODUCTION_HOLD"
+    "failure_status": "ADSORPTION_SITE_REPRODUCTION_HOLD",
+    "ordering_resolution_ev": 0.002,
+    "ordering_resolution_basis": "Prospectively set at 2x the frozen 0.001 eV fresh-SCF reproduction ceiling; this is a numerical discrimination floor, not a physical degeneracy theorem."
   },
   "selection_rule": {
     "primary": "Rank only reproduced converged minima by total energy per symmetric 2-H supercell under identical settings.",
@@ -117,7 +119,10 @@
     "MKL_NUM_THREADS": 1,
     "clean_checkpoint_restart_allowed": true,
     "scientific_parameter_autotuning_after_failure": false,
-    "completed_valid_cases_must_be_persisted": true
+    "completed_valid_cases_must_be_persisted": true,
+    "segment_seconds": 3300,
+    "max_segments_per_relaxation_case": 5,
+    "segment_role": "mechanical checkpointing only; identical scientific input and one-rank topology across restarts"
   },
   "decision_states": [
     "ADSORPTION_SITE_SCREEN_PASS",
