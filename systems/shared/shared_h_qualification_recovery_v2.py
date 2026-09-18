@@ -296,8 +296,24 @@ def run_h2(args, protocol):
         raise SystemExit(f"Missing v0.1 H2 output for {tag}")
     source_txt = source_out.read_text(encoding="utf-8", errors="replace")
     pts = final_positions(source_txt, 2)
+    geometry_source = "raw_qe_final_coordinates"
     if pts is None:
-        raise SystemExit(f"Cannot recover final v0.1 H2 geometry for {tag}")
+        parent_result_path = pathlib.Path(args.source_root).resolve() / "H_PSEUDOPOTENTIAL_QUALIFICATION_RESULT.json"
+        if not parent_result_path.exists():
+            raise SystemExit(f"Cannot recover final v0.1 H2 geometry for {tag}: parent result JSON missing")
+        parent_result = json.load(open(parent_result_path, encoding="utf-8"))
+        rec = parent_result.get("records", {}).get(tag, {}).get("h2", {})
+        candidate = rec.get("final_positions_angstrom")
+        if not (
+            isinstance(candidate, list) and len(candidate) == 2
+            and all(isinstance(row, list) and len(row) == 3 for row in candidate)
+        ):
+            raise SystemExit(f"Cannot recover final v0.1 H2 geometry for {tag}: structured parent coordinates absent")
+        pts = [[float(x) for x in row] for row in candidate]
+        parent_bond = rec.get("bond_angstrom")
+        if parent_bond is not None and abs(bond_length(pts) - float(parent_bond)) > 1.0e-8:
+            raise SystemExit(f"Parent H2 geometry/bond mismatch for {tag}")
+        geometry_source = "structured_parent_qualification_result"
 
     out = pathlib.Path(args.out).resolve()
     work = out / f"h2_{tag}"
@@ -399,6 +415,7 @@ def run_h2(args, protocol):
         "segments": seg_records,
         "source_parent_run_id": protocol["parent_run_id"],
         "source_parent_hold_preserved": True,
+        "initial_geometry_source": geometry_source,
         "pseudo_md5": md5,
         "pw_sha256": sha256(pw),
         "forc_conv_thr_ry_per_bohr": recovery["forc_conv_thr_ry_per_bohr"],
