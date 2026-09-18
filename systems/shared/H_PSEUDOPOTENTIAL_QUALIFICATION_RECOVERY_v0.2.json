@@ -1,0 +1,85 @@
+{
+  "schema": "symc-shared-h-pseudopotential-qualification-recovery-v0.2",
+  "status": "FROZEN_AFTER_V0_1_HOLD_BEFORE_V0_2_RECOVERY_RESULTS",
+  "effective_date": "2026-09-18",
+  "parent_protocol": "systems/shared/H_PSEUDOPOTENTIAL_QUALIFICATION_v0.1.json",
+  "parent_run_id": 35295414137,
+  "parent_artifact_id": 10527449397,
+  "parent_artifact_digest": "sha256:f2324898e0e7e14dae5c23c7a815e20b15900b57e05aff9020b56131c050a9d5",
+  "parent_disposition": "SHARED_H_PSEUDOPOTENTIAL_HOLD",
+  "diagnostic_run_id": 35303928350,
+  "purpose": "Prospectively bounded post-HOLD numerical recovery that preserves the v0.1 HOLD, the exact pseudopotential, basis choices, electronic convergence criterion, scientific acceptance gates, and firewall while correcting only finite-runway and optimizer-stop mismatches exposed by v0.1.",
+  "non_retroactivity": {
+    "v0_1_hold_remains_valid": true,
+    "v0_2_does_not_relabel_v0_1": true,
+    "v0_2_pass_requires_fresh_adjudication_before_downstream_use": true
+  },
+  "candidate": {
+    "filename": "H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf",
+    "source_commit": "0fb07d89d13407b0f00a0a3b8c21d7e387fb56f9",
+    "source_path": "libraries-pbe/nc-sg15-oncvpsp4/H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf",
+    "expected_md5": "39a7d154f04d65093d603a437119a874"
+  },
+  "runtime": {
+    "pw_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "engine_run_id": 31371043888,
+    "engine_artifact": "co-cu111-pbe-stage-a-engine-v2",
+    "runner": "ubuntu-24.04",
+    "mpi_ranks": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1
+  },
+  "basis_cases": {
+    "70": {"ecutwfc_ry": 70.0, "ecutrho_ry": 280.0},
+    "80": {"ecutwfc_ry": 80.0, "ecutrho_ry": 320.0}
+  },
+  "shared_electronic_settings": {
+    "input_dft": "PBE",
+    "occupations": "fixed",
+    "conv_thr": 1e-12,
+    "mixing_beta": 0.3,
+    "electron_maxstep_per_segment": 200
+  },
+  "atom_recovery": {
+    "source_checkpoint_required": true,
+    "restart_mode": "restart",
+    "spin_polarized": true,
+    "starting_magnetization": 1.0,
+    "total_magnetization": 1,
+    "max_additional_segments": 4,
+    "parameter_changes_from_v0_1": "none",
+    "stop_when": "QE reports both convergence has been achieved and JOB DONE."
+  },
+  "h2_recovery": {
+    "start_from_v0_1_final_geometry": true,
+    "calculation": "relax",
+    "ion_dynamics": "bfgs",
+    "trust_radius_max": 0.5,
+    "max_segments": 3,
+    "ionic_steps_per_segment": 100,
+    "forc_conv_thr_ry_per_bohr": 0.00015,
+    "forc_conv_thr_ev_per_angstrom": 0.0038567,
+    "rationale": "The v0.1 frozen acceptance gate is <=0.005 eV/A, but QE's unspecified default ionic stopping tolerance permitted BFGS termination near 0.018 eV/A. v0.2 makes the optimizer stopping tolerance stricter than, not weaker than, the pre-existing acceptance gate."
+  },
+  "acceptance": {
+    "all_four_cases_must_complete": true,
+    "max_h2_final_force_ev_per_angstrom": 0.005,
+    "max_abs_h2_bond_difference_70_vs_80_angstrom": 0.005,
+    "max_abs_h2_binding_energy_difference_70_vs_80_ev": 0.005,
+    "pass_status": "SHARED_H_PSEUDOPOTENTIAL_RECOVERY_PASS",
+    "hold_status": "SHARED_H_PSEUDOPOTENTIAL_RECOVERY_HOLD"
+  },
+  "firewall": {
+    "published_h_ru_site_ordering_used": false,
+    "published_h_ru_barrier_used": false,
+    "published_h_ru_rate_used": false,
+    "published_h2_cu_barrier_used": false,
+    "published_h2_cu_rate_used": false,
+    "chi_used": false,
+    "capital_Chi_used": false,
+    "target_agreement_may_rescue_failure": false
+  },
+  "next_gate_after_pass": "INDEPENDENT_V0_2_RECOVERY_AUDIT_AND_DOWNSTREAM_BINDING",
+  "next_gate_after_hold": "STOP_SHARED_H_BRANCH_WITHOUT_RETUNING"
+}
