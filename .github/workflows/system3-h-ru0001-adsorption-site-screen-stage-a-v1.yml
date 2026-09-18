@@ -1,0 +1,185 @@
+name: System3 H Ru0001 adsorption site screen Stage A v1
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - 'systems/h_ru0001/TRIGGER_SYSTEM3_H_RU_ADSORPTION_SITE_SCREEN_V1.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: system3-h-ru0001-adsorption-site-screen-stage-a-v1
+  cancel-in-progress: false
+
+env:
+  PROTOCOL: systems/h_ru0001/SYSTEM3_ADSORPTION_SITE_SCREEN_PROTOCOL_v0.1.json
+  RUNNER: systems/h_ru0001/system3_h_ru_adsorption_site_screen_v1.py
+  TEST: systems/h_ru0001/test_system3_h_ru_adsorption_site_screen_v1.py
+  CLEAN_RESULT: systems/h_ru0001/SYSTEM3_CLEAN_RU0001_RELAXATION_LOCAL_RESULT_20260917.json
+  BULK_ADJUDICATION: systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  PW_SHA256: 2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855
+  H_QUAL_RUN_ID: '35295414137'
+  H_QUAL_ARTIFACT: system3-shared-h-pseudopotential-qualification-v1
+  SSSP_URL: https://raw.githubusercontent.com/unkcpz/sssp-verify-scripts/refs/heads/main/2-experiments/finalized_scripts/010-extract-eff-lib/SSSP-lib-pbe-eff-v2.tar.gz
+  SSSP_SHA256: 67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2
+  RU_PSEUDO_SHA256: ed637e8481a2fddda6a93863a92f8b0b857379b9db23325a4664e3df0a6f45bd
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen site-screen contract and geometry tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$PROTOCOL" >/dev/null
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open(os.environ['PROTOCOL']))
+          c=json.load(open(os.environ['CLEAN_RESULT']))
+          assert p['status']=='FROZEN_BEFORE_ADSORPTION_RESULTS'
+          assert c['status']=='CLEAN_SURFACE_RELAX_PASS'
+          assert c['readiness_state']=='SURFACE_READY'
+          assert p['screen_model']['candidate_sites']==['top','bridge','fcc_hollow','hcp_hollow']
+          assert p['screen_model']['starting_heights_angstrom']==[1.0,1.5,2.0]
+          assert p['screen_model']['spin_treatment']['nspin']==1
+          print('SITE_SCREEN_PROTOCOL_FROZEN')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.H_QUAL_ARTIFACT }}
+          path: hqual
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.H_QUAL_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify shared H qualification PASS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, hashlib
+          hits=list(pathlib.Path('hqual').rglob('H_PSEUDOPOTENTIAL_QUALIFICATION_RESULT.json'))
+          assert len(hits)==1, hits
+          r=json.load(open(hits[0]))
+          assert r['status']=='SHARED_H_PSEUDOPOTENTIAL_PASS', r['status']
+          pseudos=list(pathlib.Path('hqual').rglob('H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf'))
+          assert len(pseudos)==1, pseudos
+          h=hashlib.sha256(pseudos[0].read_bytes()).hexdigest()
+          assert h==r['pseudo']['sha256'], (h,r['pseudo']['sha256'])
+          print('H_QUALIFICATION_PASS',h)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Build exact common execution bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$PW_SHA256  engine/bin/pw.x" | sha256sum -c -
+          curl -L --fail --retry 5 --retry-delay 5 "$SSSP_URL" -o SSSP-lib-pbe-eff-v2.tar.gz
+          echo "$SSSP_SHA256  SSSP-lib-pbe-eff-v2.tar.gz" | sha256sum -c -
+          mkdir -p common/pseudos common/bin
+          cp engine/bin/pw.x common/bin/pw.x
+          tar -xOf SSSP-lib-pbe-eff-v2.tar.gz mix-sssp-pbe-eff-lib-v2/library/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf > common/pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf
+          echo "$RU_PSEUDO_SHA256  common/pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf" | sha256sum -c -
+          hfile="$(find hqual -name H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf -print -quit)"
+          cp "$hfile" common/pseudos/H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf
+          chmod +x common/bin/pw.x
+          sha256sum common/bin/pw.x common/pseudos/*.upf > common/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: system3-h-ru0001-site-screen-common-v1
+          path: common
+          retention-days: 90
+          if-no-files-found: error
+
+  stage_a:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        site: [top, bridge, fcc_hollow, hcp_hollow]
+        height: [1.0, 1.5, 2.0]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: system3-h-ru0001-site-screen-common-v1
+          path: common
+      - name: Verify common input bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd common && sha256sum -c SHA256SUMS.txt)
+          chmod +x common/bin/pw.x
+          ldd common/bin/pw.x | tee pw_ldd.txt
+          ! grep -q 'not found' pw_ldd.txt
+      - name: Run frozen constrained site basin
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+          python3 "$RUNNER" stage-a             --protocol "$PROTOCOL"             --clean-result "$CLEAN_RESULT"             --bulk-adjudication "$BULK_ADJUDICATION"             --pw common/bin/pw.x             --ru-pseudo common/pseudos/Ru.nc.pbe.z_16.oncvpsp4.sg15.v0.upf             --h-pseudo common/pseudos/H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf             --site '${{ matrix.site }}'             --height '${{ matrix.height }}'             --out case_${{ matrix.site }}_H${{ matrix.height }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: h-ru0001-stage-a-${{ matrix.site }}-H${{ matrix.height }}
+          path: case_${{ matrix.site }}_H${{ matrix.height }}
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Enforce Stage-A case disposition
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, glob
+          hits=glob.glob('case_*/STAGE_A_RESULT.json')
+          assert len(hits)==1,hits
+          r=json.load(open(hits[0]))
+          print('STAGE_A_STATUS',r['site'],r['starting_height_angstrom'],r['status'])
+          if r['status']!='STAGE_A_PASS':
+              raise SystemExit(2)
+          PY
+
+  select_stage_a:
+    needs: stage_a
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: h-ru0001-stage-a-*
+          path: cases
+          merge-multiple: false
+      - name: Select one converged vertical basin per registered site
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER" select-stage-a             --cases-root cases             --out H_RU0001_STAGE_A_SELECTION.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: h-ru0001-stage-a-selection-v1
+          path: H_RU0001_STAGE_A_SELECTION.json
+          retention-days: 90
+          if-no-files-found: warn
