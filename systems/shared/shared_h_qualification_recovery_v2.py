@@ -41,7 +41,7 @@ def run_pw(pw, work, name, text, timeout):
 
 
 def last_energy_ev(txt):
-    vals = re.findall(r"!\\s+total energy\\s+=\\s+([-+0-9.Ee]+)\\s+Ry", txt)
+    vals = re.findall(r"!\s+total energy\s+=\s+([-+0-9.Ee]+)\s+Ry", txt)
     if not vals:
         return None
     return float(vals[-1]) * RY_TO_EV
@@ -50,7 +50,7 @@ def last_energy_ev(txt):
 def final_positions(txt, nat):
     idx = txt.rfind("Begin final coordinates")
     chunk = txt[idx:] if idx >= 0 else txt
-    matches = list(re.finditer(r"ATOMIC_POSITIONS\\s*\\(angstrom\\)\\s*\\n", chunk))
+    matches = list(re.finditer(r"ATOMIC_POSITIONS\s*\(angstrom\)\s*\n", chunk))
     if not matches:
         return None
     lines = chunk[matches[-1].end():].splitlines()
@@ -72,7 +72,7 @@ def final_positions(txt, nat):
 
 def last_max_force_ev_ang(txt, nat):
     vals = re.findall(
-        r"force\\s*=\\s*([-+0-9.Ee]+)\\s+([-+0-9.Ee]+)\\s+([-+0-9.Ee]+)",
+        r"force\s*=\s*([-+0-9.Ee]+)\s+([-+0-9.Ee]+)\s+([-+0-9.Ee]+)",
         txt,
     )
     if len(vals) < nat:
