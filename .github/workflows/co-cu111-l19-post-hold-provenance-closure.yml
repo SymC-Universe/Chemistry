@@ -1,0 +1,99 @@
+name: CO Cu111 L19 post-HOLD provenance closure
+
+on:
+  push:
+    branches: [bridge/co-cu111-l19-20260916]
+    paths:
+      - 'systems/co_cu111/L19_POST_HOLD_PROVENANCE_AMENDMENT_v0.1.json'
+      - '.github/workflows/co-cu111-l19-post-hold-provenance-closure.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify additive provenance amendment only
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNNER=systems/co_cu111/pbe_surface_depth_stack_v1.py
+          TEST=systems/co_cu111/test_pbe_surface_depth_stack_v1.py
+          PROTOCOL=systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json
+          AMEND=systems/co_cu111/L19_POST_HOLD_PROVENANCE_AMENDMENT_v0.1.json
+          HOLD=systems/co_cu111/L19_SCIENTIFIC_HOLD_RECORD_20260918.json
+          PROD=.github/workflows/co-cu111-pbe-surface-convergence-l19-v1.yml
+          echo '1bbfa730641c6007cf93c6418b015f505716c2fa58ba1f59a3879ea009d43df7  systems/co_cu111/pbe_surface_depth_stack_v1.py' | sha256sum -c -
+          echo 'f27ecf8ee22776e695b92549c1f2a8a8818df57d8f8f24033d0cd2c49f5f361e  systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json' | sha256sum -c -
+          echo '7dc5f5cbd5592ee9535b471732bfd2c2e459a4221c8b6d1a1fd6b27c8ed1ba6f  systems/co_cu111/test_pbe_surface_depth_stack_v1.py' | sha256sum -c -
+          python3 -m py_compile "$RUNNER" "$TEST"
+          python3 "$TEST" -v
+          python3 "$RUNNER" self-test --protocol "$PROTOCOL"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, re
+          def sha(p):
+              return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          a=json.loads(Path('systems/co_cu111/L19_POST_HOLD_PROVENANCE_AMENDMENT_v0.1.json').read_text())
+          h=json.loads(Path('systems/co_cu111/L19_SCIENTIFIC_HOLD_RECORD_20260918.json').read_text())
+          p=json.loads(Path('systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json').read_text())
+          assert a['status']=='FROZEN_AFTER_SCIENTIFIC_HOLD_REPORTING_REPAIR'
+          assert a['scope']=='REPORTING_AND_PROVENANCE_ONLY'
+          assert a['scientific_protocol']['modified_by_this_amendment'] is False
+          assert a['scientific_protocol']['sha256']==sha('systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json')
+          assert a['reporting_repair']['runner_sha256']==sha('systems/co_cu111/pbe_surface_depth_stack_v1.py')
+          assert a['reporting_repair']['scientific_logic_changed'] is False
+          assert a['reporting_repair']['thresholds_changed'] is False
+          assert a['reporting_repair']['runway_changed'] is False
+          assert a['reporting_repair']['continuation_logic_changed'] is False
+          assert a['scientific_disposition']['status']=='SCIENTIFIC_HOLD'
+          assert a['scientific_disposition']['maximum_scf_segments']==4
+          assert a['scientific_disposition']['additional_scf_runway_authorized'] is False
+          assert a['scientific_disposition']['additional_scientific_rung_authorized'] is False
+          assert h['scientific_disposition']=='SCIENTIFIC_HOLD'
+          assert h['frozen_maximum_scf_segments']==4
+          assert h['additional_scientific_rung_authorized'] is False
+          assert p['execution']['maximum_scf_segments']==4
+          assert p['decision']['no_threshold_retuning_after_results'] is True
+          prod=Path('.github/workflows/co-cu111-pbe-surface-convergence-l19-v1.yml').read_text()
+          assert '\n  push:' not in prod
+          assert 'workflow_dispatch:' in prod
+          assert 'SUPERSEDED - CO Cu111 L19 exact QE restart convergence v1' in prod
+          print('L19_POST_HOLD_PROVENANCE_CLOSURE_PASS')
+          PY
+      - name: Write closure record
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          out={
+            "schema":"co-cu111-l19-post-hold-provenance-closure-v0.1",
+            "status":"PASS_POST_HOLD_PROVENANCE_CLOSURE",
+            "scientific_disposition":"SCIENTIFIC_HOLD",
+            "scientific_compute_relaunched":False,
+            "scientific_protocol_modified":False,
+            "thresholds_changed":False,
+            "maximum_scf_segments":4,
+            "additional_scf_runway_authorized":False,
+            "additional_scientific_rung_authorized":False,
+            "reporting_runner_sha256":"1bbfa730641c6007cf93c6418b015f505716c2fa58ba1f59a3879ea009d43df7",
+            "scientific_protocol_sha256":"f27ecf8ee22776e695b92549c1f2a8a8818df57d8f8f24033d0cd2c49f5f361e",
+            "source_scientific_run_id":35112369188,
+            "verification_probe_run_id":35337527492,
+            "next_action":"No further L19 compute under v0.1; any continuation requires a new prospectively frozen scientific protocol."
+          }
+          pathlib.Path('L19_POST_HOLD_PROVENANCE_CLOSURE.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l19-post-hold-provenance-closure
+          path: L19_POST_HOLD_PROVENANCE_CLOSURE.json
+          retention-days: 90
+          if-no-files-found: error
