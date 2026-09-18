@@ -1,0 +1,46 @@
+name: PowerCell shared H v0.2 launcher preflight
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - 'systems/shared/START_POWERCELL_SHARED_H_V02.sh'
+      - 'systems/shared/powercell_shared_h_v02.py'
+      - 'systems/shared/H_PSEUDOPOTENTIAL_QUALIFICATION_RECOVERY_v0.2.json'
+      - '.github/workflows/powercell-shared-h-v02-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and frozen-contract checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n systems/shared/START_POWERCELL_SHARED_H_V02.sh
+          python3 -m py_compile systems/shared/powercell_shared_h_v02.py
+          python3 - <<'PY'
+          import json
+          p=json.load(open('systems/shared/H_PSEUDOPOTENTIAL_QUALIFICATION_RECOVERY_v0.2.json'))
+          assert p['status']=='FROZEN_AFTER_V0_1_HOLD_BEFORE_V0_2_RECOVERY_RESULTS'
+          assert p['parent_run_id']==35295414137
+          assert p['parent_disposition']=='SHARED_H_PSEUDOPOTENTIAL_HOLD'
+          assert p['non_retroactivity']['v0_1_hold_remains_valid'] is True
+          assert p['shared_electronic_settings']=={
+              'input_dft':'PBE',
+              'occupations':'fixed',
+              'conv_thr':1e-12,
+              'mixing_beta':0.3,
+              'electron_maxstep_per_segment':200
+          }
+          assert p['acceptance']['max_h2_final_force_ev_per_angstrom']==0.005
+          assert p['h2_recovery']['forc_conv_thr_ev_per_angstrom'] < 0.005
+          assert all(v is False for v in p['firewall'].values())
+          print('POWERCELL_V02_PREFLIGHT_PASS')
+          PY
