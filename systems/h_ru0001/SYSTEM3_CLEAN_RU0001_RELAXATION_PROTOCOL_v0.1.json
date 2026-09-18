@@ -1,0 +1,57 @@
+{
+  "schema": "h-ru0001-clean-ru0001-relaxation-protocol-v0.1",
+  "status": "FROZEN_BEFORE_SYSTEM3_CLEAN_SURFACE_RELAXATION_RESULTS",
+  "effective_date": "2026-08-30",
+  "system": "H/Ru(0001)",
+  "scope": "NON_KINETIC_CLEAN_SURFACE_RELAXATION_AND_REPRODUCTION",
+  "purpose": "Convert a CLEAN_SURFACE_FIXED_GRID_PASS into SURFACE_READY only after a checkpoint-protected clean-surface relaxation and independent reproduction pass.",
+  "entry_gate": {
+    "required_status": "CLEAN_SURFACE_FIXED_GRID_PASS",
+    "inherit_only": ["selected slab layers", "selected total vacuum", "selected surface kmesh", "bulk-fitted a and c", "selected cutoffs", "exact engine and Ru pseudopotential hashes"]
+  },
+  "relaxation": {
+    "ion_dynamics": "bfgs",
+    "cell_dynamics": "fixed",
+    "movable_atoms": "outer two Ru layers on each face",
+    "movable_components": "z only",
+    "inner_layers": "fixed",
+    "force_max_ev_per_angstrom": 0.02,
+    "same_symmetric_clean_surface_geometry_as_fixed_grid_gate": true
+  },
+  "reproduction_gate": {
+    "required": true,
+    "method": "fresh independent SCF at the final emitted relaxed geometry using identical frozen electronic settings",
+    "absolute_total_energy_difference_max_ev": 0.001,
+    "require_JOB_DONE": true,
+    "require_exact_engine_and_pseudopotential_hashes": true
+  },
+  "native_qe_checkpoint_restart": {
+    "required": true,
+    "qualification_run_id": 33343734581,
+    "qualification_status": "PASS",
+    "qualification_is_not_production_activation": true,
+    "production_workflow_must_verify_qualification_artifact": true,
+    "clean_stop_mechanism": "CONTROL.max_seconds",
+    "resume_restart_mode": "restart",
+    "disk_io": "medium",
+    "checkpoint_manifest_required_across_fresh_jobs": true,
+    "external_wrapper_timeout_alone_is_not_a_checkpoint": true,
+    "ACTIVE_definition": "ACTIVE only after the System 3 production workflow itself has verified the qualification artifact, exact engine, exact scientific inputs, CONTROL.max_seconds wiring, restart_mode='restart', disk_io='medium', and successful checkpoint handoff behavior."
+  },
+  "evidence_firewall": {
+    "H_Ru_kinetics_used": false,
+    "H_Ru_barriers_used": false,
+    "published_site_ordering_used": false,
+    "chi_used": false,
+    "expected_ChemSA_used": false,
+    "System2_result_used_to_select_settings": false
+  },
+  "decision": {
+    "pass_status": "CLEAN_SURFACE_RELAX_PASS",
+    "force_hold_status": "CLEAN_SURFACE_FORCE_HOLD",
+    "reproduction_hold_status": "CLEAN_SURFACE_REPRODUCTION_HOLD",
+    "checkpoint_hold_status": "MECHANICAL_CHECKPOINT_HOLD",
+    "pass_readiness_state": "SURFACE_READY",
+    "pass_next_gate": "H_RU0001_ADSORPTION_SITE_SCREEN_PROTOCOL_FREEZE"
+  }
+}

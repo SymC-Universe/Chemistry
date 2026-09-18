@@ -1,0 +1,123 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "H_Pt111",
+      "contrast_axes": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "contrast_score": 4,
+      "eligible": true,
+      "role_if_selected": "contrast_limit",
+      "scientific_risk": "nuclear quantum effects can invalidate a purely classical harmonic rate treatment; a refusal or quantum-method requirement is an informative outcome",
+      "sources": [
+        {
+          "doi": "10.1103/PhysRevLett.105.136101",
+          "type": "microscopic dynamics / quantum contribution / dissipative TST evidence"
+        },
+        {
+          "doi": "10.1103/PhysRevB.71.245409",
+          "type": "independent first-principles vibrational/PES evidence"
+        },
+        {
+          "doi": "10.1103/PhysRevB.68.205401",
+          "type": "vibrational states and first-principles PES evidence"
+        }
+      ],
+      "system": "H/Pt(111)"
+    },
+    {
+      "candidate_id": "H_Ru0001",
+      "contrast_axes": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "contrast_score": 4,
+      "eligible": true,
+      "role_if_selected": "contrast_limit",
+      "scientific_risk": "measured low-temperature tunneling is underestimated by the reported ab initio quantum treatment, making this an unusually strong limit test rather than a favorable demonstration",
+      "sources": [
+        {
+          "doi": "10.1021/jz400622v",
+          "type": "CC-BY HeSE dynamics plus first-principles PIMD/QTST; quantum effects and low-friction multiple jumps"
+        }
+      ],
+      "system": "H/Ru(0001)"
+    },
+    {
+      "candidate_id": "K_Cu001",
+      "contrast_axes": {
+        "A": false,
+        "B": false,
+        "C": false,
+        "D": true
+      },
+      "contrast_score": 1,
+      "eligible": true,
+      "role_if_selected": "portability_with_limited_contrast",
+      "scientific_risk": "same Cu(001)/alkali family as the development pilot and reported friction is fitted to the same dynamics, limiting independent dissipation validation",
+      "sources": [
+        {
+          "doi": "10.1103/PhysRevB.80.125426",
+          "type": "HeSE dynamics plus DFT PES and Langevin friction fit"
+        }
+      ],
+      "system": "K/Cu(001)"
+    },
+    {
+      "candidate_id": "CO_Cu001",
+      "contrast_axes": {
+        "A": false,
+        "B": false,
+        "C": false,
+        "D": true
+      },
+      "contrast_score": 1,
+      "eligible": true,
+      "role_if_selected": "facet_portability_with_limited_contrast",
+      "scientific_risk": "same adsorbate and substrate element as System 2, so it tests facet/method portability more than breadth",
+      "sources": [
+        {
+          "doi": "10.1103/PhysRevLett.93.156103",
+          "type": "spin-echo microscopic activated dynamics and molecular-dynamics interpretation benchmarked against first-principles work"
+        }
+      ],
+      "system": "CO/Cu(001)"
+    }
+  ],
+  "contrast_axes_equal_weight": {
+    "A": "substrate element differs from Cu used in Systems 1 and 2",
+    "B": "adsorbate class differs from System 1 alkali atom and System 2 CO molecule",
+    "C": "published measured dynamics explicitly document nuclear-quantum effects",
+    "D": "published interpretation explicitly requires or tests dissipation/friction/phonon-coupling beyond a purely static classical barrier"
+  },
+  "eligibility_rule": [
+    "simple atomic or diatomic adsorbate and tractable elementary surface diffusion coordinate",
+    "well-defined low-index surface and published microscopic dynamics",
+    "published kinetic/diffusion comparator",
+    "published PES/barrier/first-principles evidence sufficient to establish feasibility",
+    "a plausible dissipation observable or an informative reason that a scalar dissipation mapping may fail",
+    "published evidence is openly accessible or its final publication identity and usable public copy/abstract are independently verifiable",
+    "selection does not use chi, expected SymC agreement, residual size, or closeness of any barrier/rate prediction"
+  ],
+  "exposure_note": "Exploratory literature outcomes for some candidates were already known before this formal pool. This is prospective with respect to new computation and ChemSA classification, not outcome-blind literature selection.",
+  "purpose": "Select a contrast/limit system using neutral methodological axes, never expected ChemSA agreement or chi.",
+  "schema": "chemsa-system3-candidate-pool-v0.1",
+  "selection_rule": {
+    "forbidden_tiebreakers": [
+      "chi",
+      "expected ChemSA result",
+      "barrier agreement",
+      "rate agreement",
+      "known residual"
+    ],
+    "primary": "maximize the count of true contrast axes A-D among eligible candidates",
+    "tiebreak": "for tied highest-score candidates, compute SHA256(seed + '|' + candidate_id) and choose the lexicographically smallest hexadecimal digest",
+    "tiebreak_seed": "SYSTEM3_CONTRAST_SELECTION_V0.1"
+  },
+  "status": "FROZEN_BEFORE_SYSTEM3_COMPUTATION"
+}

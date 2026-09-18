@@ -1,0 +1,245 @@
+name: CO Cu111 L15 post-relax adjudication v1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-l15-postrelax-adjudication-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-l15-postrelax-adjudication-v1
+  cancel-in-progress: false
+
+env:
+  EXT_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json
+  EXT_RUNNER: systems/co_cu111/pbe_surface_convergence_extension_v1.py
+  EXT_TEST: systems/co_cu111/test_pbe_surface_convergence_extension_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  L15_PRODUCTION_RUN_ID: '33351747179'
+  L15_FINAL_ARTIFACT: co-cu111-l15-native-restart-v1-seg36
+  SOURCE_HOLD_RUN_ID: '33306112961'
+  SOURCE_HOLD_ARTIFACT: co-cu111-pbe-clean-surface-gate-recovery-v1
+  L13_REFERENCE_RUN_ID: '33296522880'
+  L13_REFERENCE_ARTIFACT: co-cu111-pbe-clean-audit-reproduction-recovery-v2-L13-V28-K24
+  SELECTION_RUN_ID: '32915640451'
+  SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  SOURCE_SURFACE_RUN_ID: '31922544540'
+  REPRO_RUNTIME_CAP_S: '19200'
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  reproduce_audit:
+    name: independently reproduce completed L15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen post-relax contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$EXT_RUNNER" "$EXT_TEST"
+          test "$(git hash-object "$EXT_PROTOCOL")" = '0cf59a7974b769f619b2684ea10966e6789dd546'
+          test "$(git hash-object "$EXT_RUNNER")" = 'bf5526692f2ce55311e71516f1cf336ce9250b87'
+          test "$(git hash-object "$EXT_TEST")" = '7c4830b590fb8b851dcab37c093e6533823c569c'
+          echo '518583a18ec5a26b442523601e325b2b525fd5a374f37c255eb9c5fff163ebd7  '$EXT_PROTOCOL | sha256sum -c -
+          echo '00f32beaa072ca474125e2296ad610215457f936faab2e03b5675ccf21453fbb  '$EXT_RUNNER | sha256sum -c -
+          echo '83145d7f50b1597801426ea647115e94c2467250a1f5ea907d201d0ad9053871  '$EXT_TEST | sha256sum -c -
+          echo '1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f  '$SURFACE_PROTOCOL | sha256sum -c -
+          echo '6a2216a776cbe3bf8a08e1f7215bcf0ff77caf96a2f2529875a0157f4bbfed3f  '$BUNDLE | sha256sum -c -
+          python3 "$EXT_RUNNER" self-test --protocol "$EXT_PROTOCOL"
+          python3 "$EXT_TEST" -v
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L15_FINAL_ARTIFACT }}
+          path: prior
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L15_PRODUCTION_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Normalize native artifact layout without changing contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d prior/chunk_out
+          cp -a prior/chunk_out/. prior/
+          rm -rf prior/chunk_out
+
+      - name: Bind adjudication to completed native L15 result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$EXT_RUNNER" inspect-prior --protocol "$EXT_PROTOCOL" --prior-root prior --segment 37 | tee prior_status.txt
+          grep -q '^CARRY=true$' prior_status.txt || { echo 'MECHANICAL_INCOMPLETE: native L15 artifact is not a completed frozen segment-36 state'; exit 1; }
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          seg=json.loads(Path('prior/SURFACE_CONVERGENCE_EXTENSION_SEGMENT.json').read_text())
+          native=json.loads(Path('prior/NATIVE_L15_CHUNK.json').read_text())
+          assert seg['status']=='RELAX_COMPLETE'
+          assert seg['case_id']=='L15-V32-K28-extension-audit'
+          assert seg['layers']==15 and seg['vacuum_angstrom']==32.0 and seg['kmesh']==28
+          assert seg['latest_authoritative_max_movable_force_ev_per_angstrom'] <= 0.02
+          assert seg['scientific_settings_changed'] is False
+          assert seg['thresholds_changed'] is False
+          assert seg['kinetic_inputs_used'] is False
+          assert native['status']=='RELAX_COMPLETE'
+          assert native['case_id']=='L15-V32-K28-extension-audit'
+          assert native['scientific_settings_changed'] is False
+          assert native['thresholds_changed'] is False
+          assert native['kinetic_inputs_used'] is False
+          print('L15_NATIVE_RESULT_BOUND')
+          print('RELAX_ENERGY_EV='+str(seg['energy_ev']))
+          print('FORCE_EV_A='+str(seg['latest_authoritative_max_movable_force_ev_per_angstrom']))
+          print('COMPLETION_SEGMENT='+str(seg['completion_segment']))
+          PY
+
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Independently reproduce L15 fixed geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$EXT_RUNNER" reproduce --protocol "$EXT_PROTOCOL" --prior-root prior \
+            --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x \
+            --selection selection/RANK_SELECTION_RESULT.json \
+            --runtime-cap-s "$REPRO_RUNTIME_CAP_S" --out l15_audit
+          python3 - <<'PY'
+          import json
+          r=json.load(open('l15_audit/summary.json'))
+          print('L15_REPRO_STATUS='+r['status'])
+          print('REPRO_ENERGY_EV='+str(r['fixed_geometry_scf_energy_ev']))
+          print('REPRO_DELTA_EV='+str(r['energy_reproduction_delta_ev']))
+          print('SURFACE_EXCESS_EV_PER_SURFACE_ATOM='+str(r['surface_excess_ev_per_surface_atom']))
+          print('FORCE_EV_A='+str(r['max_movable_force_ev_per_angstrom']))
+          PY
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-native-postrelax-reproduced-v1
+          path: l15_audit
+          retention-days: 90
+          if-no-files-found: error
+
+  extension_gate:
+    name: apply frozen L13-L15 convergence gate
+    needs: reproduce_audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_HOLD_ARTIFACT }}
+          path: source_hold
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_HOLD_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.L13_REFERENCE_ARTIFACT }}
+          path: l13_reference
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.L13_REFERENCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-l15-native-postrelax-reproduced-v1
+          path: l15_audit
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: co-cu111-pbe-clean-v1-*
+          path: candidates
+          merge-multiple: false
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_SURFACE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Apply prospectively frozen extension gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p extension_gate
+          python3 "$EXT_RUNNER" gate --protocol "$EXT_PROTOCOL" \
+            --hold-root source_hold --l13-root l13_reference --l15-root l15_audit \
+            --candidate-root candidates --surface-protocol "$SURFACE_PROTOCOL" \
+            --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json \
+            --out extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE.json \
+            > extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE_STDOUT.txt
+          cat extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE_STDOUT.txt
+          python3 - <<'PY'
+          import json
+          r=json.load(open('extension_gate/SURFACE_CONVERGENCE_EXTENSION_GATE.json'))
+          print('FINAL_STATUS='+r['status'])
+          print('L13_L15_DELTA_EV_PER_SURFACE_ATOM='+str(r['extension_reference_audit_delta_ev_per_surface_atom']))
+          print('THRESHOLD_EV_PER_SURFACE_ATOM='+str(r['extension_reference_audit_threshold_ev_per_surface_atom']))
+          print('L13_L15_PASS='+str(r['extension_reference_audit_pass']).lower())
+          print('CANDIDATES_ADJUDICATED='+str(r['candidates_adjudicated']).lower())
+          print('NEXT_GATE='+str(r['next_gate']))
+          if r.get('selected'):
+              print('SELECTED_CASE='+str(r['selected']['case_id']))
+          PY
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-l15-native-postrelax-gate-v1
+          path: extension_gate
+          retention-days: 90
+          if-no-files-found: error

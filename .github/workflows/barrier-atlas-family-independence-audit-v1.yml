@@ -1,0 +1,115 @@
+name: Barrier Atlas family independence audit v1
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/barrier-atlas-family-independence-audit-v1.yml'
+      - 'barrier_atlas/family_independence/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ROOT: barrier_atlas/family_independence
+  CAMPAIGN: barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json
+  TRAILS: barrier_atlas/family_independence/candidate_trails_v0.1.json
+  VALIDATOR: barrier_atlas/family_independence/validate_family_independence_campaign.py
+  INVENTORY: barrier_atlas/family_independence/inventory_public_trails.py
+  TRYPSIN_REPO: https://github.com/narjesansari/LigandBinding_Trypsin_FES_RATE.git
+  TRYPSIN_COMMIT: fe2ee38a58bc8ed3b7dcae23f2be70ad0fefba9f
+  ENZYME_REPO: https://github.com/jensengroup/db-enzymes.git
+  ENZYME_COMMIT: 22afe1913e973096be9c2a72385035b296619eba
+  LIPRED_URL: https://zenodo.org/records/16358189/files/supplementary_material_v3.zip?download=1
+  LIPRED_MD5: 7934b25adb63b520ac504db615874bb3
+
+jobs:
+  candidate-generation-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen family-independence contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$CAMPAIGN" >/dev/null
+          python3 -m json.tool "$TRAILS" >/dev/null
+          python3 -m py_compile "$VALIDATOR" "$INVENTORY" "$ROOT/test_family_independence_campaign.py"
+          python3 "$VALIDATOR" --campaign "$CAMPAIGN" --trails "$TRAILS"
+          python3 -m unittest "$ROOT/test_family_independence_campaign.py" -v
+
+      - name: Install inventory-only dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --quiet openpyxl
+          mkdir -p external family_independence_out
+
+      - name: Pin and inventory trypsin-benzamidine computational trail
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet "$TRYPSIN_REPO" external/trypsin
+          git -C external/trypsin checkout --quiet --detach "$TRYPSIN_COMMIT"
+          test "$(git -C external/trypsin rev-parse HEAD)" = "$TRYPSIN_COMMIT"
+          python3 "$INVENTORY" trypsin --root external/trypsin --out family_independence_out/TRYPSIN_BENZAMIDINE_INVENTORY.json
+
+      - name: Pin and inventory public enzyme barrier database
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet "$ENZYME_REPO" external/db-enzymes
+          git -C external/db-enzymes checkout --quiet --detach "$ENZYME_COMMIT"
+          test "$(git -C external/db-enzymes rev-parse HEAD)" = "$ENZYME_COMMIT"
+          python3 "$INVENTORY" enzyme-db --root external/db-enzymes --out family_independence_out/ENZYME_BARRIER_DB_INVENTORY.json
+
+      - name: Retrieve and inventory LiPRED-2026 machine-readable supplement
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 4 --retry-delay 5 "$LIPRED_URL" -o external/lipred.zip
+          echo "$LIPRED_MD5  external/lipred.zip" | md5sum -c -
+          mkdir -p external/lipred
+          unzip -q external/lipred.zip -d external/lipred
+          python3 "$INVENTORY" lipred --root external/lipred --out family_independence_out/LIPRED_2026_INVENTORY.json
+
+      - name: Write candidate-generation audit state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          out=pathlib.Path('family_independence_out')
+          def sha(p):
+              h=hashlib.sha256(); h.update(pathlib.Path(p).read_bytes()); return h.hexdigest()
+          records={}
+          for name in ['TRYPSIN_BENZAMIDINE_INVENTORY.json','ENZYME_BARRIER_DB_INVENTORY.json','LIPRED_2026_INVENTORY.json']:
+              p=out/name; records[name]=sha(p)
+          state={
+            'schema':'barrier-atlas-family-independence-audit-result-v0.1',
+            'status':'CANDIDATE_GENERATION_COMPLETE',
+            'repository_commit':os.environ['GITHUB_SHA'],
+            'workflow_run_id':int(os.environ['GITHUB_RUN_ID']),
+            'parent_release':'Barrier_Height_Rate_Atlas_v0.9',
+            'parent_mutated':False,
+            'coordinates_admitted':0,
+            'grades_changed':0,
+            'automatic_admission':False,
+            'target_single_family_classes':11,
+            'inventory_sha256':records,
+            'next_gate':'MANUAL_AND_PROGRAMMATIC_SOURCE_BARRIER_COMPARATOR_CLASSIFICATION_AUDIT'
+          }
+          (out/'FAMILY_INDEPENDENCE_AUDIT_RESULT.json').write_text(json.dumps(state,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(state,indent=2,sort_keys=True))
+          PY
+
+      - name: Upload candidate-generation evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: barrier-atlas-family-independence-audit-v1
+          path: family_independence_out
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,116 @@
+{
+  "schema": "chemsa-system3-h-ru0001-method-quantum-protocol-v0.1",
+  "status": "FROZEN_BEFORE_SYSTEM3_PRODUCTION_COMPUTATION",
+  "system": "H/Ru(0001)",
+  "system_role": "contrast_limit",
+  "selection_record": "systems/h_ru0001/SYSTEM3_SELECTION_RECORD_v0.1.json",
+  "layers": {
+    "classical_PES_and_saddle": "Computational Reaction-Path Engine",
+    "nuclear_quantum_free_energy_and_rate": "Computational Reaction-Path Engine quantum-nuclear tier",
+    "coordinate_matching": "Reaction-Coordinate Consistency Validator",
+    "friction_or_damping_interpretation": "Dissipation Provenance Validator",
+    "spectral_stability_class": "ChemSA Classifier",
+    "registry": "Barrier-Rate Atlas"
+  },
+  "purpose": "Use H/Ru(0001) as a deliberately difficult limit test in which the workflow must identify when a classical harmonic surface-diffusion treatment is insufficient and must refuse a full rate claim unless nuclear quantum effects are explicitly resolved.",
+  "exposure_and_quarantine": {
+    "selection_is_not_outcome_blind": true,
+    "published_outcomes_already_known": [
+      "He-3 spin-echo dynamics span 75-250 K",
+      "quantum effects are experimentally evident at temperatures up to roughly 200 K",
+      "a low-temperature tunneling-dominated plateau is reported",
+      "published ab initio PIMD/QTST reproduces higher-temperature behavior more successfully than the low-temperature tunneling rate",
+      "published static calculations report fcc/hcp/bridge energetics"
+    ],
+    "forbidden_uses": "These exposed kinetic, barrier, site-energy and rate values may not choose the new XC functional, pseudopotentials, cutoffs, k-mesh, slab size, bead count, path, free-energy windows, friction model, or acceptance threshold.",
+    "allowed_use": "The published experimental temperature interval may define the external comparison state points because those are measurement conditions rather than fit targets."
+  },
+  "external_primary_source": {
+    "citation": "McIntosh et al., Quantum Effects in the Diffusion of Hydrogen on Ru(0001), J. Phys. Chem. Lett. 4, 1565-1569 (2013)",
+    "doi": "10.1021/jz400622v",
+    "license": "CC-BY",
+    "role": "held-out experimental and published-theory comparator after the new protocol is frozen"
+  },
+  "electronic_structure_method_selection": {
+    "state": "METHOD_SELECTION_REQUIRED_BEFORE_SURFACE_PRODUCTION",
+    "selection_principle": "Choose the lowest-cost method that passes non-kinetic structural, vibrational, pseudopotential-provenance and numerical-convergence gates. Kinetic agreement is forbidden as a selector.",
+    "minimum_non_kinetic_gates": [
+      "Ru bulk lattice and numerical convergence",
+      "clean Ru(0001) slab convergence",
+      "H adsorption-site screen including fcc, hcp, bridge and top without assuming the published minimum",
+      "local H vibrational-mode stability for the numerically selected adsorption minimum",
+      "pseudopotential provenance and transferability"
+    ],
+    "kinetic_closeness_tiebreaker": "FORBIDDEN",
+    "method_candidates": "TO_BE_FROZEN_IN_A_SEPARATE_NON_KINETIC_METHOD_SCREEN_BEFORE_EXECUTION",
+    "production_authorized": false
+  },
+  "classical_reaction_path_tier": {
+    "required": true,
+    "purpose": "Establish the classical Born-Oppenheimer PES, minima, MEP, saddle and harmonic baseline independently of quantum-rate agreement.",
+    "minimum_path_requirements": [
+      "numerically rank adsorption minima first",
+      "construct the lowest-energy adjacent-site path from the numerical minima rather than imposing fcc-to-hcp if the calculation disagrees",
+      "ordinary NEB convergence before CI-NEB",
+      "verified saddle with one unstable mode aligned with the computed path",
+      "retain classical harmonic TST as the conventional baseline even if it later fails"
+    ],
+    "path_force_max_ev_per_angstrom": 0.05,
+    "ci_path_force_max_ev_per_angstrom": 0.03,
+    "barrier_numerical_sensitivity_max_ev": 0.005,
+    "classical_rate_claim_scope": "BASELINE_ONLY over the measured temperature interval unless an independently justified high-temperature classical regime is demonstrated prospectively"
+  },
+  "nuclear_quantum_tier": {
+    "required_for_full_rate_comparison": true,
+    "reason": "The selected contrast system has published experimental evidence of nuclear quantum effects within the external comparison interval; a static classical barrier plus harmonic prefactor is therefore knowingly incomplete as a full rate model.",
+    "primary_open_implementation_route": {
+      "nuclear_engine": "i-PI path-integral molecular dynamics",
+      "electronic_force_client": "Quantum ESPRESSO PWscf through its documented i-PI socket interface",
+      "technical_basis": [
+        "Quantum ESPRESSO documents pw.x --ipi with calculation='scf' for force-client operation",
+        "i-PI documents Quantum ESPRESSO as an out-of-box client and supports PIMD"
+      ],
+      "method_role": "constrained-centroid PIMD free-energy calculation followed by a prospectively defined QTST rate expression"
+    },
+    "ring_polymer_beads": {
+      "exposure_note": "The published H/Ru study used 16 beads and tested 32/64. Those values are known and therefore are not treated as blind evidence.",
+      "prospective_grid": [16, 32, 64],
+      "selection_rule": "At each registered temperature, choose the smallest P for which the computed free-energy barrier changes by <= 0.005 eV on doubling P. If 32->64 fails, return QUANTUM_BEAD_CONVERGENCE_HOLD rather than extrapolating or relaxing the threshold.",
+      "rate_agreement_not_used_for_bead_selection": true
+    },
+    "registered_external_comparison_temperatures_K": [75, 100, 120, 150, 200, 250],
+    "reaction_coordinate_rule": "The constrained-centroid coordinate must be defined from the newly computed adjacent-site MEP. Published fcc-hcp labels may describe the comparator but cannot override a different newly computed minimum/path.",
+    "centroid_coordinate_limitation": "If the centroid coordinate becomes demonstrably non-representative in a strongly asymmetric deep-tunneling regime, return QUANTUM_REACTION_COORDINATE_HOLD. Do not switch to another quantum rate theory after inspecting experimental rate agreement without a separately frozen amendment.",
+    "instanton_note": "i-PI includes ring-polymer instanton functionality, but its own documentation cautions that the implementation is not applicable to condensed phases. It is therefore not an automatic rescue method for H/Ru(0001)."
+  },
+  "dissipation_boundary": {
+    "published_multiple_jump_or_low_friction_language_is_not_a_scalar_gamma": true,
+    "HeSE_dephasing_rate_is_not_automatically_reaction_coordinate_friction": true,
+    "no_chi_until_validators_pass": true,
+    "required_later": [
+      "identify an independently sourced projected friction/damping quantity for the same H diffusion coordinate and state point",
+      "separate measured dephasing from population relaxation and model-fitted friction",
+      "demonstrate condition compatibility with the barrier/free-energy calculation"
+    ]
+  },
+  "compute_environment_gate": {
+    "state": "REQUIRED_BEFORE_AB_INITIO_PIMD",
+    "reason": "PIMD requires multiple force-evaluation replicas. The current standard GitHub-hosted environment has already been shown insufficient for a single 177-atom Na/Cu adsorption calculation and cannot be presumed suitable for multi-replica ab initio H/Ru PIMD.",
+    "standard_16GB_GitHub_runner_authorized_for_quantum_tier": false,
+    "acceptable_route": "qualify a larger/self-hosted/HPC environment first and record memory/runtime scaling with a non-admissible pilot before production PIMD"
+  },
+  "decision_states": [
+    "METHOD_SELECTION_REQUIRED",
+    "CLASSICAL_PES_PASS",
+    "CLASSICAL_MECHANISM_REVISION_REQUIRED",
+    "QUANTUM_COMPUTE_ENVIRONMENT_HOLD",
+    "QUANTUM_BEAD_CONVERGENCE_HOLD",
+    "QUANTUM_REACTION_COORDINATE_HOLD",
+    "QUANTUM_RATE_TIER_PASS",
+    "DISSIPATION_NOT_ESTABLISHED",
+    "CHEMSA_NOT_ELIGIBLE",
+    "CHEMSA_ELIGIBLE_AFTER_VALIDATORS"
+  ],
+  "next_gate": "H_RU0001_NON_KINETIC_METHOD_CANDIDATE_AUDIT",
+  "scientific_settings_changed_after_results": false
+}

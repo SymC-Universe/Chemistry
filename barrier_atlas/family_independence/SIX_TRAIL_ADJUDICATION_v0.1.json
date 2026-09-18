@@ -1,0 +1,249 @@
+{
+  "schema": "barrier-atlas-six-trail-adjudication-v0.1",
+  "status": "SIX_TRAIL_CAMPAIGN_ADJUDICATED_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "ready_for_adjudication_is_not_admission": true
+  },
+  "promotion_ladder": [
+    "CANDIDATE",
+    "SOURCE_QUALIFIED",
+    "BARRIER_QUALIFIED",
+    "COMPARATOR_QUALIFIED",
+    "CONDITION_MATCHED",
+    "INDEPENDENCE_PASS",
+    "READY_FOR_ADJUDICATION"
+  ],
+  "trail_count": 6,
+  "trails": [
+    {
+      "trail_id": "FI-MC01-TRYPSIN-BENZAMIDINE",
+      "target_class": "MC01",
+      "candidate_family": "trypsin-benzamidine association",
+      "directional_observable": "association k_on",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS",
+      "barrier_quantity": {
+        "value": 11.6,
+        "unit": "kJ/mol",
+        "type": "metadynamics free-energy-surface association barrier",
+        "temperature_K": 297.0,
+        "source_doi": "10.1038/s41467-018-05769-2"
+      },
+      "comparator_gate": "PASS",
+      "observed_comparator": {
+        "value": 2.9e7,
+        "unit": "M^-1 s^-1",
+        "type": "experimental association rate constant",
+        "primary_source_doi": "10.1021/ja00721a051",
+        "secondary_open_reproductions": [
+          "10.1021/acs.jpcb.6b09388",
+          "10.1021/acs.jcim.2c00501"
+        ]
+      },
+      "classification_gate": "PASS_MC01_DIRECTIONALLY_MATCHED",
+      "condition_gate": "HOLD_PRIMARY_EXPERIMENT_T_BUFFER_NOT_RECONSTRUCTED",
+      "independence_gate": "PASS_DISTINCT_FROM_FAM_BETA_CD_HOST_GUEST_ASSOCIATION",
+      "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+      "terminal_state": "CONDITION_MATCH_HOLD",
+      "ready_for_adjudication": false,
+      "notes": [
+        "The 11.6 kJ/mol quantity is the physical association FES barrier, not the OPES BARRIER=22 bias cap in the separate 2022 unbinding repository.",
+        "Association k_on is paired only with the association barrier; the same system's k_off is not substituted for it.",
+        "The 2018 simulations are explicitly at 297 K, but the accessible 1970 primary record did not expose enough temperature/buffer detail to close condition matching without inference."
+      ]
+    },
+    {
+      "trail_id": "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK",
+      "target_class": "MC02",
+      "candidate_family": "cyclobutene to 1,3-butadiene ring opening",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_FOR_PERICYCLIC_CHEMISTRY",
+      "barrier_quantity": {
+        "range": [35.23, 35.34],
+        "unit": "kcal/mol",
+        "type": "LRDMC electronic activation barrier without ZPE",
+        "source_doi": "10.1063/1.4769791"
+      },
+      "classification_gate": "FAIL_TARGET_CLASS_MISMATCH",
+      "classification_result": "conrotatory electrocyclic ring opening; pericyclic rather than MC02 dissociation_fragmentation",
+      "comparator_gate": "NOT_PROMOTED_FOR_MC02",
+      "condition_gate": "NOT_APPLICABLE_AFTER_CLASSIFICATION_FAILURE",
+      "independence_gate": "NOT_APPLICABLE_FOR_MC02",
+      "highest_contiguous_promotion_state": "SOURCE_QUALIFIED",
+      "terminal_state": "REFUSED_FOR_MC02_CLASSIFICATION",
+      "ready_for_adjudication": false,
+      "notes": [
+        "High-quality barrier evidence is retained, but the candidate cannot be reassigned merely to fill the MC02 gap.",
+        "This is a successful ontology/refusal result, not evidence that the source itself is poor."
+      ]
+    },
+    {
+      "trail_id": "FI-MC06-CYCLOPROPANE-PROPENE",
+      "target_class": "MC06",
+      "candidate_family": "cyclopropane to propene thermal isomerization",
+      "representation_mode": "NETWORK_RESOLVED",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_TYPED_AS_THEORETICAL_NETWORK_ARRHENIUS_ACTIVATION_ENERGY",
+      "barrier_quantity": {
+        "value": 65.70,
+        "uncertainty": 0.17,
+        "unit": "kcal/mol",
+        "type": "activation energy in theoretical high-pressure-limit Arrhenius representation",
+        "source_doi": "10.1021/acs.jpca.4c05315"
+      },
+      "predicted_rate_model": {
+        "temperature_range_K": [400.0, 1400.0],
+        "pressure_regime": "high-pressure limit",
+        "equation": "log10(k_overall_inf/s^-1)=(15.60+/-0.06)-(65.70+/-0.17 kcal mol^-1)/(2.303 R T)",
+        "mechanism": "predominantly biradical; carbene contribution 1-2 percent at higher temperature; concerted path not supported"
+      },
+      "comparator_gate": "PASS",
+      "observed_comparator": {
+        "type": "independent historical high-pressure experimental Arrhenius expression",
+        "primary_source": "Chambers and Kistiakowsky, JACS 56, 399 (1934)",
+        "equation": "log10(k_inf/s^-1)=15.17-65.000 kcal mol^-1/(2.303 R T)",
+        "independent_evaluation_source": "NBS NSRDS 21, Kinetic Data on Gas Phase Unimolecular Reactions"
+      },
+      "classification_gate": "PASS_MC06",
+      "condition_gate": "PASS_HIGH_PRESSURE_AND_TEMPERATURE_OVERLAP",
+      "independence_gate": "PASS_DISTINCT_FROM_FAM_GAS_CH3NC_ISOMERIZATION_AND_NO_TARGET_RATE_FIT_DISCLOSED",
+      "post_gate_diagnostic": {
+        "selection_role": "NONE",
+        "comparison_temperatures_K": [742.75, 772.65, 791.75],
+        "predicted_over_observed_ratios": [1.6752141235, 1.7062371348, 1.7251026697],
+        "ln_residuals": [0.5159409920, 0.5342904399, 0.5452865674]
+      },
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "notes": [
+        "The later mechanism-resolving study directly addresses the earlier multistep-diradical HOLD rather than bypassing it.",
+        "Admission, grade assignment, and coordinate representation remain separate future adjudication decisions for a new release."
+      ]
+    },
+    {
+      "trail_id": "FI-ENZYME-DB-INVENTORY",
+      "target_class": "MC13",
+      "candidate_family": "Pyrococcus furiosus formaldehyde ferredoxin oxidoreductase oxidation",
+      "pinned_repository": "jensengroup/db-enzymes@22afe1913e973096be9c2a72385035b296619eba",
+      "pdb_id": "1B25",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_WITH_BARRIER_REFERENCE_AMBIGUITY_RETAINED",
+      "barrier_profile": {
+        "source_doi": "10.1016/j.jinorgbio.2011.03.020",
+        "repository_model": "model D singlet, epsilon=4",
+        "relative_energies_kcal_per_mol": {
+          "reactant": 0.0,
+          "TS1": 14.3,
+          "intermediate": -2.1,
+          "TS2": 14.5,
+          "product": -9.9
+        },
+        "TS2_internal_barrier_from_intermediate_kcal_per_mol": 16.6,
+        "mechanistic_typing": "proton transfer coupled to two-electron reduction of W(VI) to W(IV)"
+      },
+      "comparator_gate": "PASS",
+      "observed_comparator": {
+        "source_doi": "10.1007/s00775-007-0301-3",
+        "temperature_K": 323.15,
+        "pre_steady_state_rates_s_inverse": [4.7, 1.9],
+        "interpretation": "substrate oxidation followed by rearrangement, or alternatively binding followed by oxidation"
+      },
+      "classification_gate": "PASS_PROVISIONAL_MC13_COUPLED_PROTON_TWO_ELECTRON_TRANSFER",
+      "condition_gate": "HOLD_STATIC_CLUSTER_POTENTIAL_PROFILE_VS_EXPERIMENTAL_ENZYME_KINETIC_EVENT",
+      "independence_gate": "PASS_DISTINCT_FROM_FAM_POV_PCET_CROSS_REACTIONS",
+      "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+      "terminal_state": "CONDITION_AND_EVENT_MAPPING_HOLD",
+      "ready_for_adjudication": false,
+      "notes": [
+        "The numerical model-D profile is reproduced from the pinned repository rather than inferred from a figure.",
+        "The overall reactant-to-TS2 maximum is 14.5 kcal/mol while the second-step barrier from the intermediate is 16.6 kcal/mol; neither is silently substituted for the other.",
+        "The pre-steady-state experiment itself retains ambiguity over whether the first fast event is binding or oxidation, so one scalar barrier/rate pair is not yet licensed."
+      ]
+    },
+    {
+      "trail_id": "FI-LIPRED-2026-SCREEN",
+      "target_class": "MC04_PROVISIONAL_POOL",
+      "candidate_family": "LiPRED-2026 liquid-phase addition-family candidates",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_AT_DATASET_CANDIDATE_GENERATION_LEVEL",
+      "barrier_dataset": {
+        "doi": "10.1039/D6CP00088F",
+        "zenodo_record": "16358189",
+        "activation_free_energy_count": 4513,
+        "reaction_count": 28,
+        "temperature_K": 298.15,
+        "computational_scheme_count": 7
+      },
+      "comparator_gate": "FAIL_NO_SELECTED_INDEPENDENT_RAW_RATE_CHAIN",
+      "comparator_issue": "experimental activation free energies used for benchmarking may be rate-derived and therefore cannot independently validate the same target rate; no exact addition-family raw-rate chain has yet been qualified",
+      "condition_gate": "NOT_REACHED",
+      "classification_gate": "POOL_ONLY_NOT_FINAL_FAMILY_ASSIGNMENT",
+      "independence_gate": "NOT_REACHED",
+      "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+      "terminal_state": "COMPARATOR_MISSING",
+      "ready_for_adjudication": false,
+      "notes": [
+        "The thousands of computational method/solvent records remain replicates or candidate-generation records, not thousands of independent reaction families.",
+        "LiPRED explicitly notes that its reaction set does not cover several common classes including elimination and radical reactions."
+      ]
+    },
+    {
+      "trail_id": "FI-BARRIER-ONLY-REPOSITORY-SCREEN",
+      "target_class": "UNASSIGNED_CANDIDATE_POOL",
+      "candidate_family": "barrier-only benchmark family pool",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_AT_POOL_LEVEL",
+      "repositories": [
+        {
+          "name": "heid-lab/reaction_database",
+          "evidence": "computed barrier-height datasets including RDB7 11926, RGD1 176898, E2 1264, and SN2 2361 points"
+        },
+        {
+          "name": "lcmd-epfl/benchmark-barrier-learning",
+          "evidence": "computed activation-barrier learning benchmarks including Cyclo-23-TS, GDB7-22-TS, and Proparg-21-TS"
+        },
+        {
+          "name": "JiashuLiang/GSCDB",
+          "evidence": "GSCDB137, 137 datasets and 8377 entries spanning accurate energy differences including barrier heights"
+        }
+      ],
+      "comparator_gate": "FAIL_NO_MATCHED_INDEPENDENT_OBSERVED_RATE_CHAIN",
+      "condition_gate": "NOT_REACHED",
+      "classification_gate": "POOL_ONLY",
+      "independence_gate": "NOT_REACHED",
+      "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+      "terminal_state": "BARRIER_HALF_TRAIL_COMPARATOR_MISSING",
+      "ready_for_adjudication": false,
+      "notes": [
+        "These resources are valuable for candidate discovery and barrier-method validation but do not become rate validation by database size alone.",
+        "A separately qualified observed-rate trail is mandatory for any candidate extracted from them."
+      ]
+    }
+  ],
+  "aggregate_gate_counts": {
+    "source_gate_pass": 6,
+    "candidate_or_pool_barrier_evidence_pass": 6,
+    "independent_kinetic_comparator_pass": 3,
+    "condition_match_pass": 1,
+    "ready_for_adjudication": 1,
+    "target_class_refusals": 1,
+    "comparator_missing_half_trails": 2,
+    "condition_or_event_mapping_holds": 2
+  },
+  "conglomerate_interpretation_file": "barrier_atlas/family_independence/CONGLOMERATE_EVIDENCE_READOUT_v0.1.md",
+  "next_campaign_gate": "ADJUDICATE_MC06_NETWORK_RESOLVED_COORDINATE_AND_RUN_TARGETED_HOLD_CLOSURES_WITHOUT_CHANGING_V0_9"
+}

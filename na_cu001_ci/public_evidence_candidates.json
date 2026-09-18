@@ -1,0 +1,70 @@
+{
+  "schema": "na-cu001-public-evidence-candidates-v0.1",
+  "status": "candidate_only_not_atlas_admitted",
+  "system": "Na/Cu(001)",
+  "candidates": [
+    {
+      "bibliographic_identity": {
+        "title": "A molecular dynamics simulation of the diffusion of sodium on a Cu(001) surface",
+        "journal": "Surface Science",
+        "volume": "317",
+        "pages": "99-108",
+        "year": 1994,
+        "doi": "10.1016/0039-6028(94)90256-9"
+      },
+      "publicly_visible_numeric_claims": {
+        "mechanism": "jumps from one fourfold hollow site to another",
+        "effective_activation_energy_mev": 51.0,
+        "jump_attempt_frequency_thz": 0.53
+      },
+      "source_scope": "publisher abstract",
+      "verification_tier": "SNIPPET",
+      "admission_state": "HOLD",
+      "hold_reasons": [
+        "coverage is not stated in the public abstract",
+        "temperature or fitted temperature range is not stated in the public abstract",
+        "the abstract summarizes agreement with quasielastic helium scattering but does not expose the underlying rate table"
+      ]
+    },
+    {
+      "bibliographic_identity": {
+        "title": "Kramers' turnover theory for diffusion of Na atoms on a Cu(001) surface measured by He scattering",
+        "journal": "The Journal of Chemical Physics",
+        "volume": "119",
+        "pages": "2780-2791",
+        "year": 2003,
+        "doi": "10.1063/1.1587687"
+      },
+      "source_scope": "repository-hosted published-paper copy located; numerical extraction pending",
+      "verification_tier": "FULL_PENDING_EXTRACTION",
+      "admission_state": "HOLD",
+      "hold_reasons": [
+        "complete numerical state-point table has not yet been extracted and cross-checked",
+        "same-coverage correspondence with the computational 4x4 model has not yet been established"
+      ]
+    },
+    {
+      "bibliographic_identity": {
+        "title": "Onset of 3D collective surface diffusion in the presence of lateral interactions: Na/Cu(001)",
+        "journal": "Physical Review Letters",
+        "volume": "97",
+        "article": "156103",
+        "year": 2006,
+        "doi": "10.1103/PhysRevLett.97.156103"
+      },
+      "publicly_visible_claims": {
+        "method": "3He spin-echo",
+        "correlated_motion_seen_from_coverage_ml": 0.04,
+        "pronounced_perpendicular_motion_above_coverage_ml": 0.05
+      },
+      "source_scope": "PubMed and institutional bibliographic abstracts",
+      "verification_tier": "SNIPPET",
+      "admission_state": "HOLD",
+      "hold_reasons": [
+        "public abstract does not state a numeric barrier-rate coordinate",
+        "collective and perpendicular motion must not be conflated with isolated-adatom hopping"
+      ]
+    }
+  ],
+  "admission_rule": "No candidate enters the Barrier Height-Rate Atlas until same-system phase coverage temperature and mechanism fields are numerically resolved without assumption."
+}

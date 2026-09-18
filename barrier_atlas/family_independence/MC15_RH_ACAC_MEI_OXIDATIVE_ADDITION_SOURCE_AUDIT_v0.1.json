@@ -1,0 +1,122 @@
+{
+  "schema": "barrier-atlas-mc15-rh-acac-mei-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_AUDIT_HARD_HOLD_WITHOUT_PARENT_MUTATION",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "experimental_eyring_quantity_from_selected_rate_may_validate_rate": false
+  },
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "trail": {
+    "trail_id": "FI-MC15-RH-ACAC-MEI-OXIDATIVE-ADDITION",
+    "target_class": "MC15",
+    "candidate_family": "iodomethane oxidative addition to rhodium(I) acetylacetonato carbonyl triphenylphosphine",
+    "reaction": "[Rh(acac)(CO)(PPh3)] + CH3I -> Rh(III)-alkyl oxidative-addition product",
+    "classification_gate": "PASS_MC15_ORGANOMETALLIC_BOND_ACTIVATION_OXIDATIVE_ADDITION",
+    "source_gate": "PASS",
+    "barrier_gate": "PASS_EXACTLY_TYPED_COMPUTATIONAL_GIBBS_ACTIVATION_FREE_ENERGY",
+    "barrier_quantity": {
+      "value": 71.0,
+      "unit": "kJ/mol",
+      "type": "PW91/TZP/COSMO(methanol) calculated Gibbs free energy of activation at 298.15 K for the favored linear/back associative SN2 oxidative-addition transition state, relative to the separated computational reactants",
+      "electronic_activation_energy_kJ_per_mol": 24.0,
+      "activation_enthalpy_298K_kJ_per_mol": 27.0,
+      "activation_entropy_298K_J_per_K_per_mol": -147.0,
+      "source_doi": "10.1039/C1DT10271K",
+      "method_provenance": "PW91 functional, TZP basis, COSMO solvent model with methanol dielectric; reactants taken as energy zero",
+      "temperature_K": 298.15,
+      "solvent": "methanol",
+      "standard_state_status": "NOT_EXPLICITLY_RECONSTRUCTED_IN_THIS_AUDIT",
+      "typing_firewall": [
+        "not an experimental activation free energy",
+        "not an Arrhenius activation energy",
+        "not a raw observed rate constant",
+        "24 kJ/mol electronic activation energy and 27 kJ/mol activation enthalpy are retained as distinct quantities and are not silently substituted for 71 kJ/mol"
+      ]
+    },
+    "comparator_gate": "PASS_INDEPENDENT_PRIMARY_RAW_KINETIC_EVENT_EXISTS",
+    "observed_comparator": {
+      "source_doi": "10.1039/B922083F",
+      "event": "formation of the first Rh(III)-alkyl oxidative-addition product under pseudo-first-order CH3I excess",
+      "reaction_order": "bimolecular second-order oxidative-addition step",
+      "solvent": "dichloromethane",
+      "temperature_C": 24.9,
+      "temperature_K": 298.05,
+      "second_order_rate_constant": 30.8e-3,
+      "second_order_rate_constant_uncertainty": 0.5e-3,
+      "unit": "M^-1 s^-1",
+      "independent_method_crosscheck": {
+        "method": "IR spectroscopy",
+        "temperature_C": 25.0,
+        "second_order_rate_constant": 30.9e-3,
+        "second_order_rate_constant_uncertainty": 0.3e-3,
+        "unit": "M^-1 s^-1"
+      },
+      "raw_kinetic_support": "temperature- and CH3I-concentration-dependent pseudo-first-order k_obs values are publicly reproduced for the PPh3 complex in dichloromethane"
+    },
+    "rate_derived_activation_quantities": {
+      "experimental_Gibbs_activation_free_energy_kJ_per_mol": 82.0,
+      "experimental_Gibbs_activation_free_energy_uncertainty_kJ_per_mol": 1.0,
+      "experimental_activation_enthalpy_kJ_per_mol": 38.8,
+      "experimental_activation_entropy_J_per_K_per_mol": -146.0,
+      "validation_role": "QUARANTINED_RATE_DERIVED_NOT_AN_INDEPENDENT_BARRIER_COMPARATOR"
+    },
+    "condition_gate": "FAIL_SOLVENT_AND_STANDARD_STATE_MAPPING_NOT_CLOSED",
+    "condition_mismatch": {
+      "computational_solvent": "methanol",
+      "experimental_solvent": "dichloromethane",
+      "temperature_match": "PASS_WITHIN_0.10_K",
+      "solvent_match": "FAIL",
+      "standard_state_mapping": "HOLD_NOT_RECONSTRUCTED",
+      "reason": "The 71 kJ/mol theoretical free-energy barrier was calculated with COSMO methanol, while the independent 2010 raw kinetic comparator was measured in dichloromethane. The solvent dependence of an associative charged/polar transition state cannot be assumed negligible or repaired by ad hoc residual matching."
+    },
+    "independence_gate": "HOLD_METHOD_SELECTION_LINEAGE_REQUIRES_AUDIT",
+    "independence_note": "The 2011 computational study explicitly compares its 71 kJ/mol result with known experimental activation quantities. No same-target parameter fitting is established by the sources audited here, but independence from target-informed method/transition-state selection is not presumed. The computational method lineage must be reconstructed before promotion.",
+    "mechanism_gate": "PASS_ASSOCIATIVE_SN2_OXIDATIVE_ADDITION_FIRST_STEP",
+    "representation_mode": "SINGLE_BARRIER_ASSOCIATIVE_SN2_OXIDATIVE_ADDITION",
+    "representation_gate": "PASS_FOR_FIRST_OXIDATIVE_ADDITION_STEP_ONLY",
+    "network_note": "Subsequent carbonyl insertion/deinsertion and alkyl/acyl isomerization belong to later steps and are not substituted for the first oxidative-addition event comparator.",
+    "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+    "terminal_state": "CONDITION_AND_MODEL_SELECTION_PROVENANCE_HOLD",
+    "ready_for_adjudication": false,
+    "automatic_admission": false,
+    "next_gate": [
+      "Locate a prospectively independent theoretical barrier/free-energy calculation for the same elementary oxidative-addition event in dichloromethane at approximately 298 K with explicit standard-state treatment, or locate independent raw kinetics in methanol at approximately 298 K matching the existing PW91/TZP/COSMO barrier.",
+      "Reconstruct the PW91/TZP method-selection lineage and establish whether choices were fixed independently of the selected kinetic target; if target-informed tuning or model selection is found, quarantine that calculation from validation.",
+      "Do not use the experimental 82 kJ/mol Eyring free energy or 38.8 kJ/mol activation enthalpy as an independent barrier because they are derived from the same kinetics being validated."
+    ]
+  },
+  "existing_mc15_hold_preserved": {
+    "trail_id": "FI-MC15-VASKA-H2-OXIDATIVE-ADDITION",
+    "terminal_state": "CONDITION_AND_QUANTITY_MAPPING_HOLD",
+    "superseded": false
+  },
+  "campaign_aggregate_unchanged": {
+    "family_depth_classes_with_additive_ready_second_family": ["MC02", "MC04", "MC06", "MC11", "MC14", "MC16"],
+    "ready_second_family_count": 6,
+    "target_class_count": 11,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v0.9",
+  "status": "ADDITIVE_FAMILY_DEPTH_UPDATE_WITHOUT_PARENT_MUTATION",
+  "parent_campaign": "barrier_atlas/family_independence/FAMILY_INDEPENDENCE_CAMPAIGN_v0.1.json",
+  "parent_six_trail_adjudication": "barrier_atlas/family_independence/SIX_TRAIL_ADJUDICATION_v0.1.json",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.8.json",
+  "source_audit": "barrier_atlas/family_independence/MC08_CHLORIDE_METHYL_IODIDE_NONIDENTITY_SN2_SOURCE_AUDIT_v0.1.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "candidate_origin": "MC08 exchange/metathesis class-gap search; selected by independent reaction identity, exact PES typing, direct thermal kinetics, and network representation only"
+  },
+  "frozen_target_classes": ["MC01", "MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC13", "MC14", "MC15", "MC16"],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC08-CL-CH3I-NONIDENTITY-SN2",
+      "target_class": "MC08",
+      "candidate_family": "gas-phase chloride/methyl-iodide nonidentity nucleophilic substitution",
+      "reaction": "Cl- + CH3I -> CH3Cl + I-",
+      "classification_gate": "PASS_MC08_NONIDENTITY_HALIDE_EXCHANGE_SN2",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_BENCHMARK_NETWORK_PES",
+      "barrier_quantity": {
+        "reference_state": "separated gas-phase Cl- + CH3I reactants",
+        "classical_relative_energies_kcal_per_mol": {"PreMIN": -11.56, "WaldenTS": -5.48, "PostMIN": -23.66, "products": -14.88},
+        "adiabatic_relative_energies_kcal_per_mol": {"PreMIN": -11.42, "WaldenTS": -5.54, "PostMIN": -22.72, "products": -14.07},
+        "derived_central_barrier_above_precomplex_kcal_per_mol": {"classical": 6.08, "adiabatic": 5.88},
+        "type": "benchmark intrinsic PES stationary-point energies; classical focal-point electronic energies and adiabatic zero-point-corrected energies",
+        "source_doi": "10.1021/acs.jpca.7b05503",
+        "temperature_status": "NOT_A_300_K_THERMAL_PROFILE",
+        "gibbs_free_energy_status": "NOT_A_GIBBS_FREE_ENERGY_BARRIER",
+        "activation_enthalpy_status": "NOT_A_THERMAL_ACTIVATION_ENTHALPY"
+      },
+      "comparator_gate": "PASS_INDEPENDENT_PRIMARY_OBSERVED_THERMAL_GAS_PHASE_RATE",
+      "observed_comparator": {
+        "primary_source_doi": "10.1016/S1387-3806(01)00398-0",
+        "temperature_K": 300.0,
+        "carrier_gas": "helium",
+        "flow_tube_pressure_Torr": 0.5,
+        "value": 15.9e-11,
+        "uncertainty_one_sigma": 0.5e-11,
+        "unit": "cm^3 s^-1",
+        "measurement_sets": 3,
+        "absolute_systematic_uncertainty": "approximately 20 percent",
+        "type": "direct FA-SIFT bimolecular rate coefficient"
+      },
+      "condition_gate": "PASS_GAS_PHASE_SPECIES_MATCH_WITH_INTRINSIC_PES_TYPING_AND_EXPLICIT_300K_THERMAL_COMPARATOR",
+      "condition_note": "The intrinsic PES is not assigned a fictitious temperature. Condition matching is species/phase/mechanism exact while the experimental comparator carries its actual 300 K, helium, 0.5 Torr state point.",
+      "independence_gate": "PASS_DISTINCT_FAMILY_AND_TARGET_RATE_NOT_USED_AS_DISCLOSED_THEORY_FIT",
+      "independence_basis": [
+        "the selected direct kinetic measurement was published in 2001 and the benchmark PES in 2017",
+        "the experiment and computation are from independent groups",
+        "the 2017 benchmark uses a coupled-cluster focal-point hierarchy across many stationary points and does not disclose fitting its stationary energies to the selected thermal rate",
+        "no residual, chi, isotope effect, reaction efficiency, or expected ChemSA agreement selected the candidate or theory variant"
+      ],
+      "representation_mode": "NETWORK_RESOLVED_COMPLEX_FORMING_NONIDENTITY_SN2",
+      "representation_gate": "PASS_NETWORK_RESOLVED_PRECOMPLEX_SUBMERGED_WALDEN_TS_POSTCOMPLEX",
+      "highest_contiguous_promotion_state": "READY_FOR_ADJUDICATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "selection_role_of_residual_chi_or_chemsa": "NONE"
+    }
+  ],
+  "preserved_nonpromotion_states": {
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+    "FI-MC08-METHANE-ZEOLITE-HD-EXCHANGE": "MECHANISM_AND_RAW_COMPARATOR_HOLD",
+    "FI-MC08-CHLORIDE-METHYL-CHLORIDE-IDENTITY-SN2": "COMPARATOR_REGIME_CONFLICT_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-MC15-RH-ACAC-MEI-OXIDATIVE-ADDITION": "CONDITION_AND_MODEL_SELECTION_PROVENANCE_HOLD",
+    "FI-MC15-VASKA-H2-OXIDATIVE-ADDITION": "CONDITION_AND_QUANTITY_MAPPING_HOLD",
+    "FI-MC16-METHYLPEROXY-SELF-REACTION": "PES_TOPOLOGY_NETWORK_AND_MODEL_PROVENANCE_HOLD"
+  },
+  "supersession_note": "v0.9 adds an independent MC08 nonidentity SN2 family-depth trail. It does not alter either held MC08 trail, any frozen six-trail outcome, any Barrier Atlas v0.9 coordinate, or any v0.9 grade.",
+  "aggregate": {
+    "new_ready_for_adjudication": 1,
+    "new_ready_class": "MC08",
+    "new_ready_trail": "FI-MC08-CL-CH3I-NONIDENTITY-SN2",
+    "family_depth_classes_with_additive_ready_second_family": ["MC02", "MC04", "MC05", "MC06", "MC08", "MC11", "MC14", "MC16"],
+    "ready_second_family_count": 8,
+    "target_class_count": 11,
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

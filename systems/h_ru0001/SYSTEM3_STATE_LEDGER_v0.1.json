@@ -1,0 +1,40 @@
+{
+  "schema": "h-ru0001-system3-state-ledger-v0.1",
+  "updated_at": "2026-08-30T23:14:00-05:00",
+  "system": "H/Ru(0001)",
+  "branch": "agent/na-cu001-integration",
+  "readiness": {
+    "METHOD_READY": {
+      "state": "ADJUDICATED",
+      "status": "PASS",
+      "source": "SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json"
+    },
+    "SURFACE_READY": {
+      "state": "PLANNED_AND_EXECUTING_PREREQUISITE",
+      "status": "PENDING",
+      "fixed_grid_run_id": 33356315835,
+      "fixed_grid_states": {
+        "PLANNED": true,
+        "EXECUTED": true,
+        "MEASURED": false,
+        "VALID": false,
+        "ADJUDICATED": false
+      },
+      "relaxation_protocol_frozen": true,
+      "checkpoint_qualification_run_id": 33343734581,
+      "checkpoint_qualification": "QUALIFIED",
+      "checkpoint_production_status": "NOT_ACTIVE_UNTIL_SYSTEM3_WORKFLOW_WIRING_IS_VERIFIED"
+    },
+    "ADSORPTION_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
+    "PATH_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
+    "QUANTUM_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
+    "DISSIPATION_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
+    "CHEMSA_ELIGIBLE": {"state": "NOT_YET_ENTERED", "status": "PENDING"}
+  },
+  "documentation": {
+    "manuscript_integration_source": "SYSTEM3_MANUSCRIPT_INTEGRATION_v0.1.md",
+    "package_contract": "SYSTEM3_REPRODUCIBILITY_PACKAGE_SPEC_v0.1.json",
+    "l15_equivalent_target": "SYSTEM3_L15_EQUIVALENT_READINESS_TARGET_v0.1.json"
+  },
+  "conflict_policy": "HOLD_AND_INVESTIGATE_NOT_AVERAGE_TO_PASS"
+}

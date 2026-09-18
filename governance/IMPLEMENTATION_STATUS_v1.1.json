@@ -1,0 +1,129 @@
+{
+  "schema": "symc-implementation-status-v1.1",
+  "status": "ACTIVE_IMPLEMENTATION_REGISTRY",
+  "effective_date": "2026-09-14",
+  "supersedes": "governance/IMPLEMENTATION_STATUS_v1.0.json",
+  "supersession_rule": "v1.0 remains immutable historical deployment evidence. v1.1 separates deployment qualification from whether a computation is currently running, so ACTIVE deployment no longer implies active execution.",
+  "program_manual": {
+    "name": "SymC General Operations Manual",
+    "version": "0.8.0",
+    "date": "2026-09-14",
+    "markdown_sha256": "ee3d9955e19f280ad385488180800d1cdb2d5054823cfa2fa6a697ab3f51d396"
+  },
+  "deployment_state_vocabulary": [
+    "FROZEN",
+    "QUALIFIED",
+    "WIRED",
+    "ACTIVE"
+  ],
+  "execution_state_vocabulary": [
+    "IDLE",
+    "QUEUED",
+    "RUNNING",
+    "COMPLETED",
+    "FAILED",
+    "HOLD"
+  ],
+  "components": {
+    "program_governance": {
+      "deployment_state": "ACTIVE",
+      "protocol": "governance/SCIENTIFIC_CHANGE_CONTROL_PROTOCOL_v1.1.json",
+      "workflow": ".github/workflows/program-governance-audit.yml",
+      "v1_1_registry_qualification_run_id": 34841401307,
+      "v1_1_registry_qualification_commit": "6c30e54b31ef1f49766c6b2b58c91ece49f5eb4c",
+      "v1_1_registry_qualification_conclusion": "success",
+      "execution_state": "IDLE",
+      "claim_allowed": "Governance v1.1 and the v1.1 deployment/execution registry pair have passed CI. The governance deployment is ACTIVE while current execution remains IDLE."
+    },
+    "qe_native_checkpoint_restart": {
+      "deployment_state": "ACTIVE",
+      "protocol": "systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json",
+      "deployment": "systems/co_cu111/SYSTEM2_L15_NATIVE_RESTART_DEPLOYMENT_v0.1.json",
+      "qualification_required": true,
+      "qualification_run_id": 33343734581,
+      "qualification_result_artifact_id": 9741750399,
+      "qualification_status": "PASS",
+      "energy_absolute_difference_ev": 1.3605858839582652e-7,
+      "energy_tolerance_ev": 0.0001,
+      "force_component_absolute_difference_max_ev_per_angstrom": 0.000035738336896046104,
+      "force_tolerance_ev_per_angstrom": 0.0001,
+      "crossed_fresh_github_runners": true,
+      "direct_one_rank": true,
+      "scientific_settings_changed": false,
+      "thresholds_changed": false,
+      "production_workflow": ".github/workflows/co-cu111-l15-native-restart-production-v1.yml",
+      "last_production_run_id": 33351747179,
+      "last_production_run_conclusion": "success",
+      "execution_state": "IDLE",
+      "last_execution_state": "COMPLETED",
+      "claim_allowed": "Native QE checkpoint/restart remains a qualified and wired deployment capability. Its recorded L15 production chain completed; no GitHub Actions computation is currently running and workflow success does not override a scientific HOLD."
+    },
+    "legacy_l15_runtime_recovery_run_33329096616": {
+      "deployment_state": "WIRED",
+      "architecture": "LEGACY_EXTERNAL_WRAPPER_NO_NATIVE_ELECTRONIC_CHECKPOINT",
+      "run_id": 33329096616,
+      "conclusion": "FAILURE",
+      "failure_class": "MECHANICAL_PRE_BFGS_SCF_TIMEOUT",
+      "native_checkpoint_protected": false,
+      "successor_identical_unsalvageable_retry_allowed": false,
+      "execution_state": "FAILED",
+      "claim_allowed": "The legacy runtime recovery remains a preserved mechanical failure. It may not be rewritten as checkpoint-protected or retried through the identical unsalvageable architecture."
+    },
+    "system3_h_ru0001_pbe_bulk_recovery": {
+      "deployment_state": "WIRED",
+      "scope": "NON_KINETIC_METHOD_CANDIDATE_AUDIT",
+      "protocol": "systems/h_ru0001/SYSTEM3_PBE_BULK_CANDIDATE_PROTOCOL_v0.1.json",
+      "original_run_id": 33345475633,
+      "recovery_workflow": ".github/workflows/system3-h-ru0001-pbe-bulk-recovery-v1.yml",
+      "recovery_run_id": 33351800093,
+      "recovery_run_conclusion": "success",
+      "recomputed_qe_cases": 0,
+      "execution_state": "COMPLETED",
+      "kinetic_inputs_used": false,
+      "cross_system_inference_allowed": false,
+      "claim_allowed": "The zero-recompute bulk recovery completed successfully. It is not active computation and it does not override the later H/Ru(0001) clean-surface numerical HOLD."
+    }
+  },
+  "current_execution_snapshot": {
+    "checked_date": "2026-09-14",
+    "scope": "GitHub Actions in SymC-Universe/Chemistry",
+    "in_progress_run_count": 0,
+    "queued_run_count": 0,
+    "source_queries": [
+      "https://api.github.com/repos/SymC-Universe/Chemistry/actions/runs?status=in_progress&per_page=100",
+      "https://api.github.com/repos/SymC-Universe/Chemistry/actions/runs?status=queued&per_page=100"
+    ],
+    "interpretation": "No GitHub Actions computation is currently running or queued. This does not assert the absence of local, external, or manually hosted computation."
+  },
+  "current_scientific_dispositions": {
+    "system2_co_cu111": {
+      "status": "NUMERICAL_HOLD_EXTENSION_AUDIT",
+      "last_adjudication_run_id": 33712992505,
+      "source": "PROGRAM_CLOSURE_STATUS_2026-09-04.md",
+      "scientific_settings_changed_during_recovery": false,
+      "threshold_changed": false,
+      "automatic_downstream_progression_allowed": false
+    },
+    "system3_h_ru0001": {
+      "status": "CLEAN_SURFACE_NUMERICAL_HOLD",
+      "last_adjudication_run_id": 33389260021,
+      "source": "PROGRAM_CLOSURE_STATUS_2026-09-04.md",
+      "scientific_settings_changed_during_recovery": false,
+      "threshold_changed": false,
+      "automatic_downstream_progression_allowed": false
+    },
+    "barrier_height_rate_atlas": {
+      "status": "CLOSED_REPRODUCIBLE_V0.9",
+      "source": "PROGRAM_CLOSURE_STATUS_2026-09-04.md",
+      "depends_on_system2_or_system3_hold_resolution": false
+    }
+  },
+  "synchronization_flags": {
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "acceptance_rule_changed": false,
+    "kinetic_inputs_used": false,
+    "prior_failure_preserved": true,
+    "prospective_before_results": true
+  }
+}

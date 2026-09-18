@@ -1,0 +1,316 @@
+name: CO Cu111 PBE Stage A L26 final assembly v2
+
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-stage-a-l26-final-assembly-v2
+  cancel-in-progress: false
+
+env:
+  PRIOR_RECOVERY_RUN_ID: '31445411702'
+  C2L22_ASSEMBLY_RUN_ID: '31482419488'
+  PRIOR_L26_RUN_ID: '31571756451'
+  FINAL_RESUME_RUN_ID: '31804335647'
+
+  PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  FROZEN_RUNNER: 'systems/co_cu111/pbe_stage_a_runner_v1.py'
+  RECOVERY_RUNNER: 'systems/co_cu111/pbe_stage_a_recovery_v1.py'
+  RECOVERY_CONTRACT: 'systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json'
+
+jobs:
+  assemble-all-recovery-targets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen mechanical assembly inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$FROZEN_RUNNER" "$RECOVERY_RUNNER"
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          contract = json.loads(Path("systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json").read_text())
+          assert contract["schema"] == "co-cu111-stage-a-mechanical-recovery-v0.1"
+          assert contract["status"] == "FROZEN_BEFORE_RECOVERY_RESULTS"
+          assert contract["frozen_inputs"]["mpi_ranks"] == 1
+          assert contract["frozen_inputs"]["thread_environment"] == {
+              "OMP_NUM_THREADS": 1,
+              "OPENBLAS_NUM_THREADS": 1,
+          }
+          assert contract["provenance"]["scientific_settings_changed"] is False
+          expected_targets = {
+              ("C0", 26.0),
+              ("C1", 22.0),
+              ("C1", 26.0),
+              ("C2", 18.0),
+              ("C2", 22.0),
+              ("C2", 26.0),
+          }
+          got_targets = {(r["cutoff_id"], float(r["box_angstrom"])) for r in contract["recovery_targets"]}
+          assert got_targets == expected_targets
+
+          expected_blobs = {
+              "systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json": "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336",
+              "systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json": "4a23d19bbd4374e250582fb1d02419828a06eb5d",
+              "systems/co_cu111/pbe_stage_a_runner_v1.py": "13f457a7f8daaeb2ffccdb9fe6f01c1b0d3a1bdd",
+              "systems/co_cu111/pbe_stage_a_recovery_v1.py": "4463ec9ef3e4a4ffa8e8fc6d5bc1e0620a10e9ac",
+              "systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json": "16923e4384420a8820442e8bcee738bc8eff75af",
+          }
+          for path, expected in expected_blobs.items():
+              got = subprocess.check_output(["git", "hash-object", path], text=True).strip()
+              assert got == expected, (path, got, expected)
+          print("FROZEN_MECHANICAL_ASSEMBLY_INPUTS_VERIFIED")
+          print("RECOVERY_TARGET_COUNT=6")
+          PY
+
+      - name: Install unchanged Python runtime dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-numpy
+
+      - name: Download prior consolidated recovery state
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-mechanical-recovery-v1-state
+          path: parts/base_state
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download completed C2 L22 assembly state
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-c2l22-assembly-v3-state
+          path: parts/c2l22_state
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.C2L22_ASSEMBLY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C1 L26 chunk 0-7
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C1-L26-i0-7
+          path: parts/c1_0_7
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C1 L26 chunk 8-15
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C1-L26-i8-15
+          path: parts/c1_8_15
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C1 L26 chunk 16-22
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C1-L26-i16-22
+          path: parts/c1_16_22
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C2 L26 chunk 0-7
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C2-L26-i0-7
+          path: parts/c2_0_7
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C2 L26 chunk 8-15
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C2-L26-i8-15
+          path: parts/c2_8_15
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download resumed C2 L26 chunk 16-22
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-c2-final-resume-v1-C2-L26-i16-22
+          path: parts/c2_16_22
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.FINAL_RESUME_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Assemble six immutable recovery targets explicitly
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p \
+            assembly/stageA/co_C0_L26 \
+            assembly/stageA/co_C1_L22 \
+            assembly/stageA/co_C1_L26 \
+            assembly/stageA/co_C2_L18 \
+            assembly/stageA/co_C2_L22 \
+            assembly/stageA/co_C2_L26
+
+          cp -a parts/base_state/recovered/co_C0_L26/. assembly/stageA/co_C0_L26/
+          cp -a parts/base_state/recovered/co_C1_L22/. assembly/stageA/co_C1_L22/
+          cp -a parts/base_state/recovered/co_C2_L18/. assembly/stageA/co_C2_L18/
+          cp -a parts/c2l22_state/recovered/stageA/co_C2_L22/. assembly/stageA/co_C2_L22/
+
+          cp -a parts/c1_0_7/co_C1_L26/. assembly/stageA/co_C1_L26/
+          cp -a parts/c1_8_15/co_C1_L26/. assembly/stageA/co_C1_L26/
+          cp -a parts/c1_16_22/co_C1_L26/. assembly/stageA/co_C1_L26/
+
+          cp -a parts/c2_0_7/co_C2_L26/. assembly/stageA/co_C2_L26/
+          cp -a parts/c2_8_15/co_C2_L26/. assembly/stageA/co_C2_L26/
+          cp -a parts/c2_16_22/co_C2_L26/. assembly/stageA/co_C2_L26/
+
+          for member in co_C0_L26 co_C1_L22 co_C1_L26 co_C2_L18 co_C2_L22 co_C2_L26; do
+            echo "$member point directories: $(find "assembly/stageA/$member" -maxdepth 1 -type d -name 'r*' | wc -l)"
+          done
+
+      - name: Independently verify all 138 frozen recovery points
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import math
+          from pathlib import Path
+
+          root = Path("assembly/stageA")
+          members = (
+              "co_C0_L26",
+              "co_C1_L22",
+              "co_C1_L26",
+              "co_C2_L18",
+              "co_C2_L22",
+              "co_C2_L26",
+          )
+
+          def sha256(path: Path) -> str:
+              h = hashlib.sha256()
+              with path.open("rb") as f:
+                  for block in iter(lambda: f.read(1 << 20), b""):
+                      h.update(block)
+              return h.hexdigest()
+
+          for member in members:
+              valid = 0
+              for idx in range(23):
+                  r = 1.02 + 0.01 * idx
+                  tag = f"r{r:.2f}"
+                  d = root / member / tag
+                  rp = d / "run_record.json"
+                  inp = d / f"{tag}.in"
+                  out = d / f"{tag}.out"
+                  assert rp.is_file() and inp.is_file() and out.is_file(), (member, tag, "missing")
+                  rec = json.loads(rp.read_text())
+                  assert rec["returncode"] == 0, (member, tag, "returncode")
+                  assert rec["job_done"] is True, (member, tag, "job_done")
+                  assert math.isfinite(float(rec["energy_ev_total"])), (member, tag, "energy")
+                  assert rec["input_sha256"] == sha256(inp), (member, tag, "input hash")
+                  assert rec["output_sha256"] == sha256(out), (member, tag, "output hash")
+                  assert abs(float(rec["bond_angstrom"]) - r) < 1e-8, (member, tag, "bond")
+                  valid += 1
+              assert valid == 23
+              print(f"{member}: VERIFIED_23_OF_23")
+
+          for tag in ("r1.18", "r1.19", "r1.20", "r1.21", "r1.22"):
+              rec = json.loads((root / "co_C2_L26" / tag / "run_record.json").read_text())
+              assert rec["mechanical_recovery_source"] == "reused_recovery_run_31571756451_artifact_9219394270"
+              assert rec["mechanical_recovery_seed_digest"] == "sha256:e4aa7247317c9c1ae378003b0a516d3ecccadd998dae70b093dd3588df63f827"
+          for tag in ("r1.23", "r1.24"):
+              rec = json.loads((root / "co_C2_L26" / tag / "run_record.json").read_text())
+              assert rec["mechanical_recovery_source"] == "recomputed_unchanged_frozen_input"
+
+          print("ALL_138_FROZEN_RECOVERY_POINTS_VERIFIED")
+          print("SCIENTIFIC_SETTINGS_CHANGED=false")
+          PY
+
+      - name: Record final assembly provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          provenance = {
+              "schema": "co-cu111-stage-a-final-mechanical-assembly-provenance-v0.1",
+              "source_runs": {
+                  "initial_recovery": 31445411702,
+                  "c2_l22_assembly": 31482419488,
+                  "l26_large_recovery": 31571756451,
+                  "l26_final_resume": 31804335647,
+              },
+              "source_artifacts": {
+                  "initial_recovery_state_digest": "sha256:e482f693aeaafc196e72530cafd8355716ab389580ca7a9645598a241f92958a",
+                  "c2_l22_assembly_state_digest": "sha256:1b8ca58633edf6fcc6f7016f39e118238618e9668c502da4bb333becdbe73d58",
+                  "c1_l26_i0_7_digest": "sha256:a57fee0ca793afd4f81cb789baeb163592c4a6a0808601afafe3d247596a9593",
+                  "c1_l26_i8_15_digest": "sha256:009ca79b1dca29412ce37665e88305609eb429959707379764e8e2e853f4ecf0",
+                  "c1_l26_i16_22_digest": "sha256:d7977960e615ad24ce44532a1c1622dfd6d6ad2d0bd4e64645a262cfcaa963db",
+                  "c2_l26_i0_7_digest": "sha256:6a8ff3184ef9086e06419e42038cb37c80696d3518bec2fb672f65bb14d345ed",
+                  "c2_l26_i8_15_digest": "sha256:a1af50b355c865f08866c758193d69584c479db843b720d208bc5aaba5d8789d",
+                  "c2_l26_i16_22_resumed_digest": "sha256:a7d765b43c18e91d1bde2ef0cac374cad356e616c23e72d54b47b37f4c3ea169",
+              },
+              "recovery_target_count": 6,
+              "bond_points_per_target": 23,
+              "total_recovery_points": 138,
+              "scientific_settings_changed": False,
+          }
+          Path("assembly/FINAL_ASSEMBLY_PROVENANCE.json").write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+          PY
+
+      - name: Assemble canonical mechanical recovery state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RECOVERY_RUNNER" assemble-all \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --root assembly \
+            --state-out assembly/MECHANICAL_RECOVERY_STATE.json
+
+      - name: Verify canonical assembly complete
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path("assembly/MECHANICAL_RECOVERY_STATE.json").read_text())
+          assert state["status"] == "COMPLETE"
+          assert state["scientific_result_available"] is False
+          assert len(state["members"]) == 6
+          assert all(m["complete"] for m in state["members"])
+          assert all(m["record_count"] == 23 for m in state["members"])
+          assert state["provenance"]["scientific_settings_changed"] is False
+          print("MECHANICAL_RECOVERY_ASSEMBLY_COMPLETE")
+          print("RECOVERY_TARGETS=6")
+          print("TOTAL_FROZEN_RECOVERY_POINTS=138")
+          PY
+
+      - name: Upload complete assembled mechanical recovery
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-stage-a-mechanical-recovery-complete-v1
+          path: assembly
+          retention-days: 90
+          if-no-files-found: error

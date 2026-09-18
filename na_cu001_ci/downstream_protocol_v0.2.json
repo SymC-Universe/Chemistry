@@ -1,0 +1,38 @@
+{
+  "schema": "na-cu001-downstream-protocol-v0.2",
+  "status": "FROZEN_BEFORE_CORRECTED_DOWNSTREAM_RESULTS",
+  "pilot_role": "Na/Cu(001) is the development pilot, not a randomly selected validation-system observation.",
+  "maximum_separation": {
+    "arc_efficiency_maximum": "maximum of eta(chi); not computed by this route",
+    "reaction_path_saddle": "maximum energy along the converged minimum-energy path",
+    "kinetic_turnover_maximum": "requires an independent friction/damping series and independent rates; not assumed"
+  },
+  "source_of_truth": {
+    "method": "method_protocol_v0.2.json",
+    "artifact_dag": "integration_closure_plan_v0.2.json",
+    "engine": "closure_engine_v2.py",
+    "workflow": ".github/workflows/na-cu001-computational-route-v2.yml"
+  },
+  "stages": {
+    "bulk": "Reuse the completed 120-SCF matrix, execute a six-SCF 80 Ry/16^3 holdout EOS, and select the smallest candidate satisfying joint lattice and energy gates.",
+    "slab": "Run the full primitive Cu(001) thickness-vacuum-k matrix under ESM bc1, fit thickness-dependent slab energies, retain at least seven layers for one-sided mobility, and record a periodic comparison only as a diagnostic.",
+    "clean_surface": "Relax the symmetric clean slab in z and reproduce the final energy with a separate fixed-geometry SCF.",
+    "pseudopotential": "Verify immutable archive and UPF hashes, read Na cutoffs from authoritative SSSP cutoffs.json metadata, and calculate an isolated spin-polarized Na reference.",
+    "adsorption": "Run hollow, bridge, and top starts at three heights under primary and expanded one-sided substrate-mobility models. Unexpected minima trigger mechanism revision rather than coercion.",
+    "paths": "Converge ordinary NEB at 5, 7, and 9 images for both mobility models. CI-NEB is initialized from the selected ordinary path coordinates.",
+    "mobility": "Compare primary and expanded full-path barriers. A difference above 5 meV gives HOLD and requires a larger preregistered mobility region.",
+    "saddle": "Build mass-weighted Hessians for Na-only, Na+4Cu, and Na+8Cu regions at 0.02 and 0.04 A. Require index-one saddle behavior, active-region prefactor convergence, and 3D downhill return to distinct endpoint basins.",
+    "sensitivity": "Evaluate fixed-geometry cutoff, density-cutoff, k-mesh, and vacuum variants plus the full-path mobility difference. Report a nonprobabilistic maximum-deviation envelope, not a confidence interval.",
+    "atlas": "Admit one independent mechanism with a nested temperature-rate curve and orthogonal barrier, saddle, prefactor, rate, and experimental tiers."
+  },
+  "null_fields": [
+    "zero_point_correction_ev",
+    "thermal_free_energy_correction_ev",
+    "friction_or_linewidth"
+  ],
+  "turnover_rule": "No turnover claim or reconstruction is permitted without independently varied friction/damping and independent rate evidence.",
+  "electrostatic_convention": {
+    "registered": "ESM bc1 from the full clean-slab matrix through adsorption, endpoints, NEB, saddle, and sensitivity",
+    "periodic_role": "diagnostic comparison only"
+  }
+}

@@ -1,0 +1,199 @@
+name: CO Cu111 QE native restart qualification v1
+
+on:
+  push:
+    branches:
+      - agent/na-cu001-integration
+    paths:
+      - '.github/workflows/co-cu111-qe-native-restart-qualification-v1.yml'
+      - 'systems/co_cu111/qe_native_restart_qualification_v1.py'
+      - 'systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  QUAL_RUNNER: systems/co_cu111/qe_native_restart_qualification_v1.py
+  RESTART_PROTOCOL: systems/co_cu111/SYSTEM2_QE_NATIVE_CHECKPOINT_RESTART_PROTOCOL_v0.1.json
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  PW_SHA256: 2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855
+  CU_PSEUDO_SHA256: b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d
+  CU_PSEUDO: Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  checkpoint-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen qualification contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$QUAL_RUNNER"
+          python3 -m json.tool "$RESTART_PROTOCOL" >/dev/null
+          python3 - <<'PY'
+          import json,os
+          p=json.load(open(os.environ['RESTART_PROTOCOL']))
+          q=p['qualification_before_production_restart']
+          assert p['status']=='FROZEN_BEFORE_CHECKPOINT_QUALIFICATION_RESULTS'
+          assert p['scope']=='MECHANICAL_EXECUTION_RECOVERY_ONLY'
+          assert q['required'] is True
+          assert q['fixture_is_non_evidentiary'] is True
+          assert q['must_use_exact_stage_a_pw_x'] is True
+          assert q['must_exercise_relax_clean_stop_and_restart'] is True
+          assert q['must_cross_two_fresh_github_jobs'] is True
+          assert q['must_verify_checkpoint_manifest_across_jobs'] is True
+          assert q['energy_absolute_difference_max_ev']==0.0001
+          assert q['force_component_absolute_difference_max_ev_per_angstrom']==0.0001
+          print('NATIVE_RESTART_QUALIFICATION_CONTRACT_VERIFIED')
+          PY
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Verify exact engine and Cu pseudopotential
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$QUAL_RUNNER" verify-binary --pw engine/bin/pw.x --pseudo "engine/pseudos/$CU_PSEUDO"
+      - name: Run uninterrupted non-evidentiary reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf restart_state reference
+          mkdir -p reference
+          python3 "$QUAL_RUNNER" write-input --mode reference --out reference/qual_reference.in
+          timeout 2700 engine/bin/pw.x < reference/qual_reference.in > reference/qual_reference.out 2>&1
+          grep -q 'JOB DONE.' reference/qual_reference.out
+      - name: Force clean QE max_seconds stop and capture native state
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf restart_state checkpoint_source source_bundle
+          mkdir -p checkpoint_source source_bundle
+          python3 "$QUAL_RUNNER" write-input --mode checkpoint --max-seconds 15 --out checkpoint_source/qual_checkpoint.in
+          set +e
+          timeout 900 engine/bin/pw.x < checkpoint_source/qual_checkpoint.in > checkpoint_source/qual_checkpoint.out 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" = 124 ]; then
+            echo 'QUALIFICATION_HOLD: external timeout killed checkpoint source' >&2
+            exit 1
+          fi
+          echo "QE_CHECKPOINT_SOURCE_RC=$rc"
+          python3 "$QUAL_RUNNER" check-clean-stop --output checkpoint_source/qual_checkpoint.out --restart-root restart_state
+          python3 "$QUAL_RUNNER" manifest --root restart_state --out source_bundle/checkpoint_manifest.json
+          cp -a restart_state source_bundle/restart_state
+          cp reference/qual_reference.out source_bundle/qual_reference.out
+          cp reference/qual_reference.in source_bundle/qual_reference.in
+          cp checkpoint_source/qual_checkpoint.out source_bundle/qual_checkpoint.out
+          cp checkpoint_source/qual_checkpoint.in source_bundle/qual_checkpoint.in
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          def sha(p):
+              h=hashlib.sha256();
+              with open(p,'rb') as f:
+                  for b in iter(lambda:f.read(1<<20),b''): h.update(b)
+              return h.hexdigest()
+          meta={
+            'schema':'co-cu111-qe-native-restart-qualification-source-v0.1',
+            'fixture_is_non_evidentiary':True,
+            'source_run_id':int(os.environ['GITHUB_RUN_ID']),
+            'source_job_name':os.environ['GITHUB_JOB'],
+            'repository_commit':os.environ['GITHUB_SHA'],
+            'pw_x_sha256':os.environ['PW_SHA256'],
+            'cu_pseudo_sha256':os.environ['CU_PSEUDO_SHA256'],
+            'checkpoint_input_sha256':sha('checkpoint_source/qual_checkpoint.in'),
+            'checkpoint_output_sha256':sha('checkpoint_source/qual_checkpoint.out'),
+            'recursive_restart_manifest_sha256':sha('source_bundle/checkpoint_manifest.json'),
+            'clean_stop_requested_by_max_seconds':True,
+            'external_wrapper_timeout':False,
+            'execution_mode':'DIRECT_ONE_RANK',
+            'mpi_ranks':1,
+            'thread_caps':{'OMP_NUM_THREADS':1,'OPENBLAS_NUM_THREADS':1,'MKL_NUM_THREADS':1}
+          }
+          pathlib.Path('source_bundle/source_metadata.json').write_text(json.dumps(meta,indent=2,sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-qe-native-restart-qualification-source-v1
+          path: source_bundle
+          retention-days: 90
+          if-no-files-found: error
+
+  checkpoint-resume:
+    needs: checkpoint-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-qe-native-restart-qualification-source-v1
+          path: source_bundle
+      - name: Verify exact engine and checkpoint integrity on fresh runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          python3 "$QUAL_RUNNER" verify-binary --pw engine/bin/pw.x --pseudo "engine/pseudos/$CU_PSEUDO"
+          python3 "$QUAL_RUNNER" verify-manifest --root source_bundle/restart_state --manifest source_bundle/checkpoint_manifest.json
+          python3 - <<'PY'
+          import json,os
+          m=json.load(open('source_bundle/source_metadata.json'))
+          assert m['fixture_is_non_evidentiary'] is True
+          assert m['pw_x_sha256']==os.environ['PW_SHA256']
+          assert m['cu_pseudo_sha256']==os.environ['CU_PSEUDO_SHA256']
+          assert m['external_wrapper_timeout'] is False
+          assert m['execution_mode']=='DIRECT_ONE_RANK' and m['mpi_ranks']==1
+          assert m['source_job_name']=='checkpoint-source'
+          print('CROSS_JOB_CHECKPOINT_METADATA_VERIFIED')
+          PY
+      - name: Resume exact native QE checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf restart_state resumed
+          cp -a source_bundle/restart_state restart_state
+          mkdir -p resumed
+          python3 "$QUAL_RUNNER" write-input --mode resume --out resumed/qual_resume.in
+          timeout 2700 engine/bin/pw.x < resumed/qual_resume.in > resumed/qual_resume.out 2>&1
+          grep -q 'JOB DONE.' resumed/qual_resume.out
+      - name: Compare restart result with uninterrupted reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qualification_result
+          python3 "$QUAL_RUNNER" compare --reference source_bundle/qual_reference.out --resumed resumed/qual_resume.out --out qualification_result/QE_NATIVE_RESTART_QUALIFICATION_RESULT.json
+          cp source_bundle/checkpoint_manifest.json qualification_result/checkpoint_manifest.json
+          cp source_bundle/source_metadata.json qualification_result/source_metadata.json
+          cp resumed/qual_resume.in qualification_result/qual_resume.in
+          cp resumed/qual_resume.out qualification_result/qual_resume.out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-qe-native-restart-qualification-result-v1
+          path: qualification_result
+          retention-days: 90
+          if-no-files-found: error
