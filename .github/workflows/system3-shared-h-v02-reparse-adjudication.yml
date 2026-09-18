@@ -1,0 +1,155 @@
+name: System3 shared H v0.2 reparse and adjudication
+
+on:
+  push:
+    branches: [bridge/h-ru0001-relax-pass-20260917]
+    paths:
+      - '.github/workflows/system3-shared-h-v02-reparse-adjudication.yml'
+      - 'systems/shared/shared_h_reparse_v02.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PROTOCOL: systems/shared/H_PSEUDOPOTENTIAL_QUALIFICATION_RECOVERY_v0.2.json
+  RUNNER: systems/shared/shared_h_qualification_recovery_v2.py
+  REPARSER: systems/shared/shared_h_reparse_v02.py
+  SOURCE_V02_RUN_ID: '35306388897'
+  H2_CLOSURE_RUN_ID: '35333306947'
+
+jobs:
+  h2-reparse:
+    strategy:
+      fail-fast: false
+      matrix:
+        basis: ['70', '80']
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download completed H2 raw evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-h-v02-h2-${{ matrix.basis }}-mechanical-closure
+          path: source
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.H2_CLOSURE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Reparse only existing H2 outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile "$REPARSER" "$RUNNER"
+          python3 "$REPARSER"             --protocol "$PROTOCOL"             --mode h2             --basis "${{ matrix.basis }}"             --source-root source             --out corrected
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-h-v02-h2-${{ matrix.basis }}-reparsed
+          path: corrected
+          retention-days: 90
+          if-no-files-found: error
+
+  atom70-reparse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait only for the already-running atom70 artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 210); do
+            artifacts=$(curl -fsSL               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/SymC-Universe/Chemistry/actions/runs/$SOURCE_V02_RUN_ID/artifacts?name=shared-h-v02-atom-70")
+            count=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("total_count",0))' <<<"$artifacts")
+            if [ "$count" -gt 0 ]; then
+              echo "ATOM70_ARTIFACT_READY"
+              exit 0
+            fi
+            run_json=$(curl -fsSL               -H "Authorization: Bearer $GH_TOKEN"               -H "Accept: application/vnd.github+json"               "https://api.github.com/repos/SymC-Universe/Chemistry/actions/runs/$SOURCE_V02_RUN_ID")
+            status=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])' <<<"$run_json")
+            if [ "$status" = "completed" ]; then
+              echo "MECHANICAL_HOLD: atom70 source run completed without expected artifact" >&2
+              exit 3
+            fi
+            sleep 60
+          done
+          echo "MECHANICAL_HOLD: atom70 artifact did not appear inside polling runway" >&2
+          exit 4
+      - name: Download preserved atom70 recovery evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-h-v02-atom-70
+          path: source
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_V02_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Reparse only existing atom70 outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$REPARSER"             --protocol "$PROTOCOL"             --mode atom             --basis 70             --source-root source             --out corrected
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-h-v02-atom-70-reparsed
+          path: corrected
+          retention-days: 90
+          if-no-files-found: error
+
+  adjudicate:
+    needs: [h2-reparse, atom70-reparse]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: shared-h-v02-atom-70-reparsed
+          path: inputs/atom70
+      - uses: actions/download-artifact@v4
+        with:
+          name: shared-h-v02-h2-70-reparsed
+          path: inputs/h270
+      - uses: actions/download-artifact@v4
+        with:
+          name: shared-h-v02-h2-80-reparsed
+          path: inputs/h280
+      - name: Assemble compact adjudication inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging
+          cp inputs/atom70/ATOM_70_RECOVERY_RESULT.json staging/
+          cp systems/shared/evidence/ATOM_80_RECOVERY_RESULT_run35306388897.json staging/ATOM_80_RECOVERY_RESULT.json
+          cp inputs/h270/H2_70_RECOVERY_RESULT.json staging/
+          cp inputs/h280/H2_80_RECOVERY_RESULT.json staging/
+      - name: Adjudicate frozen v0.2 without retuning
+        shell: bash
+        run: |
+          set +e
+          python3 "$RUNNER"             --protocol "$PROTOCOL"             --mode adjudicate             --source-root staging             --out adjudication
+          rc=$?
+          set -e
+          test -f adjudication/H_PSEUDOPOTENTIAL_QUALIFICATION_RECOVERY_RESULT_v0.2.json
+          python3 - <<'PY'
+          import json
+          p='adjudication/H_PSEUDOPOTENTIAL_QUALIFICATION_RECOVERY_RESULT_v0.2.json'
+          r=json.load(open(p))
+          print("V0_2_FINAL_STATUS="+r["status"])
+          print("V0_2_NEXT_GATE="+str(r["next_gate"]))
+          print("V0_2_ALL_COMPLETE="+str(r["crosscheck"]["all_complete"]))
+          PY
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 2 ]; then
+            echo "MECHANICAL_HOLD: unexpected adjudicator exit code $rc" >&2
+            exit "$rc"
+          fi
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shared-h-pseudopotential-qualification-recovery-v02-final
+          path: adjudication
+          retention-days: 90
+          if-no-files-found: error
