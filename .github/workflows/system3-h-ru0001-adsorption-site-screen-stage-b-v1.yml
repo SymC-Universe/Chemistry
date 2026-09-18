@@ -55,7 +55,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
           import json, os, time, urllib.request
           repo=os.environ['REPO']; run_id=os.environ['STAGE_A_RUN_ID']; token=os.environ['GH_TOKEN']
           url=f"https://api.github.com/repos/{repo}/actions/runs/{run_id}"
@@ -67,7 +67,8 @@ jobs:
               if data.get('status')=='completed':
                   if data.get('conclusion')!='success':
                       raise SystemExit(f"Stage-A did not PASS workflow execution: {data.get('conclusion')}")
-                  print(f"stage_a_run_id={run_id}")
+                  with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as out:
+                      out.write(f"stage_a_run_id={run_id}\n")
                   break
               time.sleep(20)
           else:
@@ -158,7 +159,7 @@ jobs:
 
   adjudicate:
     needs: stage_b
-    if: always()
+    if: ${{ always() && needs.stage_b.result != 'skipped' && needs.stage_b.result != 'cancelled' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
