@@ -1,0 +1,37 @@
+{
+  "schema": "symc-co-cu111-l19-scientific-hold-record-v0.1",
+  "recorded_at_utc": "2026-09-18T05:20:00Z",
+  "source_run_id": 35112369188,
+  "source_job_id": 105481070037,
+  "source_branch": "bridge/co-cu111-l19-20260916",
+  "source_head_sha": "4282ec2b08896c7047f89c3bb6801d01a5757ac9",
+  "protocol_path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json",
+  "scientific_disposition": "SCIENTIFIC_HOLD",
+  "frozen_status": "NUMERICAL_HOLD_L19_CONTINUE_FROZEN_DEPTH_LADDER",
+  "hold_reason": "target independent SCF incomplete inside frozen runway",
+  "exact_terminal_message": "SCIENTIFIC_HOLD: target independent SCF incomplete inside frozen runway",
+  "frozen_maximum_scf_segments": 4,
+  "additional_scientific_rung_authorized": false,
+  "automatic_site_ordering_dispatch": false,
+  "final_scf_artifact": {
+    "name": "co-cu111-l19-exact-restart-scf-04-recovery-v1",
+    "artifact_id": 10530769874,
+    "size_bytes": 10687922205,
+    "digest": "sha256:49d1f940371c83c0c746ca4376f88abeb97dcfa352ea9f3667b667b15fb5056b"
+  },
+  "mechanical_reporting_defect": {
+    "present": true,
+    "description": "The original adjudicator raised the scientific HOLD before writing L19_CONVERGENCE_RESULT.json, so the result-artifact upload failed after the scientific disposition was already determined.",
+    "science_affected": false,
+    "repair_commit": "64aad88fc88d45bae7211e0f698de5a5a56db6bf",
+    "repair": "The adjudicator now writes a fail-closed HOLD provenance JSON before raising on exhausted relaxation or SCF runway."
+  },
+  "frozen_science_preserved": {
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "additional_scf_runway_added": false,
+    "kinetic_inputs_used": false,
+    "hold_reclassified_as_pass": false
+  },
+  "next_action": "No further L19 compute under v0.1. Any additional SCF runway requires a prospectively frozen new scientific continuation protocol."
+}
