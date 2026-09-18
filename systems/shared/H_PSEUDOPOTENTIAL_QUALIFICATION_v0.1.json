@@ -1,0 +1,82 @@
+{
+  "schema": "symc-shared-h-pseudopotential-qualification-v0.1",
+  "status": "FROZEN_BEFORE_QUALIFICATION_RESULTS",
+  "effective_date": "2026-09-17",
+  "scope": "NON_TARGET_H_PSEUDOPOTENTIAL_PROVENANCE_AND_BASIS_COMPATIBILITY",
+  "purpose": "Qualify one exact PBE hydrogen pseudopotential for H/Ru(0001) and H2/Cu(111) without using either system's adsorption ordering, barrier, rate, chi, or expected downstream agreement.",
+  "candidate": {
+    "family": "SG15 ONCV",
+    "filename": "H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf",
+    "source_repository": "unkcpz/sssp-verify-scripts",
+    "source_commit": "0fb07d89d13407b0f00a0a3b8c21d7e387fb56f9",
+    "source_path": "libraries-pbe/nc-sg15-oncvpsp4/H.nc.pbe.z_1.oncvpsp4.sg15.v0.upf",
+    "expected_md5": "39a7d154f04d65093d603a437119a874",
+    "sha256": "RECORD_AT_EXECUTION"
+  },
+  "independent_convergence_evidence": {
+    "source_repository": "unkcpz/sssp-verify-scripts",
+    "source_commit": "0fb07d89d13407b0f00a0a3b8c21d7e387fb56f9",
+    "source_path": "2-experiments/2024-01-analyze/nc-curated/lib_nc_curated_precision.json",
+    "registered_label": "H.nc.z_1.oncvpsp4.sg15.v0",
+    "wavefunction_cutoff_ry": 70.0,
+    "charge_density_cutoff_ry": 140.0,
+    "role": "external non-target numerical convergence evidence; not a chemical-accuracy claim"
+  },
+  "production_basis_compatibility": {
+    "h_ru0001_basis": {"ecutwfc_ry": 70.0, "ecutrho_ry": 280.0},
+    "interpretation": "The accepted H/Ru basis equals the registered H wavefunction cutoff and exceeds the registered H charge-density cutoff.",
+    "crosscheck_basis": {"ecutwfc_ry": 80.0, "ecutrho_ry": 320.0}
+  },
+  "runtime": {
+    "pw_sha256": "2b1ede22d276b1d4dab3e31212f306e88ae57e00f33ce6b532b849493a457855",
+    "engine_run_id": 31371043888,
+    "engine_artifact": "co-cu111-pbe-stage-a-engine-v2",
+    "mpi_ranks": 1,
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1
+  },
+  "local_compatibility_tests": {
+    "cell_angstrom": 18.0,
+    "kpoints": "Gamma",
+    "h_atom": {
+      "spin_polarized": true,
+      "total_magnetization": 1,
+      "run_at_bases": [[70.0, 280.0], [80.0, 320.0]]
+    },
+    "h2": {
+      "initial_bond_angstrom": 0.75,
+      "calculation": "relax",
+      "ion_dynamics": "bfgs",
+      "run_at_bases": [[70.0, 280.0], [80.0, 320.0]],
+      "experimental_bond_or_binding_value_used_as_gate": false
+    }
+  },
+  "acceptance": {
+    "all_qe_jobs_must_finish": true,
+    "both_h2_relaxations_must_report_bfgs_converged": true,
+    "max_h2_final_force_ev_per_angstrom": 0.005,
+    "max_abs_h2_bond_difference_70_vs_80_angstrom": 0.005,
+    "max_abs_h2_binding_energy_difference_70_vs_80_ev": 0.005,
+    "pass_status": "SHARED_H_PSEUDOPOTENTIAL_PASS",
+    "hold_status": "SHARED_H_PSEUDOPOTENTIAL_HOLD"
+  },
+  "firewall": {
+    "published_h_ru_site_ordering_used": false,
+    "published_h_ru_barrier_used": false,
+    "published_h_ru_rate_used": false,
+    "published_h2_cu_barrier_used": false,
+    "published_h2_cu_rate_used": false,
+    "chi_used": false,
+    "capital_Chi_used": false,
+    "target_agreement_may_rescue_failure": false
+  },
+  "scope_boundary": {
+    "qualifies": ["exact H pseudopotential identity", "generic PBE numerical provenance", "70/280 basis compatibility", "isolated H/H2 runtime compatibility"],
+    "does_not_qualify": ["H/Ru adsorption accuracy", "H2/Cu reaction accuracy", "surface site ordering", "barriers", "rates", "dissipation", "chi", "capital Chi"]
+  },
+  "eligible_consumers_after_pass": [
+    "H/Ru(0001) adsorption-site screen if all other entry gates pass",
+    "H2/Cu(111) isolated-H2 and target prerequisites if its independently frozen protocol accepts the same PBE/H basis lineage"
+  ]
+}
