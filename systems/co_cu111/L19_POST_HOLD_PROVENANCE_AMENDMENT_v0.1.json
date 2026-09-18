@@ -1,0 +1,53 @@
+{
+  "schema": "co-cu111-l19-post-hold-provenance-amendment-v0.1",
+  "status": "FROZEN_AFTER_SCIENTIFIC_HOLD_REPORTING_REPAIR",
+  "effective_date": "2026-09-18",
+  "scope": "REPORTING_AND_PROVENANCE_ONLY",
+  "scientific_protocol": {
+    "path": "systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json",
+    "sha256": "f27ecf8ee22776e695b92549c1f2a8a8818df57d8f8f24033d0cd2c49f5f361e",
+    "modified_by_this_amendment": false
+  },
+  "original_frozen_runner": {
+    "path": "systems/co_cu111/pbe_surface_depth_stack_v1.py",
+    "sha256": "0cd11a12c5f031197e4cc11880e5b0dd963ee83e5b223b1eae308d5bec9e0401"
+  },
+  "reporting_repair": {
+    "commit_sha": "64aad88fc88d45bae7211e0f698de5a5a56db6bf",
+    "runner_sha256": "1bbfa730641c6007cf93c6418b015f505716c2fa58ba1f59a3879ea009d43df7",
+    "diff_scope": {
+      "files_changed": 1,
+      "file": "systems/co_cu111/pbe_surface_depth_stack_v1.py",
+      "additions": 50,
+      "deletions": 0,
+      "location": "command_adjudicate fail-closed HOLD branches"
+    },
+    "behavioral_change": "Write a structured HOLD result JSON before raising the pre-existing SCIENTIFIC_HOLD on exhausted relaxation or SCF runway.",
+    "scientific_logic_changed": false,
+    "thresholds_changed": false,
+    "runway_changed": false,
+    "continuation_logic_changed": false,
+    "energies_or_results_changed": false
+  },
+  "verification": {
+    "probe_run_id": 35337527492,
+    "probe_job_id": 105575726897,
+    "tests_passed": 11,
+    "self_test_passed": true,
+    "post_hold_provenance_probe_passed": true
+  },
+  "scientific_disposition": {
+    "source_run_id": 35112369188,
+    "status": "SCIENTIFIC_HOLD",
+    "reason": "target independent SCF incomplete inside frozen runway",
+    "maximum_scf_segments": 4,
+    "additional_scf_runway_authorized": false,
+    "additional_scientific_rung_authorized": false,
+    "automatic_site_ordering_dispatch": false
+  },
+  "workflow_control": {
+    "superseded_production_workflow_manual_only": true,
+    "production_relaunch_authorized": false,
+    "closure_is_provenance_only": true
+  }
+}
