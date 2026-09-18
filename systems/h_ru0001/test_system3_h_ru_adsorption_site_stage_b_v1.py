@@ -17,9 +17,14 @@ class TestStageB(unittest.TestCase):
 
     def test_off_registry_classifier(self):
         aa=2.7252915734660723
-        # Chosen away from all registered high-symmetry motifs.
-        got=b.nearest_basin(0.22*aa,0.31*aa,aa)
-        self.assertIn(got["basin"],["off_registry","bridge","fcc_hollow","hcp_hollow","top"])
+        # Fractional primitive coordinate (0.33, 0.16) is >0.35 A from every
+        # registered top/bridge/fcc/hcp motif, so the classifier must refuse a label.
+        a1,a2=a.primitive_vectors(aa)
+        x=0.33*a1[0]+0.16*a2[0]
+        y=0.33*a1[1]+0.16*a2[1]
+        got=b.nearest_basin(x,y,aa)
+        self.assertEqual(got["basin"],"off_registry")
+        self.assertGreater(got["distance_angstrom"],0.35)
 
     def test_protocol_requires_spin_sensitivity_before_path(self):
         p=json.load(open(ROOT/"SYSTEM3_ADSORPTION_SITE_SCREEN_PROTOCOL_v0.1.json"))
