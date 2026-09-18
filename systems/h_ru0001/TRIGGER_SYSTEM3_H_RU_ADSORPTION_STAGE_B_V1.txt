@@ -1,0 +1,8 @@
+AUTHORIZED_TRIGGER
+date=2026-09-17
+system=H/Ru(0001)
+gate=adsorption_site_screen_stage_B
+upstream_stage_a_run=35295894752
+rule=workflow_must_wait_for_exact_stage_a_run_success_and_verify_STAGE_A_SELECTION_PASS_before_any_stage_B_case
+scientific_settings_changed=false
+thresholds_changed=false
