@@ -1,8 +1,8 @@
 {
   "schema": "h-ru0001-system3-state-ledger-v0.1",
-  "updated_at": "2026-08-30T23:14:00-05:00",
+  "updated_at": "2026-09-18T11:10:59Z",
   "system": "H/Ru(0001)",
-  "branch": "agent/na-cu001-integration",
+  "branch": "bridge/h-ru0001-relax-pass-20260917",
   "readiness": {
     "METHOD_READY": {
       "state": "ADJUDICATED",
@@ -10,28 +10,68 @@
       "source": "SYSTEM3_PBE_BULK_CANDIDATE_ADJUDICATION_v0.1.json"
     },
     "SURFACE_READY": {
-      "state": "PLANNED_AND_EXECUTING_PREREQUISITE",
-      "status": "PENDING",
-      "fixed_grid_run_id": 33356315835,
-      "fixed_grid_states": {
-        "PLANNED": true,
-        "EXECUTED": true,
-        "MEASURED": false,
-        "VALID": false,
-        "ADJUDICATED": false
-      },
-      "relaxation_protocol_frozen": true,
-      "checkpoint_qualification_run_id": 33343734581,
-      "checkpoint_qualification": "QUALIFIED",
-      "checkpoint_production_status": "NOT_ACTIVE_UNTIL_SYSTEM3_WORKFLOW_WIRING_IS_VERIFIED"
+      "state": "ADJUDICATED",
+      "status": "PASS",
+      "source": "SYSTEM3_CLEAN_RU0001_RELAXATION_LOCAL_RESULT_20260917.json",
+      "selected_layers": 17,
+      "relaxation_status": "RELAX_COMPLETE",
+      "reproduction_status": "COMPLETE",
+      "max_movable_force_ev_per_angstrom": 0.0005723276110115071,
+      "force_threshold_ev_per_angstrom": 0.02,
+      "absolute_total_energy_difference_ev": 1.2245436664670706e-8,
+      "reproduction_threshold_ev": 0.001
     },
-    "ADSORPTION_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
-    "PATH_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
-    "QUANTUM_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
-    "DISSIPATION_READY": {"state": "NOT_YET_ENTERED", "status": "PENDING"},
-    "CHEMSA_ELIGIBLE": {"state": "NOT_YET_ENTERED", "status": "PENDING"}
+    "SHARED_H_REFERENCE_READY": {
+      "state": "ADJUDICATED",
+      "status": "SCIENTIFIC_HOLD",
+      "closure_run_id": 35336909612,
+      "closure_run_conclusion": "success",
+      "upstream_recovery_run_id": 35306388897,
+      "upstream_recovery_run_conclusion": "failure",
+      "h2_70": "PASS",
+      "h2_80": "PASS",
+      "h_atom_70": "ATOM_RECOVERY_HOLD",
+      "h_atom_80": "ATOM_RECOVERY_HOLD",
+      "final_disposition": "SHARED_H_PSEUDOPOTENTIAL_RECOVERY_HOLD",
+      "binding_energies_released": false,
+      "next_gate": "STOP_SHARED_H_BRANCH_WITHOUT_RETUNING"
+    },
+    "ADSORPTION_READY": {
+      "state": "BLOCKED_BY_SHARED_H_REFERENCE",
+      "status": "SCIENTIFIC_HOLD",
+      "stage_a_prior_run_id": 35295894752,
+      "stage_a_prior_conclusion": "failure",
+      "stage_b_prior_run_id": 35295941060,
+      "stage_b_prior_conclusion": "cancelled"
+    },
+    "PATH_READY": {
+      "state": "NOT_YET_ENTERED_UPSTREAM_HOLD",
+      "status": "PENDING"
+    },
+    "QUANTUM_READY": {
+      "state": "NOT_YET_ENTERED_UPSTREAM_HOLD",
+      "status": "PENDING"
+    },
+    "DISSIPATION_READY": {
+      "state": "NOT_YET_ENTERED_UPSTREAM_HOLD",
+      "status": "PENDING"
+    },
+    "CHEMSA_ELIGIBLE": {
+      "state": "NOT_YET_ENTERED_UPSTREAM_HOLD",
+      "status": "PENDING"
+    }
+  },
+  "firewalls": {
+    "scientific_settings_changed": false,
+    "thresholds_changed": false,
+    "kinetic_inputs_used_for_shared_h_qualification": false,
+    "adsorption_execution_authorized": false,
+    "binding_energy_interpretation_authorized": false,
+    "chi_or_capital_chi_interpretation_authorized": false,
+    "retuning_after_hold_authorized": false
   },
   "documentation": {
+    "clean_surface_result": "SYSTEM3_CLEAN_RU0001_RELAXATION_LOCAL_RESULT_20260917.json",
     "manuscript_integration_source": "SYSTEM3_MANUSCRIPT_INTEGRATION_v0.1.md",
     "package_contract": "SYSTEM3_REPRODUCIBILITY_PACKAGE_SPEC_v0.1.json",
     "l15_equivalent_target": "SYSTEM3_L15_EQUIVALENT_READINESS_TARGET_v0.1.json"
