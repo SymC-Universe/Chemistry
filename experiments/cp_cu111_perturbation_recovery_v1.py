@@ -95,16 +95,21 @@ def preflight():
             zh=rng.standard_normal(hN); z=sign*np.r_[zh,-zh]
             v += .5*dt*force(x,b,p)/p.m; x += .5*dt*v; cc=np.exp(-p.eta*dt); ss=np.sqrt(KB*p.T/p.m*(1-cc*cc)); v=cc*v+ss*z; x += .5*dt*v; v += .5*dt*force(x,b,p)/p.m
         return np.array(vals)
+    conv={}
+    for b in BARRIERS:
+        seed=int(19000+b*10); coarse=resp(b,.05,1,.001,seed); fine=resp(b,.05,1,.0005,seed)
+        conv[str(int(b))]={'response_rms':float(np.sqrt(np.mean((coarse-fine)**2)))}
+    out['G5_timestep_convergence']=conv
     lin={}
     for b in BARRIERS:
         seed=int(20000+b*10); c25p=resp(b,.025,1,p.dt_ps,seed); c50p=resp(b,.05,1,p.dt_ps,seed); c50m=resp(b,.05,-1,p.dt_ps,seed)
         lin[str(int(b))]={'amplitude_rms':float(np.sqrt(np.mean((c25p-c50p)**2))),'sign_rms':float(np.sqrt(np.mean((c50p-c50m)**2)))}
     out['G6_linearity']=lin
-    out['PASS']=bool(rms<=.01 and abs(out['G2_equipartition_ratio']-1)<=.03 and abs(out['G3_D_ratio']-1)<=.05 and all(z['barrier_relerr']<=1e-8 and z['curvature_relerr']<=1e-8 for z in pot.values()) and all(z['amplitude_rms']<=.05 and z['sign_rms']<=.05 for z in lin.values()))
+    out['PASS']=bool(rms<=.01 and abs(out['G2_equipartition_ratio']-1)<=.03 and abs(out['G3_D_ratio']-1)<=.05 and all(z['barrier_relerr']<=1e-8 and z['curvature_relerr']<=1e-8 for z in pot.values()) and all(z['response_rms']<=.05 for z in conv.values()) and all(z['amplitude_rms']<=.05 and z['sign_rms']<=.05 for z in lin.values()))
     return out
 
 def simulate(barrier,sign,seed,p=FROZEN):
-    rng=np.random.default_rng(seed); n=p.n_per_sign; x,v=sample_well(n,barrier,rng,p); delta=sign*.05*p.L; x=x+delta; x_start=x.copy(); w0=np.round((x-delta)/p.L).astype(int)
+    rng=np.random.default_rng(seed); n=p.n_per_sign; x,v=sample_well(n,barrier,rng,p); w0=np.round(x/p.L).astype(int); delta=sign*.05*p.L; x=x+delta; x_start=x.copy()
     fpt=np.full(n,np.inf); dt=p.dt_ps*PS; steps=int(round(p.t_ps/p.dt_ps)); early_every=int(round(p.early_sample_ps/p.dt_ps)); long_every=int(round(p.long_sample_ps/p.dt_ps))
     early_t=[]; early_local=[]; long_t=[]; sq=[]
     for i in range(steps+1):
@@ -113,7 +118,7 @@ def simulate(barrier,sign,seed,p=FROZEN):
         if i%long_every==0:
             long_t.append(i*p.dt_ps); sq.append(((x-x_start)/ANG)**2)
         if i==steps: break
-        x,v=step(x,v,barrier,dt,rng,p); wi=np.round((x-delta)/p.L).astype(int); hit=np.isinf(fpt)&(wi!=w0); fpt[hit]=(i+1)*p.dt_ps
+        x,v=step(x,v,barrier,dt,rng,p); wi=np.round(x/p.L).astype(int); hit=np.isinf(fpt)&(wi!=w0); fpt[hit]=(i+1)*p.dt_ps
     return {'early_t':np.array(early_t),'early_local':np.stack(early_local,axis=1),'long_t':np.array(long_t),'sq':np.stack(sq,axis=1),'fpt':fpt}
 
 def per_traj_D(long_t,sq,p=FROZEN):
