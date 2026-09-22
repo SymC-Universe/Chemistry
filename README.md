@@ -127,6 +127,8 @@ The current program-level governance baseline is **SymC General Operations Manua
 
 Current pointers:
 
+- current GOM migration: `governance/CHEMISTRY_GOM_V0.8.3_MIGRATION_20260921.md`
+
 - GOM adoption record: `governance/CHEMISTRY_GOM_V0_8_0_ADOPTION_2026-09-14.md`
 - Chemistry project guardrails: `governance/CHEMISTRY_PROJECT_GUARDRAILS_GOM_V0_8_0.md`
 - current project-state pointer: `CHEMISTRY_PROJECT_STATE_2026-09-14.md`
@@ -135,4 +137,4 @@ Current pointers:
 - frozen scalar-modal inheritance contract: `systems/CHEMISTRY_STABILITY_ARC_INHERITANCE_v0.1.json`
 - historical consolidated closure snapshot: `PROGRAM_CLOSURE_STATUS_2026-09-04.md`
 
-The governance reconciliation does not reopen numerical HOLDs, change scientific settings, or promote any claim. Before inheriting an active computation, verify the actual workflow/run/checkpoint source of truth rather than inferring activity from the existence of a workflow or monitor.
+The governance reconciliation does not reopen numerical HOLDs, change scientific settings, or promote any claim. Under GOM v0.8.3, the joint meaning of any licensed local scalar and the broader chemical-system Chi architecture must be investigated where applicable, and perturbation/recovery is kept distinct from reaction, barrier, adsorption, or relaxation physics rather than used as a generic synonym. Before inheriting an active computation, verify the actual workflow/run/checkpoint source of truth rather than inferring activity from the existence of a workflow or monitor.
