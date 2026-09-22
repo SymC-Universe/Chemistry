@@ -1,0 +1,34 @@
+name: Na Cu001 C7 definitive audit run locator
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths: ['.github/workflows/na-cu001-c7-definitive-audit-run-locator.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  locate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record definitive C7 audit run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_SHA: 8b2a4edb99efe2a9428ab4cbd2cd9cfd5e389ff9
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=''
+          for attempt in 1 2 3 4 5; do
+            result=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "Na Cu001 C7 definitive slab audit" --commit "$AUDIT_SHA" --limit 10 --json databaseId,status,conclusion,headSha,url,createdAt --jq '.[0] // empty')
+            if [[ -n "$result" ]]; then break; fi
+            sleep 10
+          done
+          [[ -n "$result" ]]
+          mkdir -p na_cu001_ci/checkpoints
+          printf '%s\n' "$result" > na_cu001_ci/checkpoints/C7_DEFINITIVE_AUDIT_RUN.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add na_cu001_ci/checkpoints/C7_DEFINITIVE_AUDIT_RUN.json
+          git commit -m 'chore(na-cu001): record timeout-safe C7 audit run'
+          git push

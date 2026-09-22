@@ -1,0 +1,347 @@
+name: CO Cu111 PBE Stage A L26 C2 final resume v1
+
+# COST_CONTROL: manual dispatch only; standard GitHub-hosted runners only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-pbe-stage-a-l26-c2-final-resume-v1
+  cancel-in-progress: false
+
+env:
+  SOURCE_STAGE_A_RUN_ID: '31371043888'
+  SOURCE_STAGE_A_COMMIT: 'd411a92c7a548524e7af598b909313f5b421faf9'
+  SOURCE_ENGINE_ARTIFACT: 'co-cu111-pbe-stage-a-engine-v2'
+
+  PRIOR_L26_RUN_ID: '31571756451'
+  PARTIAL_FINAL_ARTIFACT: 'co-cu111-stage-a-l26-large-recovery-v1-C2-L26-i16-22'
+  PARTIAL_FINAL_ARTIFACT_ID: '9219394270'
+  PARTIAL_FINAL_ARTIFACT_DIGEST: 'sha256:e4aa7247317c9c1ae378003b0a516d3ecccadd998dae70b093dd3588df63f827'
+
+  PROTOCOL: 'systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json'
+  BUNDLE: 'systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json'
+  FROZEN_RUNNER: 'systems/co_cu111/pbe_stage_a_runner_v1.py'
+  RECOVERY_RUNNER: 'systems/co_cu111/pbe_stage_a_recovery_v1.py'
+  RECOVERY_CONTRACT: 'systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json'
+  INFRA_HOLD: 'systems/co_cu111/STAGE_A_L26_MECHANICAL_INFRASTRUCTURE_HOLD_v0.1.json'
+
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  resume-final-c2-l26:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record execution resource class
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+          echo "requested_runner_label=ubuntu-24.04"
+          echo "nproc_with_frozen_omp=$(nproc)"
+          echo "online_processors=$(getconf _NPROCESSORS_ONLN)"
+          free -h
+
+      - name: Verify frozen science and mechanical resume scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 -m py_compile \
+            "$FROZEN_RUNNER" \
+            "$RECOVERY_RUNNER"
+
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          contract = json.loads(Path("systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json").read_text())
+          hold = json.loads(Path("systems/co_cu111/STAGE_A_L26_MECHANICAL_INFRASTRUCTURE_HOLD_v0.1.json").read_text())
+
+          assert contract["schema"] == "co-cu111-stage-a-mechanical-recovery-v0.1"
+          assert contract["status"] == "FROZEN_BEFORE_RECOVERY_RESULTS"
+          assert contract["source_stage_a"]["run_id"] == 31371043888
+          assert contract["source_stage_a"]["commit"] == "d411a92c7a548524e7af598b909313f5b421faf9"
+          assert contract["frozen_inputs"]["mpi_ranks"] == 1
+          assert contract["frozen_inputs"]["thread_environment"] == {
+              "OMP_NUM_THREADS": 1,
+              "OPENBLAS_NUM_THREADS": 1,
+          }
+          assert contract["provenance"]["scientific_settings_changed"] is False
+          assert any(
+              row["cutoff_id"] == "C2" and float(row["box_angstrom"]) == 26.0
+              for row in contract["recovery_targets"]
+          )
+          assert any(
+              int(row["start_index"]) == 16 and int(row["end_index"]) == 22
+              for row in contract["bond_point_chunks"]
+          )
+
+          assert hold["schema"] == "co-cu111-stage-a-l26-mechanical-infrastructure-hold-v0.1"
+          assert hold["status"] == "MECHANICAL_INFRASTRUCTURE_HOLD"
+          assert hold["standard_runner_eligible"] is False
+          assert hold["same_runner_retry_forbidden"] is True
+          assert hold["scientific_settings_changed"] is False
+
+          expected_blobs = {
+              "systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json": "2e1816ca8b1eda9fac3a97fe5eb3cd73f76de336",
+              "systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json": "4a23d19bbd4374e250582fb1d02419828a06eb5d",
+              "systems/co_cu111/pbe_stage_a_runner_v1.py": "13f457a7f8daaeb2ffccdb9fe6f01c1b0d3a1bdd",
+              "systems/co_cu111/pbe_stage_a_recovery_v1.py": "4463ec9ef3e4a4ffa8e8fc6d5bc1e0620a10e9ac",
+              "systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json": "16923e4384420a8820442e8bcee738bc8eff75af",
+              "systems/co_cu111/STAGE_A_L26_MECHANICAL_INFRASTRUCTURE_HOLD_v0.1.json": "42a90598d11cb6cde8649841824e2cc023e94775",
+          }
+          for path, expected in expected_blobs.items():
+              got = subprocess.check_output(["git", "hash-object", path], text=True).strip()
+              assert got == expected, (path, got, expected)
+
+          print("FROZEN_SCIENCE_UNCHANGED")
+          print("MECHANICAL_RESUME_SCOPE=C2/L26 indices 16-22")
+          PY
+
+      - name: Install unchanged runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libopenblas-dev \
+            liblapack-dev \
+            libfftw3-dev \
+            libopenmpi-dev \
+            openmpi-bin \
+            python3-numpy
+
+      - name: Download exact source-run Stage A engine
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SOURCE_ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SOURCE_STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify exact frozen engine and science files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c engine/meta/STAGE_A_ENGINE.sha256
+          cmp "$PROTOCOL" engine/meta/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json
+          cmp "$BUNDLE" engine/meta/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+          cmp "$FROZEN_RUNNER" engine/meta/pbe_stage_a_runner_v1.py
+          chmod +x engine/bin/pw.x
+          test -x engine/bin/pw.x
+
+      - name: Download recoverable partial final chunk
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTIAL_FINAL_ARTIFACT }}
+          path: seed
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify partial seed and remaining work
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import math
+          from pathlib import Path
+
+          root = Path("seed/co_C2_L26")
+          assert root.is_dir()
+
+          def sha256(path):
+              h = hashlib.sha256()
+              with path.open("rb") as f:
+                  for block in iter(lambda: f.read(1 << 20), b""):
+                      h.update(block)
+              return h.hexdigest()
+
+          complete = ["r1.18", "r1.19", "r1.20", "r1.21", "r1.22"]
+          for tag in complete:
+              d = root / tag
+              rec = json.loads((d / "run_record.json").read_text())
+              inp = d / f"{tag}.in"
+              out = d / f"{tag}.out"
+              assert rec["returncode"] == 0
+              assert rec["job_done"] is True
+              assert math.isfinite(float(rec["energy_ev_total"]))
+              assert rec["input_sha256"] == sha256(inp)
+              assert rec["output_sha256"] == sha256(out)
+
+          assert not (root / "r1.23" / "run_record.json").exists()
+          assert not (root / "r1.24" / "run_record.json").exists()
+          print("VALID_RECOVERABLE_SEED_POINTS=5")
+          print("REMAINING_FROZEN_POINTS=r1.23,r1.24")
+          PY
+
+      - name: Resume frozen C2 L26 final chunk
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p stageA
+          python3 "$RECOVERY_RUNNER" co-chunk \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --pseudo-dir engine/pseudos \
+            --pw engine/bin/pw.x \
+            --cutoff-id C2 \
+            --box 26 \
+            --start-index 16 \
+            --end-index 22 \
+            --seed-root seed \
+            --out stageA/co_C2_L26
+
+      - name: Correct resume provenance and verify complete chunk
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          member = Path("stageA/co_C2_L26")
+          reused_tags = {"r1.18", "r1.19", "r1.20", "r1.21", "r1.22"}
+          source_label = "reused_recovery_run_31571756451_artifact_9219394270"
+          digest = "sha256:e4aa7247317c9c1ae378003b0a516d3ecccadd998dae70b093dd3588df63f827"
+
+          for tag in reused_tags:
+              path = member / tag / "run_record.json"
+              rec = json.loads(path.read_text())
+              assert rec["job_done"] is True and rec["returncode"] == 0
+              rec["mechanical_recovery_source"] = source_label
+              rec["mechanical_recovery_seed_digest"] = digest
+              path.write_text(json.dumps(rec, indent=2, sort_keys=True) + "\n")
+
+          for tag in ("r1.23", "r1.24"):
+              rec = json.loads((member / tag / "run_record.json").read_text())
+              assert rec["job_done"] is True and rec["returncode"] == 0
+              assert rec["mechanical_recovery_source"] == "recomputed_unchanged_frozen_input"
+
+          chunk_path = member / "CHUNK_16_22.json"
+          chunk = json.loads(chunk_path.read_text())
+          assert chunk["status"] == "COMPLETE"
+          assert len(chunk["records"]) == 7
+          for rec in chunk["records"]:
+              tag = f"r{float(rec['bond_angstrom']):.2f}"
+              if tag in reused_tags:
+                  rec["mechanical_recovery_source"] = source_label
+                  rec["mechanical_recovery_seed_digest"] = digest
+          chunk["resume_provenance"] = {
+              "prior_recovery_run_id": 31571756451,
+              "partial_artifact_id": 9219394270,
+              "partial_artifact_digest": digest,
+              "reused_points": sorted(reused_tags),
+              "recomputed_points": ["r1.23", "r1.24"],
+              "scientific_settings_changed": False,
+          }
+          chunk_path.write_text(json.dumps(chunk, indent=2, sort_keys=True) + "\n")
+          print("FINAL_C2_L26_CHUNK_COMPLETE")
+          print("SCIENTIFIC_SETTINGS_CHANGED=false")
+          PY
+
+      - name: Upload resumed final chunk
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-c2-final-resume-v1-C2-L26-i16-22
+          path: stageA
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Download C1 L26 chunk 0-7 for assembly
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C1-L26-i0-7
+          path: assembly/stageA
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C1 L26 chunk 8-15 for assembly
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C1-L26-i8-15
+          path: assembly/stageA
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C1 L26 chunk 16-22 for assembly
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C1-L26-i16-22
+          path: assembly/stageA
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C2 L26 chunk 0-7 for assembly
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C2-L26-i0-7
+          path: assembly/stageA
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download C2 L26 chunk 8-15 for assembly
+        uses: actions/download-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-large-recovery-v1-C2-L26-i8-15
+          path: assembly/stageA
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.PRIOR_L26_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Assemble and validate complete L26 recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assembly/stageA/co_C2_L26
+          cp -a stageA/co_C2_L26/. assembly/stageA/co_C2_L26/
+
+          python3 "$RECOVERY_RUNNER" assemble-all \
+            --runner "$FROZEN_RUNNER" \
+            --protocol "$PROTOCOL" \
+            --bundle "$BUNDLE" \
+            --contract "$RECOVERY_CONTRACT" \
+            --root assembly \
+            --state-out assembly/MECHANICAL_RECOVERY_STATE.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path("assembly/MECHANICAL_RECOVERY_STATE.json").read_text())
+          assert state["status"] == "COMPLETE"
+          assert state["scientific_result_available"] is False
+          assert len(state["members"]) == 2
+          assert all(m["complete"] for m in state["members"])
+          assert all(m["record_count"] == 23 for m in state["members"])
+          assert state["provenance"]["scientific_settings_changed"] is False
+          print("L26_MECHANICAL_RECOVERY_ASSEMBLY_COMPLETE")
+          PY
+
+      - name: Upload complete assembled L26 recovery
+        uses: actions/upload-artifact@v4
+        with:
+          name: co-cu111-stage-a-l26-mechanical-recovery-complete-v1
+          path: assembly
+          retention-days: 90

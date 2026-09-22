@@ -1,0 +1,61 @@
+{
+  "claim_firewall": {
+    "System2_outcome_can_select_System3_settings": false,
+    "chi_can_select_upstream_settings": false,
+    "later_kinetic_agreement_can_select_upstream_settings": false,
+    "universality_under_adjudication": false
+  },
+  "effective_date": "2026-08-30",
+  "integration_mode": "ADDITIVE_TO_INHERITANCE_LOCKED_CHEMSA_PARENT",
+  "parent_inheritance": {
+    "System3_additions_receive_new_versions": true,
+    "existing_ChemSA_parent_files_may_not_be_silently_rewritten": true,
+    "historical_results_are_not_recomputed_or_relabeled_to_fit_System3": true,
+    "parent_release_identity_and_sha256_must_be_recorded_at_final_assembly": true
+  },
+  "raw_evidence_minimum": [
+    "every QE pw.in used for an evidentiary calculation",
+    "every corresponding pw.out",
+    "JOB DONE and parsed energy/force validity status",
+    "exact engine SHA-256",
+    "exact pseudopotential SHA-256",
+    "workflow run id and repository commit",
+    "wall-clock metadata",
+    "native restart state manifest for checkpointed production"
+  ],
+  "required_top_level_roles": [
+    "README/status",
+    "protocols",
+    "source code",
+    "tests",
+    "raw evidence",
+    "adjudicated results",
+    "provenance ledger",
+    "state ledger",
+    "manuscript integration source",
+    "reproducibility guide",
+    "manifest and checksums"
+  ],
+  "schema": "h-ru0001-reproducibility-package-spec-v0.1",
+  "state_model": {
+    "raw_evidence_precedes_summary_in_conflict": true,
+    "required_states": [
+      "PLANNED",
+      "EXECUTED",
+      "MEASURED",
+      "VALID",
+      "ADJUDICATED"
+    ],
+    "states_are_not_synonyms": true
+  },
+  "status": "FROZEN_PACKAGE_CONTRACT_BEFORE_DOWNSTREAM_SYSTEM3_RESULTS",
+  "system": "H/Ru(0001)",
+  "validation": {
+    "clean_room_extraction_and_validation_required": true,
+    "failed_gate_cannot_be_overridden_by_manuscript_text": true,
+    "manifest_covers_every_shipped_file_except_the_manifest_itself": true,
+    "missing_required_file_is_failure": true,
+    "scientific_tests_and_package_integrity_tests_are_separate": true,
+    "undeclared_file_is_failure": true
+  }
+}

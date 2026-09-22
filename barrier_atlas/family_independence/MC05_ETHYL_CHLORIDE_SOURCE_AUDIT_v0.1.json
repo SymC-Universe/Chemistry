@@ -1,0 +1,166 @@
+{
+  "schema": "barrier-atlas-mc05-ethyl-chloride-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_RECONSTRUCTION_WITHOUT_PROMOTION",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.4.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_reaction_experimental_agreement_may_select_theory_method": false,
+    "method_variants_are_replicates_not_independent_families": true
+  },
+  "trail_id": "FI-MC05-ETHYL-CHLORIDE-HCL-ELIMINATION",
+  "target_class": "MC05",
+  "reaction": "C2H5Cl -> C2H4 + HCl",
+  "classification_gate": "PASS_MC05_ELIMINATION",
+  "primary_kinetic_comparator": {
+    "authors": "K. A. Holbrook and A. R. W. Marsh",
+    "title": "Unimolecular gas-phase pyrolysis of ethyl chloride",
+    "journal": "Transactions of the Faraday Society",
+    "year": 1967,
+    "volume": 63,
+    "pages": "643-654",
+    "doi": "10.1039/TF9676300643",
+    "phase": "gas",
+    "temperature_range_C": [402.0, 521.0],
+    "temperature_range_K": [675.15, 794.15],
+    "pressure_floor_mmHg": 0.2,
+    "reaction_order": 1,
+    "high_pressure_arrhenius_expression": "k_inf = 10^(14.03 +/- 0.44) * exp(-(58430 +/- 1500 cal mol^-1)/(R*T)) s^-1",
+    "activation_energy_status": "RATE_DERIVED_QUANTITY_NOT_AN_INDEPENDENT_BARRIER_VALIDATOR"
+  },
+  "reconstructed_theory_source": {
+    "authors": "Alexis Maldonado, Jose R. Mora, Tania Cordova, Gabriel Chuchani",
+    "title": "Density functional theory calculations of the gas-phase elimination kinetics of 2-(dimethylamino)ethyl chloride and ethyl chloride",
+    "journal": "Journal of Molecular Structure: THEOCHEM",
+    "year": 2010,
+    "volume": 961,
+    "pages": "55-61",
+    "doi": "10.1016/j.theochem.2010.08.037",
+    "reaction_path": "TS1 four-centered cyclic molecular HCl elimination",
+    "table_temperature_C": 400.0,
+    "table_temperature_K": 673.15,
+    "quantity_typing": "The source table reports calculated rate constants, activation energies, activation enthalpies, activation entropies, and activation Gibbs free energies for the same TS1 elimination event. These are retained exactly by quantity type and are not collapsed into a single generic barrier.",
+    "method_records": [
+      {
+        "method": "B3LYP/6-31G(d,p)",
+        "ten4_k_s_inverse": 1.51,
+        "activation_energy_kJ_per_mol": 231.3,
+        "log10_A_s_inverse": 14.13,
+        "activation_enthalpy_kJ_per_mol": 225.7,
+        "activation_entropy_J_per_mol_K": 10.4,
+        "activation_gibbs_free_energy_kJ_per_mol": 218.7
+      },
+      {
+        "method": "B3LYP/6-31++G(d,p)",
+        "ten4_k_s_inverse": 5.38,
+        "activation_energy_kJ_per_mol": 224.1,
+        "log10_A_s_inverse": 14.12,
+        "activation_enthalpy_kJ_per_mol": 218.5,
+        "activation_entropy_J_per_mol_K": 10.3,
+        "activation_gibbs_free_energy_kJ_per_mol": 211.5
+      },
+      {
+        "method": "MPW1PW91/6-31G(d,p)",
+        "ten4_k_s_inverse": 0.15,
+        "activation_energy_kJ_per_mol": 243.8,
+        "log10_A_s_inverse": 14.10,
+        "activation_enthalpy_kJ_per_mol": 238.2,
+        "activation_entropy_J_per_mol_K": 10.0,
+        "activation_gibbs_free_energy_kJ_per_mol": 231.5
+      },
+      {
+        "method": "MPW1PW91/6-31++G(d,p)",
+        "ten4_k_s_inverse": 0.43,
+        "activation_energy_kJ_per_mol": 237.9,
+        "log10_A_s_inverse": 14.10,
+        "activation_enthalpy_kJ_per_mol": 232.2,
+        "activation_entropy_J_per_mol_K": 9.9,
+        "activation_gibbs_free_energy_kJ_per_mol": 225.7
+      },
+      {
+        "method": "PBEPBE/6-31G(d,p)",
+        "ten4_k_s_inverse": 22.25,
+        "activation_energy_kJ_per_mol": 216.3,
+        "log10_A_s_inverse": 14.14,
+        "activation_enthalpy_kJ_per_mol": 210.7,
+        "activation_entropy_status": "NOT_TRANSCRIBED_DUE_TO_SOURCE_EXTRACTION_AMBIGUITY",
+        "activation_gibbs_free_energy_kJ_per_mol": 203.5
+      },
+      {
+        "method": "PBEPBE/6-31++G(d,p)",
+        "ten4_k_s_inverse": 60.60,
+        "activation_energy_kJ_per_mol": 210.6,
+        "log10_A_s_inverse": 14.12,
+        "activation_enthalpy_kJ_per_mol": 205.0,
+        "activation_entropy_status": "NOT_TRANSCRIBED_DUE_TO_SOURCE_EXTRACTION_AMBIGUITY",
+        "activation_gibbs_free_energy_kJ_per_mol": 198.0
+      }
+    ],
+    "source_experimental_row": {
+      "ten4_k_s_inverse": 0.11,
+      "activation_energy_kJ_per_mol": 241.8,
+      "log10_A_s_inverse": 13.80,
+      "activation_enthalpy_kJ_per_mol": 236.2,
+      "activation_entropy_J_per_mol_K": 4.20,
+      "activation_gibbs_free_energy_kJ_per_mol": 233.4,
+      "provenance": "The 2010 paper attributes the ethyl-chloride experimental activation quantities used in its comparison to G. Chuchani, I. Martin, G. Martin, and D. B. Bigley, International Journal of Chemical Kinetics 11 (1979) 109."
+    }
+  },
+  "method_selection_audit": {
+    "result": "FAIL_FOR_SINGLE_METHOD_PROMOTION",
+    "basis": [
+      "The 2010 paper explicitly evaluates the proposed TS1 mechanism using agreement between calculated and experimental activation enthalpy/energy.",
+      "The paper's same-reaction experimental comparison therefore participates in the evidential case for the favored mechanism/method performance.",
+      "Selecting MPW1PW91 or another method because it lies closest to the experimental activation values would violate the frozen selection firewall.",
+      "All six functional/basis variants remain computational replicates until an independent method-selection rule is fixed without reference to the target kinetics."
+    ],
+    "same_physical_reaction_calibration_source": {
+      "authors": "G. Chuchani, I. Martin, G. Martin, D. B. Bigley",
+      "journal": "International Journal of Chemical Kinetics",
+      "year": 1979,
+      "volume": 11,
+      "page": 109,
+      "title": "Neighboring group participation of polar beta substituents in the gas-phase pyrolysis of 2-substituted ethyl chlorides"
+    }
+  },
+  "supersession_note": "This audit supersedes only FAMILY_DEPTH_EXTENSION_v0.4's provisional statement that the exact 2010 numerical parent table had not yet been recovered. It does not supersede or relax the v0.4 nonpromotion state.",
+  "barrier_gate": "HOLD_METHOD_SELECTION_INDEPENDENCE_AFTER_EXACT_TABLE_RECOVERY",
+  "comparator_gate": "PRESENT_BUT_NOT_CONTIGUOUSLY_PROMOTED_AFTER_BARRIER_SELECTION_HOLD",
+  "condition_gate": "NOT_REACHED",
+  "independence_gate": "HOLD_SAME_REACTION_EXPERIMENT_IN_THEORY_SELECTION_CHAIN",
+  "representation_mode": "UNIMOLECULAR_ELIMINATION_WITH_FALLOFF_REQUIRING_HIGH_PRESSURE_MAPPING",
+  "highest_contiguous_promotion_state": "SOURCE_QUALIFIED",
+  "terminal_state": "METHOD_SELECTION_AND_PROVENANCE_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "next_clean_lead": {
+    "source": {
+      "author": "Philippe C. Hiberty",
+      "title": "Organic transition states. IV. Concerted elimination of hydrogen chloride from ethyl chloride",
+      "journal": "Journal of the American Chemical Society",
+      "year": 1975,
+      "doi": "10.1021/ja00854a004"
+    },
+    "reason": "An earlier ab initio treatment may provide a method choice not selected by the 1979 same-reaction comparison used in the 2010 DFT study.",
+    "next_gate": "Recover the exact Hiberty numerical barrier and its quantity definition, audit whether earlier ethyl-chloride kinetics influenced the calculation or pathway choice, then pair only with an independent raw kinetic comparator whose condition and provenance chain clears the frozen rule."
+  },
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 3,
+    "ready_classes_unchanged": ["MC06", "MC11", "MC14"],
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

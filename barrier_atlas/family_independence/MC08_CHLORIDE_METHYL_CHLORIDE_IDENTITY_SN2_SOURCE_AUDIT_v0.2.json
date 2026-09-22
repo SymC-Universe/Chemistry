@@ -1,0 +1,132 @@
+{
+  "schema": "barrier-atlas-mc08-chloride-methyl-chloride-identity-sn2-source-audit-v0.2",
+  "status": "ADDITIVE_COMPARATOR_CONFLICT_AUDIT_WITHOUT_PROMOTION",
+  "supersedes_evidence_interpretation_only": "MC08_CHLORIDE_METHYL_CHLORIDE_IDENTITY_SN2_SOURCE_AUDIT_v0.1.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fitted_barrier_may_validate_observed_rate": false,
+    "drift_field_rate_may_be_silently_relabelled_as_zero_field_thermal_rate": false,
+    "conflicting_primary_experiments_may_be_resolved_by_expected_agreement": false
+  },
+  "trail_id": "FI-MC08-CL-CH3CL-IDENTITY-SN2",
+  "target_class": "MC08",
+  "candidate_family": "gas-phase chloride/methyl-chloride identity nucleophilic substitution",
+  "reaction": "37Cl- + CH3(35Cl) -> 35Cl- + CH3(37Cl)",
+  "classification_gate": "PASS_PROVISIONAL_MC08_EXCHANGE_METATHESIS",
+  "family_independence_gate": "PASS_PHYSICALLY_DISTINCT_FROM_FAM_GAS_H3_EXCHANGE",
+  "barrier_evidence": {
+    "source": {
+      "authors": "Mikhail N. Glukhovtsev, Addy Pross, Leo Radom",
+      "title": "Gas-Phase Identity SN2 Reactions of Halide Anions with Methyl Halides: A High-Level Computational Study",
+      "journal": "Journal of the American Chemical Society",
+      "year": 1995,
+      "doi": "10.1021/ja00112a016",
+      "received_date": "1994-08-05"
+    },
+    "method": "G2(+) high-level ab initio molecular-orbital protocol applied across X = F, Cl, Br, I",
+    "mechanistic_path": "conventional back-side Walden-inversion identity SN2 path through an ion-molecule complex and central saddle",
+    "overall_barrier": {
+      "value_kJ_per_mol": 9.8,
+      "temperature_K": 298.0,
+      "type": "calculated 298 K overall activation enthalpy relative to separated reactants, DeltaH_dagger_overall",
+      "not_relabelled_as": [
+        "activation Gibbs free energy",
+        "experimental Arrhenius activation energy",
+        "directly measured translational threshold"
+      ]
+    },
+    "central_barrier": {
+      "value_kJ_per_mol": 53.5,
+      "temperature_K": 298.0,
+      "type": "calculated 298 K central activation enthalpy from the ion-molecule complex to the central saddle",
+      "role": "network-topology descriptor; not substituted for the separated-reactant overall barrier"
+    },
+    "source_comparison_note": "The paper explicitly compares the calculated chloride barriers with prior experimental energetic estimates. The G2(+) protocol is nevertheless an ab initio method applied systematically across the halide series; no same-target rate fitting of the 9.8 kJ/mol value is disclosed. Agreement itself is not used here to select or promote the candidate."
+  },
+  "barrier_gate": "PASS_EXACT_298K_OVERALL_ACTIVATION_ENTHALPY_TYPED",
+  "primary_rate_evidence_A": {
+    "source": {
+      "authors": "Stephan E. Barlow, Jane M. Van Doren, Veronica M. Bierbaum",
+      "title": "The gas phase displacement reaction of chloride ion with methyl chloride as a function of kinetic energy",
+      "journal": "Journal of the American Chemical Society",
+      "year": 1988,
+      "doi": "10.1021/ja00229a064"
+    },
+    "instrument": "tandem flowing-afterglow SIFT-drift",
+    "reported_temperature_K": 300.0,
+    "reported_rate_coefficient": {
+      "value": 3.5e-14,
+      "unit": "cm^3 s^-1",
+      "as_reported_description": "rate coefficient at 300 K"
+    },
+    "reaction_efficiency": 2e-5,
+    "collision_energy_behavior": "reported rate coefficient remains nearly constant up to approximately 0.4 eV center-of-mass collision energy; above approximately 0.5 eV a different high-energy exchange pathway becomes important",
+    "low_energy_mechanism": "usual back-side SN2 attack at carbon",
+    "qualification": "DIRECT_RATE_COEFFICIENT_BUT_DRIFT_FIELD_REGIME_REQUIRES_RECONCILIATION_WITH_THERMAL_SIFT_RESULT"
+  },
+  "primary_rate_evidence_B": {
+    "source": {
+      "authors": "Jane M. Van Doren, Charles H. DePuy, Veronica M. Bierbaum",
+      "title": "Gas-phase isotope-exchange reactions with chloride ion",
+      "journal": "Journal of Physical Chemistry",
+      "year": 1989,
+      "doi": "10.1021/j100340a021"
+    },
+    "instrument": "selected-ion flow tube at thermal energy",
+    "temperature_description": "room temperature / thermal energy",
+    "reported_result": "the SN2 reaction of 37Cl- with methyl chloride is immeasurably slow at room temperature",
+    "source_interpretation": "transition state is close to or projects above the energy of the separated reactants",
+    "qualification": "DIRECT_PRIMARY_THERMAL_RESULT_CONFLICTS_WITH_USING_1988_NUMERICAL_DRIFT_RATE_AS_A_ZERO_FIELD_THERMAL_COMPARATOR"
+  },
+  "comparator_conflict": {
+    "status": "UNRESOLVED_PRIMARY_EXPERIMENTAL_REGIME_CONFLICT",
+    "reason": "Two closely related primary studies from the same experimental group do not license a single zero-field thermal comparator without reconstructing the instrumental energy distributions. The 1988 SIFT-drift paper gives 3.5e-14 cm^3 s^-1 at 300 K, whereas the 1989 thermal selected-ion-flow-tube study calls the same isotope-exchange reaction immeasurably slow at room temperature.",
+    "forbidden_resolution": [
+      "choose the 1988 value because it agrees better with a computed barrier",
+      "treat gas temperature as proof that the drift-field ion kinetic-energy distribution is thermal",
+      "replace the missing thermal comparator with the guided-ion-beam translational threshold"
+    ]
+  },
+  "same_target_model_quarantine": {
+    "source": {
+      "authors": "Susan C. Tucker, Donald G. Truhlar",
+      "title": "A six-body potential energy surface for the SN2 reaction Cl-(g) + CH3Cl(g) and a variational transition-state-theory calculation of the rate constant",
+      "journal": "Journal of the American Chemical Society",
+      "year": 1990,
+      "doi": "10.1021/ja00165a013"
+    },
+    "result": "The reported semiempirical gas-phase barrier of 3.1 kcal/mol was chosen to reproduce the experimental 300 K rate coefficient.",
+    "campaign_role": "CALIBRATION_ONLY_NOT_INDEPENDENT_VALIDATION"
+  },
+  "condition_gate": "HOLD_DRIFT_FIELD_VS_ZERO_FIELD_THERMAL_REGIME_NOT_RECONSTRUCTED",
+  "comparator_gate": "HOLD_CONFLICTING_PRIMARY_RATE_REGIMES",
+  "representation_mode": "NETWORK_RESOLVED_COMPLEX_FORMING_IDENTITY_SN2",
+  "representation_note": "The physical path contains a reactant ion-molecule complex and central saddle; nonstatistical scattering and recrossing literature prevents reducing the observed exchange kinetics to an unqualified one-saddle rate picture.",
+  "representation_gate": "PASS_NETWORK_RESOLVED_REQUIRED",
+  "independence_gate": "NOT_REACHED_AFTER_COMPARATOR_CONFLICT",
+  "highest_contiguous_promotion_state": "BARRIER_QUALIFIED",
+  "terminal_state": "COMPARATOR_REGIME_CONFLICT_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "next_gate": "Reconstruct the 1988 SIFT-drift ion kinetic-energy distribution, field strength and effective collision-energy regime and the 1989 thermal SIFT detection limit. A qualifying comparator requires a numerical experimentally observed rate coefficient under a regime that can be explicitly mapped to the 298 K gas-phase barrier representation. If the 1988 value is demonstrably a non-zero-field drift coefficient, retain it as a separate energetic-regime observable rather than a thermal Atlas comparator.",
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 6,
+    "ready_classes_unchanged": ["MC02", "MC04", "MC06", "MC11", "MC14", "MC16"],
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

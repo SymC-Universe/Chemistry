@@ -1,0 +1,26 @@
+name: Na Cu001 C7 L13 timeout recovery v3
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c7-l13-timeout-recovery-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: na-cu001-c7-l13-timeout-recovery-v3
+  cancel-in-progress: true
+
+jobs:
+  halt:
+    name: Cost-control halt marker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo 'PAUSED_BY_USER_COST_CONTROL'
+          echo 'NO_SCIENTIFIC_COMPUTE_AUTHORIZED'
+          echo 'STANDARD_RUNNERS_ONLY_ON_ANY_FUTURE_REDESIGN'

@@ -1,0 +1,121 @@
+{
+  "schema": "barrier-atlas-mc16-methylperoxy-self-reaction-source-audit-v0.1",
+  "status": "ADDITIVE_SOURCE_RECONSTRUCTION_WITHOUT_PROMOTION",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.5.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "later_independent_experiment_may_not_retroactively_select_between_CASSCF_and_XMC_QDPT2": true
+  },
+  "trail_id": "FI-MC16-METHYLPEROXY-SELF-REACTION",
+  "target_class": "MC16",
+  "target_class_name": "chain_propagation_termination",
+  "candidate_family": "methylperoxy radical self-reaction through dimethyltetroxide",
+  "reaction_network": "CH3O2 + CH3O2 -> CH3O4CH3 -> 2 CH3O + O2, followed by competing propagation/termination product channels",
+  "classification_gate": "PASS_MC16_PROPAGATION_TERMINATION_NETWORK",
+  "classification_basis": "The peroxyl self-reaction creates a tetroxide/alkoxyl-radical network whose downstream chemistry includes both radical-preserving and radical-terminating outcomes; it is mechanistically distinct from the frozen OH+HO2 termination family.",
+  "theory_source": {
+    "authors": "Vili-Taneli Salo, Rashid Valiev, Susi Lehtola, Theo Kurten",
+    "title": "Gas-Phase Peroxyl Radical Recombination Reactions: A Computational Study of Formation and Decomposition of Tetroxides",
+    "journal": "Journal of Physical Chemistry A",
+    "year": 2022,
+    "volume": 126,
+    "pages": "4046-4056",
+    "doi": "10.1021/acs.jpca.2c01321",
+    "received": "2022-02-24",
+    "revised": "2022-05-25",
+    "published_online": "2022-06-16",
+    "open_data_doi": "10.5281/zenodo.6517406"
+  },
+  "source_gate": "PASS",
+  "barrier_gate": "PASS_EXACTLY_TYPED_MULTISTEP_RELATIVE_ELECTRONIC_ENERGY_PROFILE_WITH_METHOD_DISAGREEMENT_RETAINED",
+  "barrier_profile": {
+    "quantity_type": "relative electronic total-energy differences along the CASSCF(10,8)/6-311++G(d,p) optimized dimethyltetroxide reaction path; XMC-QDPT2(10,8) values are separate single-point diagnostics and are not interchangeable",
+    "energy_zero": "CH3O4CH3 tetroxide intermediate = 0.00 kcal/mol in Table 3",
+    "CASSCF_relative_energies_kcal_per_mol": {
+      "separated_CH3O2_pair": 0.88,
+      "prereactive_CH3O2_dimer": -1.27,
+      "tetroxide_formation_TS": 1.40,
+      "tetroxide": 0.00,
+      "tetroxide_decomposition_TS": 2.31,
+      "two_CH3O_plus_triplet_O2": -17.41
+    },
+    "CASSCF_barriers_kcal_per_mol": {
+      "formation_from_prereactive_complex": 2.67,
+      "formation_from_separated_radicals_on_same_relative_profile": 0.52,
+      "decomposition_from_tetroxide": 2.31
+    },
+    "XMC_QDPT2_note": "Single-point XMC-QDPT2 values on CASSCF geometries place several transition states below the tetroxide and are not a self-consistent optimized barrier profile. The authors separately report fully optimized historical MeO4Me barriers of 1.43 kcal/mol for formation and 0.74 kcal/mol for decomposition at XMC-QDPT2, versus 2.67 and 2.31 kcal/mol at CASSCF.",
+    "typing_prohibitions": [
+      "Do not relabel any of these electronic total-energy differences as DeltaG-dagger at 295 or 298 K.",
+      "Do not silently choose the 2.67, 0.52, 1.43, 2.31, or 0.74 kcal/mol value by agreement with an observed rate.",
+      "Do not collapse prereactive-complex formation, tetroxide formation, decomposition, and downstream branching into a single elementary barrier without a registered kinetic mapping."
+    ]
+  },
+  "theory_rate_mapping_status": {
+    "main_text": "The 2022 theory paper states that elementary TST/CASSCF rates and DFT+CCSD(T)-based MESMER master-equation overall rates were calculated for systems with experimental data; it also states that quantitative product branching remains unresolved.",
+    "current_audit_limit": "The exact MeO2+MeO2 master-equation numerical rate and all associated pressure/energy-transfer inputs have not been reconstructed into this audit from the supporting-information rate table, so the PES alone is not treated as a condition-matched overall-rate prediction.",
+    "same_target_calibration_firewall": "Older experimental rates discussed by the theory paper may be used only as historical/model-development context. The independent comparator selected below was submitted after the theory paper was already published and therefore could not have been the same target used to construct the published PES."
+  },
+  "independent_observed_comparator": {
+    "authors": "Lavinia Onel et al.",
+    "title": "Kinetics and Product Branching Ratio Study of the CH3O2 Self-Reaction in the Highly Instrumented Reactor for Atmospheric Chemistry",
+    "journal": "Journal of Physical Chemistry A",
+    "year": 2022,
+    "volume": 126,
+    "pages": "7639-7649",
+    "doi": "10.1021/acs.jpca.2c04968",
+    "received": "2022-07-13",
+    "published_online": "2022-10-13",
+    "method": "FAGE monitoring of CH3O2 plus FTIR product measurements in HIRAC",
+    "temperature_range_K": [268.0, 344.0],
+    "pressure_mbar": 1000.0,
+    "bath_gas": "air",
+    "at_295K": {
+      "overall_second_order_rate_coefficient_cm3_molecule-1_s-1": 2.0e-13,
+      "overall_rate_uncertainty_cm3_molecule-1_s-1": 0.9e-13,
+      "CH3O_branching_ratio": 0.34,
+      "CH3O_branching_ratio_uncertainty": 0.05,
+      "uncertainty_note": "The branching-ratio uncertainty is reported at 2 sigma; the source abstract reports the overall rate uncertainty as +/-0.9e-13."
+    },
+    "temperature_dependence": "k_overall=(9.1 +/- 5.3)e-14*exp((252 +/- 174)/T) cm^3 molecule^-1 s^-1"
+  },
+  "comparator_gate": "PASS_INDEPENDENT_LATER_DIRECT_KINETICS_AND_PRODUCT_BRANCHING",
+  "independence_gate": "PASS_LATER_COMPARATOR_COULD_NOT_HAVE_FIT_PUBLISHED_THEORY_PES",
+  "independence_basis": "The Salo et al. theory was published online 2022-06-16. The Onel et al. independent kinetic paper was not received until 2022-07-13 and was published online 2022-10-13. The later dataset therefore could not have been used to fit or select the already-published theory PES.",
+  "condition_gate": "HOLD_EXACT_MASTER_EQUATION_STATE_POINT_AND_NETWORK_MAPPING_NOT_RECONSTRUCTED",
+  "condition_hold_basis": [
+    "The direct comparator is an overall bimolecular self-reaction coefficient at 295 K and 1000 mbar air, with a measured downstream methoxy branching ratio.",
+    "The exact barrier quantities available in the main theory article are electronic-energy profile quantities, not 295 K free-energy barriers.",
+    "The theory paper reports master-equation overall-rate calculations, but the exact MeO2+MeO2 numerical model output and pressure/energy-transfer settings from the supporting-information table have not yet been reconstructed into this trail.",
+    "The theory article explicitly says quantitative branching-ratio prediction requires further work, so the measured branching ratio cannot be treated as already predicted by the PES.",
+    "Selecting one electronic-structure barrier reference or method because it best matches the later rate is prohibited by the frozen firewall."
+  ],
+  "representation_mode": "NETWORK_RESOLVED_TETROXIDE_SELF_REACTION_REQUIRED",
+  "representation_gate": "HOLD_NETWORK_RATE_AND_BRANCHING_MAPPING_INCOMPLETE",
+  "highest_contiguous_promotion_state": "COMPARATOR_QUALIFIED",
+  "terminal_state": "CONDITION_AND_NETWORK_MAPPING_HOLD",
+  "ready_for_adjudication": false,
+  "automatic_admission": false,
+  "next_gate": "Reconstruct the published MeO2+MeO2 master-equation rate calculation, including exact temperature, pressure/bath-gas or pressure-independence treatment, energy-transfer/collision inputs, PES method selection, and numerical predicted overall rate. Then determine prospectively whether the later 295 K, 1000 mbar FAGE rate can be paired with that network model without selecting among CASSCF/XMC-QDPT2 alternatives by residual quality. Quantitative product branching remains a separate gate.",
+  "aggregate_effect": {
+    "new_ready_for_adjudication": 0,
+    "ready_second_family_count": 4,
+    "ready_classes_unchanged": ["MC04", "MC06", "MC11", "MC14"],
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

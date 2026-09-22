@@ -1,0 +1,72 @@
+{
+  "schema": "co-cu111-pbe-stage-a-protocol-v0.1",
+  "status": "FROZEN_BEFORE_PBE_STAGE_A_RESULTS",
+  "system": "CO/Cu(111)",
+  "layer": "Computational Reaction-Path Engine",
+  "parent_method_protocol": "systems/co_cu111/SYSTEM2_METHOD_SELECTION_PROTOCOL_v0.1.json",
+  "pseudo_bundle": "systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json",
+  "purpose": "Qualify or reject the cost-rank-1 PBE baseline using numerical convergence, Cu bulk structure and isolated CO structure/vibration only. No surface diffusion or kinetic observable is evaluated in Stage A.",
+  "forbidden_inputs": ["CO/Cu(111) diffusion barrier", "CO/Cu(111) hopping rate or diffusion coefficient", "CO/Cu(111) kinetic prefactor", "rate-fitted friction", "ChemSA chi or expected classification", "closeness to any Atlas residual"],
+  "common_electronic_settings": {
+    "exchange_correlation": "PBE",
+    "occupations_bulk": "Marzari-Vanderbilt smearing",
+    "degauss_bulk_ry": 0.02,
+    "electron_conv_thr": 1e-10,
+    "mixing_beta": 0.3,
+    "electron_maxstep": 200,
+    "mpi_ranks": 1,
+    "thread_environment": {"OMP_NUM_THREADS": 1, "OPENBLAS_NUM_THREADS": 1}
+  },
+  "cutoff_pairs_ry": [
+    {"id": "C0", "ecutwfc": 55, "ecutrho": 540, "selectable": true, "basis": "maximum SSSP-efficiency recommended floor across pinned Cu/C/O bundle"},
+    {"id": "C1", "ecutwfc": 70, "ecutrho": 720, "selectable": true, "basis": "prospective intermediate tightening"},
+    {"id": "C2", "ecutwfc": 90, "ecutrho": 900, "selectable": false, "basis": "terminal numerical holdout"}
+  ],
+  "bulk_cu": {
+    "cell": "four-atom conventional fcc cubic cell",
+    "lattice_grid_angstrom": [3.55, 3.58, 3.61, 3.64, 3.67, 3.70],
+    "kmeshes": [{"k": 12, "selectable": true}, {"k": 14, "selectable": true}, {"k": 16, "selectable": false}],
+    "terminal_reference": {"cutoff_id": "C2", "k": 16},
+    "fit": "quadratic E(a) fit over the complete frozen six-point lattice grid",
+    "joint_numerical_gate": {"delta_a0_max_angstrom": 0.005, "delta_e0_max_ev_per_atom": 0.001},
+    "physical_guard": {
+      "reference_lattice_constant_angstrom": 3.615,
+      "reference_source": "NIST physical reference example for metallic Cu gives 2d = 3.6150 A; independent crystallographic compilations report the same fcc lattice parameter",
+      "max_relative_error_fraction": 0.02,
+      "role": "broad method-fidelity guard only; it cannot choose among numerically passing settings"
+    },
+    "selection_rule": "Among all nonterminal cutoff/k pairs satisfying both joint numerical criteria relative to C2/k16, choose the lowest cutoff-pair index and then the lowest k. If none passes, Stage A returns NUMERICAL_HOLD rather than extending the grid automatically."
+  },
+  "isolated_CO": {
+    "boundary_condition": "assume_isolated='martyna-tuckerman'",
+    "boundary_source": "Quantum ESPRESSO INPUT_PW documents Martyna-Tuckerman for an isolated molecule or cluster in a 3D supercell",
+    "cell": "cubic",
+    "box_lengths_angstrom": [{"L": 18, "selectable": true}, {"L": 22, "selectable": true}, {"L": 26, "selectable": false}],
+    "k_points": "Gamma",
+    "bond_scan_angstrom": {"start": 1.02, "stop": 1.24, "step": 0.01, "note": "wide fixed scan; not centered or shifted after seeing the numerical minimum"},
+    "fit": {
+      "form": "quartic polynomial in bond length over the seven scan points nearest the discrete numerical minimum, with the continuous minimum required to lie inside the fitted interval",
+      "frequency": "harmonic stretch from the second derivative of the fitted energy at the fitted minimum and the 12C-16O reduced mass",
+      "discretization_check": "repeat the local fit using every second point from the same fixed scan and require stretch-frequency agreement within 10 cm^-1"
+    },
+    "numerical_gate_relative_to_terminal_C2_L26": {"bond_length_max_difference_angstrom": 0.002, "stretch_max_difference_cm_minus_1": 10.0},
+    "physical_guards": {
+      "equilibrium_bond_reference_angstrom": 1.128,
+      "bond_reference_source": "NIST CCCBDB experimental equilibrium bond length",
+      "bond_max_relative_error_fraction": 0.02,
+      "fundamental_vibration_reference_cm_minus_1": 2143.0,
+      "vibration_reference_source": "NIST CCCBDB experimental fundamental vibration",
+      "vibration_max_relative_error_fraction": 0.05,
+      "interpretation_note": "The calculated curvature is a harmonic frequency while 2143 cm^-1 is an experimental fundamental. The 5% gate is deliberately broad and is a method-fidelity guard, not a spectroscopic benchmark claim."
+    },
+    "selection_rule": "For each cutoff pair and box, evaluate the complete fixed bond scan. A selectable cutoff/box must pass both numerical convergence criteria relative to C2/L26, the fit-discretization check, and both broad physical guards. Choose the lowest cutoff-pair index then smallest selectable box."
+  },
+  "combined_stage_A_rule": {
+    "pass": "Bulk Cu and isolated CO must both PASS. The production cutoff pair becomes the stricter of the separately selected bulk and CO cutoff-pair indices; the bulk k-mesh comes from the bulk selection and the gas box is retained only for isolated-molecule calibration.",
+    "post_combination_check": "Re-evaluate the bulk and CO numerical criteria at the combined cutoff before declaring Stage A PASS.",
+    "failure_states": ["NUMERICAL_HOLD", "PBE_REJECT_BULK_STRUCTURE", "PBE_REJECT_CO_STRUCTURE", "PBE_REJECT_CO_VIBRATION", "FIT_HOLD"],
+    "next_gate_on_pass": "PBE_CU111_CLEAN_SURFACE_AND_SITE_ORDERING_SCREEN",
+    "next_gate_on_pbe_rejection": "BLYP_PP_PROVENANCE_GATE"
+  },
+  "provenance": {"raw_QE_input_and_output_hashes_required": true, "stage_time_hash_anchor_required": true, "final_manifest_is_additional_not_authoritative": true, "scientific_settings_changed_after_results": false}
+}

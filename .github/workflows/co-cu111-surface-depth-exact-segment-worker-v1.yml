@@ -1,0 +1,127 @@
+name: CO Cu111 surface-depth exact segment worker v1
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        required: true
+        type: string
+      segment:
+        required: true
+        type: number
+      source_relax_run_id:
+        required: false
+        type: string
+        default: ''
+      source_relax_artifact:
+        required: false
+        type: string
+        default: ''
+      prior_artifact:
+        required: false
+        type: string
+        default: ''
+      relax_final_artifact:
+        required: false
+        type: string
+        default: ''
+      output_artifact:
+        required: true
+        type: string
+      retention_days:
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_L19_v0.1.json
+  RUNNER: systems/co_cu111/pbe_surface_depth_stack_v1.py
+  SURFACE_PROTOCOL: systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json
+  BUNDLE: systems/co_cu111/PBE_PSEUDOPOTENTIAL_BUNDLE_v0.1.json
+  ENGINE_RUN_ID: '31371043888'
+  ENGINE_ARTIFACT: co-cu111-pbe-stage-a-engine-v2
+  STAGE_A_RUN_ID: '31887006685'
+  STAGE_A_ARTIFACT: co-cu111-pbe-stage-a-numerical-extension-decision-v1
+  SELECTION_RUN_ID: '32915640451'
+  SELECTION_ARTIFACT: co-cu111-pbe-surface-audit-rank-selection-v1
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+
+jobs:
+  segment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install unchanged QE runtime dependencies
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin
+      - if: ${{ inputs.source_relax_artifact != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.source_relax_artifact }}
+          path: source_relax
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ inputs.source_relax_run_id }}
+          github-token: ${{ github.token }}
+      - if: ${{ inputs.prior_artifact != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.prior_artifact }}
+          path: prior
+      - if: ${{ inputs.relax_final_artifact != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.relax_final_artifact }}
+          path: relax_final
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ENGINE_ARTIFACT }}
+          path: engine
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.ENGINE_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.STAGE_A_ARTIFACT }}
+          path: stage_a_decision
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.STAGE_A_RUN_ID }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SELECTION_ARTIFACT }}
+          path: selection
+          repository: SymC-Universe/Chemistry
+          run-id: ${{ env.SELECTION_RUN_ID }}
+          github-token: ${{ github.token }}
+      - name: Run exact-restart segment
+        shell: bash
+        env:
+          STAGE: ${{ inputs.stage }}
+          SEGMENT: ${{ inputs.segment }}
+        run: |
+          set -euo pipefail
+          chmod +x engine/bin/pw.x
+          common=(--protocol "$PROTOCOL" --segment "$SEGMENT" --out state --surface-protocol "$SURFACE_PROTOCOL" --stage-a-result stage_a_decision/PBE_STAGE_A_NUMERICAL_EXTENSION_RESULT.json --bundle "$BUNDLE" --pseudo-dir engine/pseudos --pw engine/bin/pw.x --selection selection/RANK_SELECTION_RESULT.json)
+          if [[ "$STAGE" == "relax" ]]; then
+            extra=(--source-relax-root source_relax)
+            if [[ "$SEGMENT" -gt 1 ]]; then extra+=(--prior-root prior); fi
+            python3 "$RUNNER" relax-segment "${common[@]}" "${extra[@]}"
+          elif [[ "$STAGE" == "scf" ]]; then
+            if [[ "$SEGMENT" -eq 1 ]]; then extra=(--relax-root relax_final); else extra=(--prior-root prior); fi
+            python3 "$RUNNER" scf-segment "${common[@]}" "${extra[@]}"
+          else
+            echo "MECHANICAL_HOLD: unknown worker stage $STAGE" >&2
+            exit 2
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.output_artifact }}
+          path: state
+          retention-days: ${{ inputs.retention_days }}
+          if-no-files-found: error

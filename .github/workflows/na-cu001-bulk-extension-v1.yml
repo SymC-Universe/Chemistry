@@ -1,0 +1,330 @@
+name: Na Cu001 audited bulk convergence extension v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - 'na_cu001_ci/bulk_extension_protocol_v0.1.json'
+      - 'na_cu001_ci/bulk_extension_runner_v1.py'
+      - 'na_cu001_ci/test_bulk_extension_v1.py'
+      - 'na_cu001_ci/bulk_extension_workflow_linter_v1.py'
+      - 'na_cu001_ci/BULK_EXTENSION_AMENDMENT_v1.2.md'
+      - '.github/workflows/na-cu001-bulk-extension-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-bulk-extension-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  OMP_NUM_THREADS: '1'
+  HISTORICAL_BULK_RUN_ID: '30803996866'
+
+jobs:
+  prepare-engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source, historical matrix, engine, pseudopotential, and extension contracts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gfortran make m4 perl curl ca-certificates libopenblas-dev liblapack-dev libfftw3-dev libopenmpi-dev openmpi-bin python3-numpy python3-yaml gh
+          mkdir -p historical_bulk/bulk_summaries qe_bundle/bin qe_bundle/pseudos qe_bundle/meta "$RUNNER_TEMP/qe-src" imported_bulk sssp_archive
+          state=$(gh run view "$HISTORICAL_BULK_RUN_ID" --repo "$GITHUB_REPOSITORY" --json status,conclusion --jq '.status + " " + (.conclusion // "")')
+          [[ "$state" == "completed success" ]]
+          gh run download "$HISTORICAL_BULK_RUN_ID" --repo "$GITHUB_REPOSITORY" --name na-cu001-bulk-decision-handoff --dir imported_bulk
+          find imported_bulk -type f -name 'summary_e*_k*.json' -exec cp {} historical_bulk/bulk_summaries/ \;
+          test "$(find historical_bulk/bulk_summaries -type f -name 'summary_e*_k*.json' | wc -l)" -eq 20
+
+          curl -L --retry 5 --retry-delay 5 https://gitlab.com/QEF/q-e/-/archive/qe-7.6/q-e-qe-7.6.tar.gz -o "$RUNNER_TEMP/qe-7.6.tar.gz"
+          echo "945c8f16ab330c8f0b30f4de1a9a088b85038476fcd819394e641f4d2d8b7d51  $RUNNER_TEMP/qe-7.6.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/qe-7.6.tar.gz" -C "$RUNNER_TEMP/qe-src" --strip-components=1
+          (cd "$RUNNER_TEMP/qe-src" && ./configure MPIF90=mpif90 F90=gfortran CC=mpicc && make -j2 pw)
+          cp "$RUNNER_TEMP/qe-src/bin/pw.x" qe_bundle/bin/
+          chmod +x qe_bundle/bin/pw.x
+          sha256sum qe_bundle/bin/pw.x > qe_bundle/meta/engine_binary.sha256
+
+          curl -L --retry 5 --retry-delay 5 https://raw.githubusercontent.com/unkcpz/sssp-verify-scripts/refs/heads/main/2-experiments/finalized_scripts/010-extract-eff-lib/SSSP-lib-pbe-eff-v2.tar.gz -o qe_bundle/meta/SSSP-lib-pbe-eff-v2.tar.gz
+          echo "67c59659953f32b87ebf1e7e59b5cdd55bcaca02b518532098c339c0d11193c2  qe_bundle/meta/SSSP-lib-pbe-eff-v2.tar.gz" | sha256sum -c -
+          tar -xzf qe_bundle/meta/SSSP-lib-pbe-eff-v2.tar.gz -C sssp_archive
+          cp "$(find sssp_archive -type f -name 'Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf' -print -quit)" qe_bundle/pseudos/
+          echo "b31028b2bae60cd9903260715a49b4c6d2b6dc654558c87023fa5206e427a16d  qe_bundle/pseudos/Cu.paw.pbe.z_11.ld1.psl.v1.0.0-low.upf" | sha256sum -c -
+
+          python3 -m py_compile na_cu001_ci/bulk_runner_v2.py na_cu001_ci/bulk_extension_runner_v1.py na_cu001_ci/test_bulk_extension_v1.py na_cu001_ci/bulk_extension_workflow_linter_v1.py
+          python3 na_cu001_ci/test_bulk_extension_v1.py
+          python3 na_cu001_ci/bulk_extension_workflow_linter_v1.py .github/workflows/na-cu001-bulk-extension-v1.yml --protocol na_cu001_ci/bulk_extension_protocol_v0.1.json
+          sha256sum na_cu001_ci/bulk_extension_protocol_v0.1.json na_cu001_ci/bulk_extension_runner_v1.py na_cu001_ci/test_bulk_extension_v1.py na_cu001_ci/bulk_extension_workflow_linter_v1.py na_cu001_ci/BULK_EXTENSION_AMENDMENT_v1.2.md .github/workflows/na-cu001-bulk-extension-v1.yml > historical_bulk/EXTENSION_SOURCE_MANIFEST.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-bulk-extension-qe
+          path: qe_bundle
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: na-cu001-bulk-extension-historical
+          path: historical_bulk
+          retention-days: 90
+          if-no-files-found: error
+
+  extension-eos:
+    needs: prepare-engine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include:
+          - ecut: 80
+            kmesh: 14
+            role: candidate
+            tag: e80_k14
+          - ecut: 80
+            kmesh: 16
+            role: candidate
+            tag: e80_k16
+          - ecut: 80
+            kmesh: 18
+            role: candidate
+            tag: e80_k18
+          - ecut: 80
+            kmesh: 20
+            role: candidate
+            tag: e80_k20
+          - ecut: 90
+            kmesh: 14
+            role: candidate
+            tag: e90_k14
+          - ecut: 90
+            kmesh: 16
+            role: candidate
+            tag: e90_k16
+          - ecut: 90
+            kmesh: 18
+            role: candidate
+            tag: e90_k18
+          - ecut: 90
+            kmesh: 20
+            role: candidate
+            tag: e90_k20
+          - ecut: 100
+            kmesh: 14
+            role: candidate
+            tag: e100_k14
+          - ecut: 100
+            kmesh: 16
+            role: candidate
+            tag: e100_k16
+          - ecut: 100
+            kmesh: 18
+            role: candidate
+            tag: e100_k18
+          - ecut: 100
+            kmesh: 20
+            role: candidate
+            tag: e100_k20
+          - ecut: 110
+            kmesh: 14
+            role: candidate
+            tag: e110_k14
+          - ecut: 110
+            kmesh: 16
+            role: candidate
+            tag: e110_k16
+          - ecut: 110
+            kmesh: 18
+            role: candidate
+            tag: e110_k18
+          - ecut: 110
+            kmesh: 20
+            role: candidate
+            tag: e110_k20
+          - ecut: 120
+            kmesh: 14
+            role: candidate
+            tag: e120_k14
+          - ecut: 120
+            kmesh: 16
+            role: candidate
+            tag: e120_k16
+          - ecut: 120
+            kmesh: 18
+            role: candidate
+            tag: e120_k18
+          - ecut: 120
+            kmesh: 20
+            role: candidate
+            tag: e120_k20
+          - ecut: 130
+            kmesh: 14
+            role: candidate
+            tag: e130_k14
+          - ecut: 130
+            kmesh: 16
+            role: candidate
+            tag: e130_k16
+          - ecut: 130
+            kmesh: 18
+            role: candidate
+            tag: e130_k18
+          - ecut: 130
+            kmesh: 20
+            role: candidate
+            tag: e130_k20
+          - ecut: 140
+            kmesh: 22
+            role: reference
+            tag: e140_k22
+          - ecut: 150
+            kmesh: 24
+            role: audit
+            tag: e150_k24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-bulk-extension-qe
+          path: qe_bundle
+      - name: Execute registered six-point EOS
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y openmpi-bin libopenmpi-dev libopenblas-dev liblapack-dev libfftw3-dev python3-numpy
+          chmod +x qe_bundle/bin/pw.x
+          mkdir -p "extension_raw/${{ matrix.tag }}"
+          python3 na_cu001_ci/bulk_runner_v2.py run \
+            --ecut '${{ matrix.ecut }}' \
+            --kmesh '${{ matrix.kmesh }}' \
+            --pw qe_bundle/bin/pw.x \
+            --pseudo-dir qe_bundle/pseudos \
+            --out "extension_raw/${{ matrix.tag }}" \
+            --np 2
+          python3 - <<'PYCHECK'
+          import json
+          from pathlib import Path
+          tag = "${{ matrix.tag }}"
+          ecut = int("${{ matrix.ecut }}")
+          kmesh = int("${{ matrix.kmesh }}")
+          role = "${{ matrix.role }}"
+          path = Path('extension_raw') / tag / f'summary_e{ecut}_k{kmesh}.json'
+          data = json.loads(path.read_text())
+          assert int(data['ecutwfc_ry']) == ecut and int(data['kmesh']) == kmesh
+          (path.parent / 'registered_case.json').write_text(json.dumps({'tag': tag, 'ecutwfc_ry': ecut, 'kmesh': kmesh, 'role': role}, indent=2) + '\n')
+          PYCHECK
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-bulk-extension-raw-${{ matrix.tag }}
+          path: extension_raw/${{ matrix.tag }}
+          retention-days: 30
+          if-no-files-found: error
+
+  extension-gate:
+    if: always()
+    needs: [prepare-engine, extension-eos]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize fail-closed decision evidence
+        shell: bash
+        run: |
+          mkdir -p bulk_extension_decision bulk_extension_summaries extension_raw
+          cat > bulk_extension_decision/UPSTREAM_RESULTS.json <<EOF
+          {"prepare_engine":"${{ needs.prepare-engine.result }}","extension_eos":"${{ needs.extension-eos.result }}"}
+          EOF
+          cp na_cu001_ci/bulk_extension_protocol_v0.1.json bulk_extension_decision/
+      - uses: actions/download-artifact@v4
+        if: needs.prepare-engine.result == 'success'
+        with:
+          name: na-cu001-bulk-extension-historical
+          path: historical_bulk
+      - uses: actions/download-artifact@v4
+        if: needs.prepare-engine.result == 'success' && needs.extension-eos.result == 'success'
+        with:
+          pattern: na-cu001-bulk-extension-raw-*
+          path: extension_raw
+          merge-multiple: true
+      - name: Audit reference and select only a joint-pass candidate
+        if: needs.prepare-engine.result == 'success' && needs.extension-eos.result == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bulk_extension_summaries bulk_extension_decision
+          cp historical_bulk/bulk_summaries/summary_e*_k*.json bulk_extension_summaries/
+          find extension_raw -type f -name 'summary_e*_k*.json' -exec cp {} bulk_extension_summaries/ \;
+          count=$(find bulk_extension_summaries -maxdepth 1 -type f -name 'summary_e*_k*.json' | wc -l)
+          test "$count" -eq 46
+          cp na_cu001_ci/bulk_extension_protocol_v0.1.json bulk_extension_decision/
+          cp historical_bulk/EXTENSION_SOURCE_MANIFEST.sha256 bulk_extension_decision/
+          set +e
+          python3 na_cu001_ci/bulk_extension_runner_v1.py analyze \
+            --protocol na_cu001_ci/bulk_extension_protocol_v0.1.json \
+            --summaries bulk_extension_summaries \
+            --out bulk_extension_decision/BULK_CONVERGENCE_RESULT_V0.4.json
+          gate_rc=$?
+          set -e
+          printf '%s\n' "$gate_rc" > bulk_extension_decision/GATE_EXIT_CODE.txt
+          if [[ "$gate_rc" -eq 0 ]]; then
+            python3 na_cu001_ci/bulk_extension_runner_v1.py handoff \
+              --protocol na_cu001_ci/bulk_extension_protocol_v0.1.json \
+              --result bulk_extension_decision/BULK_CONVERGENCE_RESULT_V0.4.json \
+              --out bulk_extension_decision/BULK_HANDOFF_V0.4.json
+          fi
+          sha256sum bulk_extension_decision/* > bulk_extension_decision/DECISION_MANIFEST.sha256.tmp
+          mv bulk_extension_decision/DECISION_MANIFEST.sha256.tmp bulk_extension_decision/DECISION_MANIFEST.sha256
+          exit "$gate_rc"
+      - name: Record upstream matrix HOLD
+        if: needs.prepare-engine.result != 'success' || needs.extension-eos.result != 'success'
+        shell: bash
+        run: |
+          python3 - <<'PYHOLD'
+          import json
+          from pathlib import Path
+          upstream=json.loads(Path('bulk_extension_decision/UPSTREAM_RESULTS.json').read_text())
+          payload={
+            'schema':'na-cu001-bulk-selection-v0.4',
+            'status':'HOLD',
+            'gate':'HOLD',
+            'hold_reasons':['upstream_prepare_or_registered_eos_matrix_failed'],
+            'upstream_results':upstream,
+            'recommended_smallest_cost_candidate':None,
+          }
+          Path('bulk_extension_decision/BULK_CONVERGENCE_RESULT_V0.4.json').write_text(json.dumps(payload,indent=2)+'\n')
+          PYHOLD
+          printf '2\n' > bulk_extension_decision/GATE_EXIT_CODE.txt
+          sha256sum bulk_extension_decision/* > bulk_extension_decision/DECISION_MANIFEST.sha256.tmp
+          mv bulk_extension_decision/DECISION_MANIFEST.sha256.tmp bulk_extension_decision/DECISION_MANIFEST.sha256
+          exit 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-bulk-extension-decision-v0.4
+          path: bulk_extension_decision
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-bulk-extension-all-summaries-v0.4
+          path: bulk_extension_summaries
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-bulk-extension-raw-complete-v0.4
+          path: extension_raw
+          retention-days: 30
+          if-no-files-found: error

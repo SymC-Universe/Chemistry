@@ -1,0 +1,32 @@
+{
+  "schema": "co-cu111-stage-a-l26-mechanical-infrastructure-hold-v0.1",
+  "status": "MECHANICAL_INFRASTRUCTURE_HOLD",
+  "system": "CO/Cu(111)",
+  "scope": "Only the frozen Stage A isolated-CO C1/L26 and C2/L26 members on the standard ubuntu-24.04 GitHub-hosted runner class.",
+  "scientific_result": null,
+  "scientific_settings_changed": false,
+  "frozen_protocol": "systems/co_cu111/SYSTEM2_PBE_STAGE_A_PROTOCOL_v0.1.json",
+  "recovery_contract": "systems/co_cu111/MECHANICAL_RECOVERY_CONTROLLER_v0.1.json",
+  "source_stage_a_run": 31371043888,
+  "recovery_run": 31445411702,
+  "evidence": {
+    "source_failures": [
+      {"member": "C1/L26", "class": "hosted_runner_shutdown"},
+      {"member": "C2/L26", "class": "hosted_runner_shutdown"}
+    ],
+    "recovery_failures": [
+      {"member": "C1/L26", "chunk": "0-7", "job_id": 93638455762, "exit_code": 143, "runner_message": "runner received a shutdown signal"},
+      {"member": "C1/L26", "chunk": "8-15", "job_id": 93638455765, "exit_code": 143, "runner_message": "runner received a shutdown signal"},
+      {"member": "C1/L26", "chunk": "16-22", "job_id": 93638455780, "exit_code": 143, "runner_message": "runner received a shutdown signal"},
+      {"member": "C2/L26", "chunk": "0-7", "job_id": 93638455812, "exit_code": 143, "runner_message": "runner received a shutdown signal"},
+      {"member": "C2/L26", "chunk": "8-15", "job_id": 93638456681, "exit_code": 143, "runner_message": "runner received a shutdown signal"},
+      {"member": "C2/L26", "chunk": "16-22", "job_id": 93638456668, "exit_code": 143, "runner_message": "runner received a shutdown signal"}
+    ]
+  },
+  "classification": "Repeated transient hosted-runner shutdown after one scientifically identical recovery attempt; under the continuity policy this is no longer eligible for another retry on the same runner class.",
+  "standard_runner_eligible": false,
+  "same_runner_retry_forbidden": true,
+  "required_next_action": "Route only the unresolved frozen C1/L26 and C2/L26 bond points to a different execution resource class (larger GitHub-hosted runner if verifiably available, self-hosted runner, or HPC) while preserving the exact frozen executable, pseudopotentials, MPI rank count, thread caps, cutoffs, 26 A box, bond grid, SCF settings, hashes, fit, thresholds, and selection rules. Reuse only bond points that satisfy the existing hash-and-byte-identity recovery rule.",
+  "forbidden_interpretation": "This hold is mechanical only and must not be treated as PBE rejection, numerical scientific HOLD, or evidence about the Stage A physical guards.",
+  "provenance_note": "Recorded after repeated mechanical shutdowns only. No kinetic observable or Stage A scientific outcome was used to define this infrastructure classification."
+}

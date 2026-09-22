@@ -1,0 +1,205 @@
+name: Na Cu001 C7 L13 extension gate v1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/na-cu001-c7-l13-extension-gate-v1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: na-cu001-c7-l13-extension-gate-v1
+  cancel-in-progress: false
+
+env:
+  FROZEN_SOURCE_COMMIT: '055b2f5d782c2a590e65ad429cefd0981f0dd37b'
+  SOURCE_RUN_ID: '30949901790'
+  ORIGINAL_L13_RUN_ID: '31030768817'
+  RECOVERY_RUN_ID: '31138393230'
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout frozen scientific analysis source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FROZEN_SOURCE_COMMIT }}
+          path: frozen
+
+      - name: Verify frozen extension control code
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C frozen rev-parse HEAD)" = "$FROZEN_SOURCE_COMMIT"
+          python3 -m py_compile \
+            frozen/na_cu001_ci/slab_l13_extension_v1.py \
+            frozen/na_cu001_ci/test_slab_l13_extension_v1.py
+          (cd frozen/na_cu001_ci && python3 test_slab_l13_extension_v1.py)
+
+      - name: Download frozen 64-case source evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: na-cu001-c7-raw-slab-*
+          path: source_records
+          merge-multiple: true
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download original L13 evidence block
+        uses: actions/download-artifact@v4
+        with:
+          pattern: na-cu001-c7-l13-v2-raw-*
+          path: extension_records/original
+          merge-multiple: true
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.ORIGINAL_L13_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Remove the three superseded incomplete original L13 cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf \
+            extension_records/original/l13_v16_k22 \
+            extension_records/original/l13_v24_k20 \
+            extension_records/original/l13_v24_k22
+
+      - name: Download recovered V16 K22 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovered-v16_k22
+          path: extension_records/recovered/v16_k22
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download carried-forward V24 K20 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovered-v24_k20
+          path: extension_records/recovered/v24_k20
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download recovered V24 K22 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovered-v24_k22
+          path: extension_records/recovered/v24_k22
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Download targeted recovery summary
+        uses: actions/download-artifact@v4
+        with:
+          name: na-cu001-c7-l13-v4-recovery-summary
+          path: recovery_summary
+          repository: SymCUniverse/Chemistry
+          run-id: ${{ env.RECOVERY_RUN_ID }}
+          github-token: ${{ github.token }}
+
+      - name: Verify recovered evidence provenance and complete combined grids
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          frozen = '055b2f5d782c2a590e65ad429cefd0981f0dd37b'
+          expected_recovered = {
+              (13, 16.0, 22),
+              (13, 24.0, 20),
+              (13, 24.0, 22),
+          }
+
+          summary_dir = Path('recovery_summary')
+          summary = summary_dir / 'RECOVERY_SUMMARY.json'
+          manifest = summary_dir / 'RECOVERY_SUMMARY.sha256'
+          assert summary.is_file() and manifest.is_file()
+          expected_digest = manifest.read_text().split()[0]
+          actual_digest = hashlib.sha256(summary.read_bytes()).hexdigest()
+          assert actual_digest == expected_digest
+          s = json.loads(summary.read_text())
+          assert s['scientific_settings_changed'] is False
+          assert s['frozen_source_commit'] == frozen
+          assert int(s['original_l13_run_id']) == 31030768817
+          assert int(s['continuation_run_id']) == 31138393230
+          assert s['supersedes_stale_recovery_run'] is True
+
+          source_paths = sorted(Path('source_records').rglob('run_record.json'))
+          extension_paths = sorted(Path('extension_records').rglob('run_record.json'))
+          recovered_paths = sorted(Path('extension_records/recovered').rglob('run_record.json'))
+          assert len(source_paths) == 64, len(source_paths)
+          assert len(extension_paths) == 16, len(extension_paths)
+          assert len(recovered_paths) == 3, len(recovered_paths)
+
+          recovered_grid = set()
+          for path in recovered_paths:
+              row = json.loads(path.read_text())
+              key = (int(row['layers']), float(row['vacuum_angstrom']), int(row['kmesh_inplane']))
+              recovered_grid.add(key)
+              assert row['returncode'] == 0
+              assert row['job_done'] is True
+              assert row['scf_converged'] is True
+              assert row['final_energy_ev'] is not None
+              recovery = row.get('checkpoint_recovery') or {}
+              assert recovery.get('complete') is True
+              assert recovery.get('frozen_source_commit') == frozen
+              assert int(recovery.get('mpi_processes', -1)) == 2
+          assert recovered_grid == expected_recovered, recovered_grid
+
+          original_grid = set()
+          for path in Path('extension_records/original').rglob('run_record.json'):
+              row = json.loads(path.read_text())
+              original_grid.add((int(row['layers']), float(row['vacuum_angstrom']), int(row['kmesh_inplane'])))
+          assert expected_recovered.isdisjoint(original_grid)
+          PY
+
+      - name: Run preregistered L13 strict-holdout extension gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p decision
+          python3 frozen/na_cu001_ci/slab_l13_extension_v1.py analyze \
+            --source-records source_records \
+            --extension-records extension_records \
+            --source-result-out decision/SOURCE_64_RESULT.json \
+            --out decision/L13_EXTENSION_RESULT.json
+
+      - name: Verify PASS decision artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('decision/L13_EXTENSION_RESULT.json')
+          r = json.loads(p.read_text())
+          assert r['gate'] == 'PASS'
+          assert r['next_gate'] == 'definitive_independent_audit'
+          audit = r['strict_l13_holdout_audit']
+          assert audit['status'] == 'PASS'
+          assert audit['extension_terminal_eligible_for_selection'] is False
+          assert audit['selection_candidates_are_source_layers_only'] is True
+          assert audit['selected_source_layers'] is not None
+          PY
+          sha256sum decision/L13_EXTENSION_RESULT.json decision/SOURCE_64_RESULT.json > decision/DECISION_ARTIFACTS.sha256
+
+      - name: Upload extension gate decision evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: na-cu001-c7-l13-extension-gate-v1-decision
+          path: decision
+          retention-days: 90
+          if-no-files-found: error

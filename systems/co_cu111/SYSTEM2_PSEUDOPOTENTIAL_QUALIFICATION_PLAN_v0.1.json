@@ -1,0 +1,87 @@
+{
+  "schema": "co-cu111-system2-pseudopotential-qualification-plan-v0.1",
+  "status": "ACTIVE_PREPRODUCTION_GATE",
+  "system": "CO/Cu(111)",
+  "layer": "Computational Reaction-Path Engine",
+  "parent_method_protocol": "systems/co_cu111/SYSTEM2_METHOD_SELECTION_PROTOCOL_v0.1.json",
+  "purpose": "Prevent a functional/pseudopotential mismatch or an unvalidated custom pseudopotential from deciding the CO/Cu(111) method-selection result.",
+  "scientific_boundary": [
+    "No CO/Cu(111) production diffusion barrier, hopping rate, kinetic prefactor, fitted friction, or ChemSA quantity may be used to qualify a pseudopotential.",
+    "No mixed PBE/BLYP pseudopotential set is admissible for a BLYP production calculation.",
+    "A pseudopotential-generation recipe is part of the electronic-structure method and must be frozen before its production surface calculation.",
+    "A generated pseudopotential cannot certify itself merely by reproducing the same generator's atomic reference eigenvalues. Independent transferability tests are required."
+  ],
+  "primary_software_basis": {
+    "quantum_espresso_ld1": {
+      "role": "candidate GGA pseudopotential generator",
+      "documented_capability": "Quantum ESPRESSO ld1.x accepts BLYP as a DFT functional for atomic and pseudopotential-generation calculations.",
+      "source": "Quantum ESPRESSO INPUT_LD1 documentation"
+    },
+    "pslibrary": {
+      "role": "reference generation recipes and validation practice",
+      "finding": "The current PSLibrary repository provides standard functional recipe directories such as PBE, PBEsol, PW91, PZ, revPBE and related variants, but no maintained BLYP production directory was identified in the current root. PSLibrary therefore does not presently supply a drop-in, already-qualified BLYP Cu/C/O family for this project.",
+      "consequence": "BLYP remains method-feasible in principle but pseudopotential-unqualified for production."
+    }
+  },
+  "PBE_bundle_gate": {
+    "state": "SOURCE_AND_HASH_PINNING_REQUIRED",
+    "requirements": [
+      "select one internally consistent Cu/C/O PBE pseudopotential family with explicit upstream provenance",
+      "record exact filenames, source URLs or release identifiers, valence configurations, relativistic treatment and SHA-256 hashes",
+      "record generator/code metadata available in each UPF",
+      "freeze wavefunction and charge-density cutoff convergence prospectively",
+      "pass the parent protocol's Cu bulk, gas-phase CO and numerical convergence gates"
+    ]
+  },
+  "BLYP_bundle_gate": {
+    "state": "PP_PROVENANCE_HOLD",
+    "published_basis": "Published BLYP success for CO/Cu(111) used purpose-built BLYP ultrasoft pseudopotentials and independently compared bulk calculations against an all-electron treatment; that published result does not license substitution of PBE pseudopotentials into a BLYP production calculation.",
+    "allowed_routes": [
+      {
+        "route": "independently_source_consistent_BLYP_family",
+        "requirements": [
+          "published or repository-hosted provenance for Cu, C and O",
+          "same XC functional family across all three elements",
+          "exact file hashes and generator metadata",
+          "transferability evidence sufficient for Cu metal and CO chemistry"
+        ]
+      },
+      {
+        "route": "prospectively_generate_with_QE_ld1",
+        "requirements": [
+          "freeze exact ld1.x version/source identity before generation",
+          "freeze one generation input per Cu, C and O including valence configuration, reference configuration, local channel, cutoff radii and relativistic treatment",
+          "record raw ld1.x inputs/outputs and SHA-256 hashes",
+          "verify absence of ghost-state/pathological logarithmic-derivative behavior over a prospectively declared energy range",
+          "test atomic excited/ionized configurations not used as generation references",
+          "test gas-phase CO bond length and vibration under the parent protocol",
+          "test Cu bulk lattice and convergence under the parent protocol",
+          "compare at least one transferability quantity to an independent all-electron or independently published reference not used to tune the pseudopotential",
+          "do not adjust generation parameters using CO/Cu(111) diffusion kinetics or adsorption-site energy ordering after seeing a failed surface result"
+        ]
+      }
+    ],
+    "failure_action": "If a defensible BLYP Cu/C/O family cannot be sourced or generated and independently qualified without tuning to the CO/Cu(111) surface outcome, mark BLYP METHOD_UNAVAILABLE_PP_PROVENANCE and advance to HSE03 under the already frozen method-selection algorithm."
+  },
+  "HSE03_bundle_gate": {
+    "state": "SOURCE_AND_HASH_PINNING_REQUIRED_IF_TRIGGERED",
+    "requirements": [
+      "use one internally consistent PBE-family Cu/C/O pseudopotential set under Quantum ESPRESSO's documented hybrid-functional convention",
+      "record exact files/hashes and the explicit input_dft/hybrid settings",
+      "repeat numerical and non-kinetic physical gates at HSE03 rather than inheriting PBE results",
+      "demonstrate production feasibility for the intended adsorption/NEB/Hessian workflow before declaring HSE03 selected"
+    ]
+  },
+  "transferability_decision_states": [
+    "PP_QUALIFIED",
+    "PP_HOLD_MISSING_PROVENANCE",
+    "PP_REJECT_GHOST_OR_TRANSFERABILITY",
+    "METHOD_UNAVAILABLE_PP_PROVENANCE"
+  ],
+  "next_actions": [
+    "Pin and qualify an exact PBE Cu/C/O bundle first because PBE is cost-rank 1 and serves as the negative/control baseline.",
+    "In parallel, search for a fully provenance-qualified BLYP Cu/C/O family. If none is found, design the prospective ld1.x generation recipe before any BLYP CO/Cu(111) surface calculation.",
+    "Do not invoke HSE03 unless the frozen parent method-selection trigger is met.",
+    "Do not begin production diffusion kinetics until one method plus one exact pseudopotential bundle is frozen as selected."
+  ]
+}

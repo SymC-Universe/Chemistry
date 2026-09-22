@@ -1,0 +1,79 @@
+{
+  "schema": "barrier-atlas-family-depth-extension-v1.0",
+  "status": "ADDITIVE_FAMILY_DEPTH_EXTENSION_WITHOUT_PARENT_MUTATION",
+  "parent_family_depth_extension": "barrier_atlas/family_independence/FAMILY_DEPTH_EXTENSION_v0.9.json",
+  "frozen_baseline_commit": "7fcedacf5ae485eb11cae2ace51610210ecd2ab6",
+  "validated_six_trail_run": 33359415026,
+  "parent_release": {
+    "name": "Barrier_Height_Rate_Atlas_v0.9",
+    "immutable": true,
+    "workbook_sha256": "1c287d2e8e82826e1353fabad09812efdb5147fb28a00c9cb398278942ea7a7e",
+    "archive_sha256": "8ffd3319b968eb230552fc74269788f623ad76b2af9976504ec0341f8bf0ef6c"
+  },
+  "automatic_coordinate_admission": false,
+  "coordinates_admitted": 0,
+  "grades_changed": 0,
+  "selection_firewall": {
+    "residual_may_select_candidate": false,
+    "chi_may_select_candidate": false,
+    "expected_chemsa_agreement_may_select_candidate": false,
+    "same_target_fit_or_method_selection_may_validate_target": false,
+    "rate_derived_activation_quantity_may_validate_same_observed_rate": false,
+    "single_scalar_barrier_may_replace_required_network_representation": false
+  },
+  "frozen_target_classes": ["MC01","MC02","MC04","MC05","MC06","MC08","MC11","MC13","MC14","MC15","MC16"],
+  "frozen_outcomes_reaffirmed": {
+    "FI-MC06-CYCLOPROPANE-PROPENE": "READY_FOR_ADJUDICATION_NETWORK_RESOLVED_NOT_ADMITTED",
+    "FI-MC02-CYCLOBUTENE-CLASSIFICATION-CHECK": "REFUSED_FOR_MC02_CLASSIFICATION",
+    "FI-MC01-TRYPSIN-BENZAMIDINE": "CONDITION_MISMATCH_HOLD",
+    "FI-ENZYME-DB-INVENTORY": "CONDITION_AND_EVENT_MAPPING_HOLD",
+    "FI-LIPRED-2026-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL",
+    "FI-BARRIER-ONLY-REPOSITORY-SCREEN": "BARRIER_QUALIFIED_COMPARATOR_MISSING_POOL"
+  },
+  "records": [
+    {
+      "trail_id": "FI-MC01-BETA-CD-1-BUTANOL-ASSOCIATION",
+      "class_id": "MC01",
+      "family": "aqueous cyclodextrin host-guest inclusion association",
+      "reaction": "beta-cyclodextrin + 1-butanol <=> beta-cyclodextrin:1-butanol inclusion complex",
+      "classification_gate": "PASS_MC01_ASSOCIATION_COMPLEXATION",
+      "source_gate": "PASS",
+      "barrier_gate": "PASS_EXACTLY_TYPED_CONFORMATION_CONDITIONED_PMF",
+      "comparator_gate": "PASS_INDEPENDENT_OBSERVED_ULTRASONIC_ASSOCIATION_RATE",
+      "condition_gate": "PASS_TEMPERATURE_PHASE_SPECIES_AND_EVENT_MATCHED_WITH_PMF_TYPING_PRESERVED",
+      "independence_gate": "PASS_DISTINCT_EXPERIMENTAL_AND_COMPUTATIONAL_LINEAGES_WITH_NO_TARGET_RATE_FIT",
+      "representation_gate": "PASS_CONFORMATION_AND_PATH_RESOLVED",
+      "barrier_quantity": {
+        "value_kcal_per_mol": 1.1,
+        "temperature_K": 298.0,
+        "host_conformation": "conf1",
+        "type": "finite-temperature potential-of-mean-force association barrier along the host-guest center-of-mass coordinate",
+        "standard_state_activation_free_energy_status": "NOT_CLAIMED_AS_STANDARD_STATE_DELTA_G_DAGGER",
+        "universal_scalar_status": "FORBIDDEN"
+      },
+      "observed_comparator": {
+        "value": 2.8e8,
+        "uncertainty": 0.8e8,
+        "unit": "M^-1 s^-1",
+        "temperature_K": 298.15,
+        "phase": "aqueous solution",
+        "measurement": "ultrasonic relaxation",
+        "primary_system_doi": "10.1246/bcsj.70.1003",
+        "experimental_series_doi": "10.1021/jp010535u"
+      },
+      "representation_mode": "CONFORMATION_AND_PATH_RESOLVED_PMF_ASSOCIATION",
+      "terminal_state": "READY_FOR_ADJUDICATION",
+      "ready_for_adjudication": true,
+      "automatic_admission": false,
+      "source_audit": "barrier_atlas/family_independence/MC01_BETA_CD_1_BUTANOL_ASSOCIATION_SOURCE_AUDIT_v0.1.json"
+    }
+  ],
+  "aggregate": {
+    "family_depth_classes_with_additive_ready_second_family": ["MC01","MC02","MC04","MC05","MC06","MC08","MC11","MC14","MC16"],
+    "ready_second_family_count": 9,
+    "target_class_count": 11,
+    "remaining_classes": ["MC13","MC15"],
+    "coordinates_admitted": 0,
+    "grades_changed": 0
+  }
+}

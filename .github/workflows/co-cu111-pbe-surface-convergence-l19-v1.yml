@@ -1,0 +1,27 @@
+name: CO Cu111 L19 exact QE restart convergence v1
+
+on:
+  push:
+    branches: [agent/na-cu001-integration]
+    paths:
+      - '.github/workflows/co-cu111-pbe-surface-convergence-l19-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: co-cu111-l19-exact-qe-restart-v1
+  cancel-in-progress: true
+
+jobs:
+  halt:
+    name: Cost-control halt marker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo 'PAUSED_BY_USER_COST_CONTROL'
+          echo 'NO_SCIENTIFIC_COMPUTE_AUTHORIZED'
+          echo 'NO_LARGER_RUNNERS_AUTHORIZED'

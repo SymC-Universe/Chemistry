@@ -1,0 +1,92 @@
+{
+  "schema": "co-cu111-pbe-site-ordering-handoff-v0.2",
+  "status": "FROZEN_BEFORE_L15_EXTENSION_GATE_RESULT",
+  "system": "CO/Cu(111)",
+  "purpose": "Permit immediate transition from the prospectively frozen L15 clean-surface convergence-extension adjudication to the already frozen CO adsorption-site ordering screen without rerunning the clean-surface matrix or changing scientific settings.",
+  "scientific_scope": "provenance and schema handoff only; no scientific setting, threshold, model, pseudopotential, convergence rule, geometry rule, candidate-selection rule, or kinetic input is changed",
+  "authoritative_current_audit": {
+    "workflow": "CO Cu111 L15 post-relax adjudication v1",
+    "workflow_run_id": 33390385236,
+    "workflow_head_sha": "264585c766141a55d90f8e9ae33204787a71c9a6",
+    "protocol": "systems/co_cu111/SYSTEM2_PBE_SURFACE_CONVERGENCE_EXTENSION_v0.1.json",
+    "protocol_sha256": "518583a18ec5a26b442523601e325b2b525fd5a374f37c255eb9c5fff163ebd7",
+    "required_gate_artifact": "co-cu111-l15-native-postrelax-gate-v1",
+    "required_gate_file": "SURFACE_CONVERGENCE_EXTENSION_GATE.json",
+    "required_gate_schema": "co-cu111-pbe-surface-convergence-extension-gate-v0.1",
+    "required_gate_status": "CLEAN_SURFACE_PASS",
+    "required_next_gate": "PBE_CO_SITE_ORDERING_SCREEN",
+    "required_extension_reference_audit_pass": true,
+    "required_candidates_adjudicated": true
+  },
+  "compatibility_bridge": {
+    "purpose": "Present the authoritative extension-gate PASS to the unchanged site-ordering runner using its pre-existing clean-gate input schema, without re-adjudicating or altering any value used to select the clean surface.",
+    "output_schema": "co-cu111-pbe-clean-surface-gate-v0.1",
+    "output_filename": "CLEAN_SURFACE_GATE.json",
+    "mapping": {
+      "status": "extension_gate.status",
+      "reference_audit_pass": "extension_gate.extension_reference_audit_pass",
+      "reference_audit_delta_ev_per_surface_atom": "extension_gate.extension_reference_audit_delta_ev_per_surface_atom",
+      "reference": "extension_gate.extension_reference",
+      "audit": "extension_gate.extension_audit",
+      "candidates": "extension_gate.candidates",
+      "selected": "extension_gate.selected",
+      "next_gate": "extension_gate.next_gate"
+    },
+    "required_preserved_source_fields": [
+      "prior_failure",
+      "extension_reference_audit_threshold_ev_per_surface_atom",
+      "candidate_force_reaudit_ev_per_angstrom",
+      "provenance"
+    ],
+    "reinterpretation_authorized": false,
+    "candidate_reselection_authorized": false,
+    "threshold_change_authorized": false
+  },
+  "frozen_site_ordering_contract": {
+    "protocol": "systems/co_cu111/SYSTEM2_PBE_SURFACE_SITE_ORDERING_PROTOCOL_v0.1.json",
+    "protocol_git_blob_sha": "95ced1096e4dbc3c0a75c5a4f7aa6b9693cdb924",
+    "protocol_sha256": "1bb01d81beade1642da46449770638967a103f43ee63081b3ae5b8509f1c156f",
+    "runner": "systems/co_cu111/pbe_surface_site_ordering_v1.py",
+    "runner_git_blob_sha": "d65050b77527de8453d42a77c2c45a0629a07fd3",
+    "runner_sha256": "f5dd93f6b714c061fc664c045884fc4cd3975e7db01154f667221df158689d6b",
+    "test": "systems/co_cu111/test_pbe_surface_site_ordering_v1.py",
+    "test_git_blob_sha": "b9c065af878713f128223b14b7b60ead97cae0f6",
+    "test_sha256": "0f15e3ad0ffcbb622273b9ea394a0c04336403ecdbbde54948698e4c036f76fe"
+  },
+  "source_artifacts": {
+    "stage_a_decision": {
+      "run_id": 31887006685,
+      "artifact": "co-cu111-pbe-stage-a-numerical-extension-decision-v1",
+      "result_sha256": "2f77135848bbfb90904cbbf54eeb3ef4e8de3629f5ddcc0b7157a26c6f31fff3"
+    },
+    "stage_a_engine": {
+      "run_id": 31371043888,
+      "artifact": "co-cu111-pbe-stage-a-engine-v2"
+    },
+    "original_clean_candidates": {
+      "run_id": 31922544540,
+      "artifact_pattern": "co-cu111-pbe-clean-v1-*"
+    }
+  },
+  "handoff_rules": [
+    "Do not start adsorption-site calculations unless the authoritative L15 extension gate is CLEAN_SURFACE_PASS and next_gate is PBE_CO_SITE_ORDERING_SCREEN.",
+    "Require extension_reference_audit_pass=true and candidates_adjudicated=true.",
+    "Require a non-null selected candidate and retrieve that exact case_id from the immutable original clean-surface candidate run.",
+    "Require exactly one source summary matching the selected case_id and require that source row to be COMPLETE and role=candidate.",
+    "The compatibility bridge may only copy authoritative extension-gate fields into the legacy clean-gate schema required by the unchanged site-ordering runner; it may not recompute, average, reinterpret, tune, or reselect anything.",
+    "Do not rerun the completed clean-surface Cartesian matrix merely to reach site ordering.",
+    "Use the exact frozen Stage A Quantum ESPRESSO engine and pseudopotential bundle already bound by the site-ordering protocol.",
+    "Run only the four prospectively frozen sites top, bridge, fcc_hollow, and hcp_hollow with the unchanged primary and independent-audit rules.",
+    "If the L15 extension gate is not CLEAN_SURFACE_PASS, stop with no site-ordering computation and preserve the scientific HOLD exactly.",
+    "Kinetic, diffusion, experimental site-ordering, chi, or expected ChemSA outcomes remain forbidden as selectors or tuners."
+  ],
+  "expected_pass_next_gate": "PBE_COVERAGE_HOLDOUT_AND_PRODUCTION_FEASIBILITY_GATE",
+  "provenance": {
+    "kinetic_inputs_used": false,
+    "scientific_settings_changed": false,
+    "clean_surface_recomputation_authorized": false,
+    "automatic_threshold_relaxation_authorized": false,
+    "candidate_reselection_authorized": false,
+    "post_result_method_switch_authorized": false
+  }
+}
