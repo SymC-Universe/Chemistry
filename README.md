@@ -24,7 +24,7 @@ The present chemistry program does **not** assume that:
 - spectral width is automatically mechanical damping;
 - a favorable rate trend licenses a dynamical interpretation.
 
-Mechanical stability, eigenvalue/EP geometry, barrier height, barrier-local friction, transmission/recrossing, reaction rate, uncertainty, and admissibility remain separate unless a registered bridge earns a relation among them.
+Mechanical stability, eigenvalue/EP geometry, barrier height, barrier-local friction, transmission/recrossing, reaction rate, uncertainty, and admissibility remain separate unless a registered bridge earns a relation among them. Under GOM v0.8.3, any licensed local scalar must also be interpreted jointly with the broader modal/carrier/system architecture where applicable, while perturbation/recovery remains distinct from barrier crossing, adsorption, reaction and relaxation physics.
 
 ## Current source-of-record map
 
@@ -93,7 +93,7 @@ Current project rules include:
 - compare against native chemistry methods before assigning SymC-specific meaning;
 - generate publication figures from preserved data and scripts.
 
-Historical manuscripts and releases remain provenance. Where older prose conflicts with a later explicit project-local correction, result record, or GOM-v0.8.0 migration record, the later record governs the present interpretation.
+Historical manuscripts and releases remain provenance. Where older prose conflicts with a later explicit project-local correction, result record, or GOM-v0.8.3 migration record, the later record governs the present interpretation.
 
 ## Where to start
 
