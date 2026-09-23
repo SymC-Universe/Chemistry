@@ -58,3 +58,24 @@ Do not promote a full native Capital-Chi record until exact modal vectors/subspa
 
 Do not promote the returned structure merely because the search terminates.
 The candidate must pass a same-method frequency calculation with exactly one physically relevant imaginary mode, followed by endpoint connectivity validation if IRC is available.
+
+
+## R1 completed / R2 frequency-validation draft
+
+R1 double-ended search:
+- workflow UUID: `c2653b1c-5fc8-49ca-8f24-9b465bdb01bf`
+- status: completed_ok
+- credits: 0.46
+- candidate TS energy: -93.410584 Hartree
+- search-returned frequencies: -2006.267, 2268.267, 3420.304 cm^-1
+- disposition: candidate only pending separate R2 validation
+- exact R1 candidate committed in `hcn_hnc_R1_ts_candidate.json`
+
+R2 fixed-geometry same-method frequency validation:
+- workflow UUID: `1d723abc-d91a-4a36-9be5-0fb93dabcf4e`
+- preset: organic_nnp / AIMNet2
+- task: frequencies
+- max credits: 3
+- status at checkpoint: draft
+
+Acceptance remains exactly one physically relevant imaginary mode.
