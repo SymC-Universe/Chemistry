@@ -68,6 +68,17 @@ class DeclaredProjectionRecord:
 
 
 @dataclass(frozen=True)
+class SpectralSubspaceCorrespondenceRecord:
+    group_a: int
+    group_b: int
+    dim_a: int
+    dim_b: int
+    principal_cosines: tuple[float, ...]
+    resolved: bool
+    refusal: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class CapitalChiModalRecord:
     spectrum_id: str
     n_coordinates: int
@@ -511,3 +522,93 @@ def modal_correspondence_matrix(
     XA = XA / na
     XB = XB / nb
     return np.abs(XA.T @ W @ XB)
+
+
+def _validated_metric(metric: Any, n: int) -> np.ndarray:
+    W = np.asarray(metric)
+    if np.iscomplexobj(W):
+        if np.max(np.abs(W.imag)) > 1e-12 * max(np.max(np.abs(W)), 1.0):
+            raise ValueError("correspondence metric must be materially real")
+        W = W.real
+    W = np.asarray(W, dtype=float)
+    if W.shape != (n, n):
+        raise ValueError("correspondence metric has incompatible dimension")
+    if not np.allclose(W, W.T, atol=1e-10 * max(np.linalg.norm(W, 2), 1.0), rtol=0):
+        raise ValueError("correspondence metric must be symmetric")
+    try:
+        np.linalg.cholesky(W)
+    except np.linalg.LinAlgError as exc:
+        raise ValueError("correspondence metric must be positive definite") from exc
+    return W
+
+
+def _metric_orthonormal_basis(X: Any, W: np.ndarray) -> np.ndarray:
+    """Return a basis for span(X) orthonormal under positive metric W."""
+    X=np.asarray(X,dtype=complex)
+    if X.ndim != 2 or X.shape[0] != W.shape[0] or X.shape[1] == 0:
+        raise ValueError("spectral basis has incompatible shape")
+    G=0.5*(X.conj().T@W@X + (X.conj().T@W@X).conj().T)
+    vals,U=np.linalg.eigh(G)
+    vmax=max(float(np.max(np.abs(vals))),1.0)
+    keep=vals > 1e-12*vmax
+    if not np.any(keep):
+        raise ValueError("spectral basis has zero rank under correspondence metric")
+    Uk=U[:,keep]
+    sk=vals[keep]
+    return X@Uk@np.diag(1.0/np.sqrt(sk))
+
+
+def spectral_subspace_correspondence(
+    record_a: CapitalChiModalRecord,
+    record_b: CapitalChiModalRecord,
+    *,
+    metric: Any,
+) -> tuple[SpectralSubspaceCorrespondenceRecord, ...]:
+    """Compare every authoritative spectral subspace pair with principal angles.
+
+    No cross-condition matching is selected. For each pair of resolved carrier
+    subspaces the full vector of principal cosines is returned. This makes the
+    relation invariant to arbitrary basis rotation inside degenerate subspaces.
+
+    The caller must supply the physically justified cross-condition metric.
+    """
+    n=record_a.n_coordinates
+    if record_b.n_coordinates != n:
+        raise ValueError("records must share coordinate dimension")
+    W=_validated_metric(metric,n)
+    out=[]
+    for a in record_a.spectral_carriers:
+        for b in record_b.spectral_carriers:
+            if not a.resolved or a.right_basis is None:
+                out.append(SpectralSubspaceCorrespondenceRecord(
+                    group_a=int(a.group_id), group_b=int(b.group_id),
+                    dim_a=0, dim_b=0, principal_cosines=(), resolved=False,
+                    refusal=a.refusal or "record_a spectral subspace unresolved",
+                ))
+                continue
+            if not b.resolved or b.right_basis is None:
+                out.append(SpectralSubspaceCorrespondenceRecord(
+                    group_a=int(a.group_id), group_b=int(b.group_id),
+                    dim_a=0, dim_b=0, principal_cosines=(), resolved=False,
+                    refusal=b.refusal or "record_b spectral subspace unresolved",
+                ))
+                continue
+            try:
+                XA=_metric_orthonormal_basis(a.right_basis,W)
+                XB=_metric_orthonormal_basis(b.right_basis,W)
+                cross=XA.conj().T@W@XB
+                sig=np.linalg.svd(cross,compute_uv=False)
+                sig=np.clip(np.real(sig),0.0,1.0)
+                out.append(SpectralSubspaceCorrespondenceRecord(
+                    group_a=int(a.group_id), group_b=int(b.group_id),
+                    dim_a=int(XA.shape[1]), dim_b=int(XB.shape[1]),
+                    principal_cosines=tuple(float(x) for x in sig),
+                    resolved=True,
+                ))
+            except (ValueError,np.linalg.LinAlgError) as exc:
+                out.append(SpectralSubspaceCorrespondenceRecord(
+                    group_a=int(a.group_id), group_b=int(b.group_id),
+                    dim_a=0, dim_b=0, principal_cosines=(), resolved=False,
+                    refusal=str(exc),
+                ))
+    return tuple(out)
