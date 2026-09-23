@@ -1,6 +1,6 @@
 {
   "checkpoint_version": 1,
-  "updated_utc": "2026-09-23T02:38:00Z",
+  "updated_utc": "2026-09-23T02:48:00Z",
   "project": "Capital Chi rate-predictor investigation",
   "repo": "SymC-Universe/Chemistry",
   "branch": "agent/capital-chi-rate-pilot-20260922",
@@ -19,22 +19,22 @@
     "S-DPB matched-solvent empirical P1 test completed: negative under frozen comparison",
     "Angulo 2017 no-fit GLE/GSE test preregistered before SI target extraction",
     "Deep literature search completed; Angulo 2017 identified as strongest no-fit architecture candidate",
-    "A7 DPB multi-solvent candidate audited and rejected before outcome testing because rotational predictor was viscosity-derived, not independently measured."
+    "A7 DPB multi-solvent candidate audited and rejected before outcome testing because rotational predictor was viscosity-derived, not independently measured.",
+    "A8 binary-mixture test completed: negative; viscosity outperformed solvation time.",
+    "A9 diverse neat-solvent BPAc+ test completed: positive; solvation time outperformed viscosity.",
+    "A10 robustness completed: 99.999% of 100000 uncertainty draws positive; 12/12 solvent jackknifes positive. A9 promoted to robust P1 within-family evidence."
   ],
   "current_task": {
-    "id": "NEXT-EMPIRICAL-DATASET",
-    "goal": "Find a matched empirical kinetic series with independently measured solvent/memory/collective dynamics and exact numeric values.",
+    "id": "CROSS-FAMILY-PROTON-TRANSFER",
+    "goal": "Find and preregister an independent proton-transfer dataset with matched reaction and solvent-relaxation dynamics.",
     "status": "active_search",
-    "constraints": [
-      "No target-rate-derived dynamical feature",
-      "No viscosity-derived proxy presented as independent dynamics",
-      "Preregister each dataset-specific test before numeric outcome extraction"
-    ]
+    "reason": "A second reaction family is required before considering cross-family P2 promotion."
   },
   "next_actions": [
-    "Search open literature for exact matched solvation/reaction datasets from deep-search leads (Rumble 2018, Pugzlys 2001, metallocene self-exchange, Co2(CO)8 2D-IR).",
-    "Preregister the first exact numeric dataset before outcome extraction.",
-    "Run held-out comparison and checkpoint result.",
-    "Do not push manuscript text to public repository."
+    "Locate exact proton-transfer reaction-time and independent solvation-time data.",
+    "Freeze dataset-specific test before calculating associations.",
+    "Execute held-out comparison and robustness if positive.",
+    "If proton-transfer data fail eligibility, move to ground-state isomerization or another deep-search candidate.",
+    "Keep manuscript out of public repository until a private GitHub destination exists."
   ]
 }
