@@ -1,0 +1,84 @@
+{
+  "schema": "CapitalChiModalDataContract-v0.1",
+  "record_id": "A20_CH3OH_Cu111",
+  "maturity": "P0-Q_partial",
+  "source": {
+    "doi": "10.1038/s41467-018-06478-6",
+    "year": 2018
+  },
+  "system": "CH3OH dissociative chemisorption on Cu(111)",
+  "channel_barriers_eV": {
+    "TS1_OH": 0.79,
+    "TS2_CH_DFT": 1.12,
+    "TS2_CH_PES": 1.13,
+    "TS3_CO_DFT": 1.32,
+    "TS3_CO_PES": 1.34
+  },
+  "modal_object": {
+    "type": "mode_to_reaction_coordinate_projection_matrix",
+    "convention": "absolute SVP overlap",
+    "carrier_labels": [
+      "nu1_OH",
+      "nu2_CH_as",
+      "nu9_CH_as",
+      "nu3_CH_s",
+      "nu8_CO"
+    ],
+    "target_subspaces": [
+      "TS1_OH",
+      "TS2_CH",
+      "TS3_CO"
+    ],
+    "matrix": [
+      [
+        0.869,
+        0.033,
+        0.013
+      ],
+      [
+        0.003,
+        0.178,
+        0.023
+      ],
+      [
+        0.003,
+        0.515,
+        0.087
+      ],
+      [
+        0.005,
+        0.508,
+        0.104
+      ],
+      [
+        0.026,
+        0.015,
+        0.745
+      ]
+    ]
+  },
+  "scalar_excitation_cm1": {
+    "1nu1": 3670,
+    "1nu3": 2887,
+    "1nu2": 2979,
+    "1nu9": 2935,
+    "3nu8": 2970
+  },
+  "mean_vibrational_efficacy": {
+    "1nu1": 1.922,
+    "1nu2": 0.912,
+    "1nu9": 0.89,
+    "1nu3": 1.026,
+    "1nu8": 4.748,
+    "3nu8": 3.692
+  },
+  "lowercase_chi": {
+    "status": "not_available_from_source_record"
+  },
+  "missing": [
+    "native source Hessian files",
+    "full Cartesian/mass-weighted mode vectors",
+    "mode-resolved damping/lifetimes"
+  ],
+  "promotion_limit": "partial modal record; source-informed reproduction/structure evidence"
+}
