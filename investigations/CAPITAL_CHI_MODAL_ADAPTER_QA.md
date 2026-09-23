@@ -59,3 +59,26 @@ The public `SymC-Universe/Chemistry` landing repository does not currently conta
 The connected GitHub tool does not expose repository creation or visibility mutation, so a new private reproducibility repository cannot be created mechanically from this session.
 
 Do not move manuscript source into this public repository.
+
+
+## Path-aware final branch state
+
+Current GitHub blob identities after the basis-invariant path/subspace extension:
+
+- `investigations/capital_chi_modal.py` blob SHA:
+  `25d76871d360fcc6c704f9fd5cfa538cc7ec12c1`
+- `investigations/test_capital_chi_modal.py` blob SHA:
+  `b9c6d1120fbb364884325f7bf8dfb11dc82cbd7f`
+
+The final targeted local QA after this extension is:
+
+```
+117 passed
+```
+
+Additional final cases:
+- known 30 degree saddle-subspace rotation recovered by principal cosine;
+- arbitrary basis rotation inside an exactly degenerate two-dimensional subspace leaves the subspace relation invariant;
+- saddle reaction-coordinate projection survives when mechanical lowercase chi is unavailable.
+
+These blob identities supersede the earlier adapter/test content identities in this manifest.
