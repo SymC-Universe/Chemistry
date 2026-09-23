@@ -1,0 +1,115 @@
+{
+  "schema": "HCN_HNC_R1_TS_candidate_v0.1",
+  "workflow_uuid": "c2653b1c-5fc8-49ca-8f24-9b465bdb01bf",
+  "method": "aimnet2_wb97md3",
+  "engine": "aimnet2",
+  "credits_charged": 0.46,
+  "ts_energy_hartree": -93.410584,
+  "symmetry": "Cs",
+  "geometry_angstrom": [
+    {
+      "Z": 1,
+      "xyz": [
+        0.18728331,
+        0.2938077,
+        -0.67838864
+      ]
+    },
+    {
+      "Z": 6,
+      "xyz": [
+        -0.35679594,
+        -0.55981544,
+        0.05647563
+      ]
+    },
+    {
+      "Z": 7,
+      "xyz": [
+        0.16951971,
+        0.26598555,
+        0.70991904
+      ]
+    }
+  ],
+  "reported_modes": [
+    {
+      "frequency_cm1": -2006.267,
+      "reduced_mass": 1.186,
+      "force_constant": -2.813,
+      "displacements": [
+        [
+          -0.431971,
+          -0.677774,
+          -0.582133
+        ],
+        [
+          0.047106,
+          0.073906,
+          -0.038864
+        ],
+        [
+          -0.009278,
+          -0.014554,
+          0.075201
+        ]
+      ]
+    },
+    {
+      "frequency_cm1": 2268.267,
+      "reduced_mass": 10.547,
+      "force_constant": 31.971,
+      "displacements": [
+        [
+          0.051814,
+          0.08128,
+          -0.431779
+        ],
+        [
+          -0.304329,
+          -0.477498,
+          -0.367582
+        ],
+        [
+          0.257067,
+          0.403344,
+          0.346077
+        ]
+      ]
+    },
+    {
+      "frequency_cm1": 3420.304,
+      "reduced_mass": 1.065,
+      "force_constant": 7.339,
+      "displacements": [
+        [
+          -0.305697,
+          -0.479604,
+          0.8195
+        ],
+        [
+          0.004022,
+          0.006309,
+          -0.060406
+        ],
+        [
+          0.018555,
+          0.029112,
+          -0.007215
+        ]
+      ]
+    }
+  ],
+  "path_relative_kcalmol": [
+    0,
+    19.94036855530131,
+    37.43156763357547,
+    49.74957860819953,
+    48.768153790862335,
+    39.42516523247847,
+    30.052056219338397,
+    21.93208362577815,
+    13.548557053134504
+  ],
+  "disposition": "candidate saddle only; separate same-method frequency validation still required by preregistration"
+}
