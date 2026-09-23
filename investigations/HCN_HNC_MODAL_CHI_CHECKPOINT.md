@@ -79,3 +79,27 @@ R2 fixed-geometry same-method frequency validation:
 - status at checkpoint: draft
 
 Acceptance remains exactly one physically relevant imaginary mode.
+
+
+## R2 PASS / R3 IRC draft
+
+R2 fixed-geometry frequency validation:
+- workflow UUID: `1d723abc-d91a-4a36-9be5-0fb93dabcf4e`
+- calculation UUID: `6de598e6-50e5-48af-bb57-5745ecc59a3b`
+- frequencies: -2006.267, 2268.267, 3420.307 cm^-1
+- imaginary frequencies: exactly 1
+- disposition: PASS first-order saddle gate
+- exact vectors committed in `hcn_hnc_R2_ts_validation.json`
+
+R3 IRC connectivity draft:
+- workflow UUID: `261b701c-f238-4d45-b39a-2f95b6e8f621`
+- method: `aimnet2_wb97md3`
+- engine: `aimnet2`
+- preopt: false
+- step size: 0.05 A sqrt(amu)
+- max IRC steps: 30
+- optimize endpoints: true
+- max credits: 6
+- status at checkpoint: draft
+
+R3 acceptance: IRC endpoints must connect the validated saddle to the intended HCN and HNC minima (allowing rigid rotation/translation and normal numerical geometry tolerance).
