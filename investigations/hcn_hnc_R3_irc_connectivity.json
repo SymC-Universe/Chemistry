@@ -1,0 +1,36 @@
+{
+  "schema": "HCN_HNC_R3_IRC_connectivity_v0.1",
+  "workflow_uuid": "261b701c-f238-4d45-b39a-2f95b6e8f621",
+  "method": "aimnet2_wb97md3",
+  "engine": "aimnet2",
+  "credits_charged": 0.11,
+  "ts_energy_hartree": -93.41058429,
+  "forward": {
+    "irc_points": 30,
+    "final_preopt_energy_hartree": -93.487261,
+    "optimized_endpoint_energy_hartree": -93.49323791,
+    "optimized_frequencies_cm1": [
+      726.4,
+      726.4,
+      2242.95,
+      3371.56
+    ],
+    "assigned_endpoint": "HCN",
+    "assignment_basis": "energy and full frequency fingerprint match independent R0 HCN"
+  },
+  "reverse": {
+    "irc_points": 30,
+    "final_preopt_energy_hartree": -93.46586523,
+    "optimized_endpoint_energy_hartree": -93.47164701,
+    "optimized_frequencies_cm1": [
+      417.36,
+      417.36,
+      2097.42,
+      3832.2
+    ],
+    "assigned_endpoint": "HNC",
+    "assignment_basis": "energy and full frequency fingerprint match independent R0 HNC"
+  },
+  "path_arc_A_sqrt_amu": 2.95,
+  "disposition": "PASS_IRC_CONNECTIVITY_HCN_TS_HNC"
+}
