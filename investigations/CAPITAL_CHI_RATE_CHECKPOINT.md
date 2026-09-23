@@ -128,3 +128,19 @@ Continue external-source search and extraction. The next confirmatory test must 
 ## Resume rule after interruption
 
 Open this file first. Continue from **Current active target**. Do not rerun completed A9-A12 calculations unless a source/provenance defect is discovered.
+
+
+## Final checkpoint addendum: A14-A15 / current hard stop
+
+- A14 completed and committed: 50-solvent apolar-motor counter-test, modest independent environmental-structure improvement.
+- A15 completed and committed: motor-specific DOSY diffusion slightly outperforms viscosity on the exact matched subset; joint model worsens due overlap.
+- Independent-source search has been pushed through the deep-search shortlist plus open repository sources.
+- A6, A8, and A13 remain exact-data retrieval blocks.
+- A7 remains numeric-provenance blocked.
+- No current accessible dataset supplies the complete preregistered A12 relational feature set in a new independent source with sufficient exact matched rows.
+
+**Current hard stop:** P2 cannot be earned from the evidence presently retrievable without either (a) obtaining one of the blocked supplementary/data files, or (b) adding a new independent matched dataset. Further regression on the existing sources would be post-hoc feature mining and is prohibited.
+
+**Next resumable action:** retrieve exact independent data first, then preregister and execute. Do not alter the feature definition to manufacture a positive result.
+
+**Privacy:** Chemistry repo is public; current manuscript files are absent. Keep manuscript off this repo.
