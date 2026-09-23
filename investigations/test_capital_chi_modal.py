@@ -129,3 +129,42 @@ def test_saddle_reaction_coordinate_projects_onto_unstable_spectral_mode():
     assert len(pos_groups)==1
     proj=dict(p.spectral_subspace_projection)
     assert np.isclose(proj[pos_groups[0]],1.0,atol=1e-10)
+
+
+
+def test_spectral_subspace_correspondence_tracks_known_saddle_rotation():
+    from capital_chi_modal import spectral_subspace_correspondence
+    M=np.eye(2); C=np.zeros((2,2)); K1=np.diag([-1.0,4.0])
+    a=_record(M,C,K1)
+    th=np.deg2rad(30)
+    R=np.array([[np.cos(th),-np.sin(th)],[np.sin(th),np.cos(th)]])
+    K2=R@K1@R.T
+    b=_record(M,C,K2)
+    rel=spectral_subspace_correspondence(a,b,metric=M)
+    pos_a=next(sc.group_id for sc in a.spectral_carriers
+               if abs(sc.eigenvalue.imag)<1e-10 and sc.eigenvalue.real>0)
+    pos_b=next(sc.group_id for sc in b.spectral_carriers
+               if abs(sc.eigenvalue.imag)<1e-10 and sc.eigenvalue.real>0)
+    hit=next(x for x in rel if x.group_a==pos_a and x.group_b==pos_b)
+    assert hit.resolved
+    assert np.allclose(hit.principal_cosines,[np.cos(th)],atol=1e-12)
+
+
+def test_spectral_subspace_correspondence_is_basis_invariant_inside_degenerate_span():
+    from dataclasses import replace
+    from capital_chi_modal import spectral_subspace_correspondence
+    M=np.eye(2); C=0.4*np.eye(2); K=np.eye(2)
+    a=_record(M,C,K)
+    idx=next(i for i,sc in enumerate(a.spectral_carriers)
+             if sc.right_basis is not None and sc.right_basis.shape[1]==2)
+    sc=a.spectral_carriers[idx]
+    th=np.deg2rad(37)
+    R=np.array([[np.cos(th),-np.sin(th)],[np.sin(th),np.cos(th)]])
+    rotated=replace(sc,right_basis=sc.right_basis@R)
+    carriers=list(a.spectral_carriers); carriers[idx]=rotated
+    b=replace(a,spectral_carriers=tuple(carriers))
+    rel=spectral_subspace_correspondence(a,b,metric=M)
+    hit=next(x for x in rel if x.group_a==sc.group_id and x.group_b==sc.group_id)
+    assert hit.resolved
+    assert len(hit.principal_cosines)==2
+    assert np.allclose(hit.principal_cosines,[1.0,1.0],atol=1e-12)
