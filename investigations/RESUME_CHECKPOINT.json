@@ -1,6 +1,6 @@
 {
   "checkpoint_version": 1,
-  "updated_utc": "2026-09-23T02:55:00Z",
+  "updated_utc": "2026-09-23T03:02:00Z",
   "project": "Capital Chi rate-predictor investigation",
   "repo": "SymC-Universe/Chemistry",
   "branch": "agent/capital-chi-rate-pilot-20260922",
@@ -23,23 +23,20 @@
     "A8 binary-mixture test completed: negative; viscosity outperformed solvation time.",
     "A9 diverse neat-solvent BPAc+ test completed: positive; solvation time outperformed viscosity.",
     "A10 robustness completed: 99.999% of 100000 uncertainty draws positive; 12/12 solvent jackknifes positive. A9 promoted to robust P1 within-family evidence.",
-    "A11 proton-transfer cross-family test completed: positive supporting P1; solvation relaxation strongly outperformed viscosity in n=5 protic solvents."
+    "A11 proton-transfer cross-family test completed: positive supporting P1; solvation relaxation strongly outperformed viscosity in n=5 protic solvents.",
+    "A12 Co2(CO)8 ground-state control completed: simple viscosity-only model predicts both directions strongly; passed negative-control/simple-regime test."
   ],
   "current_task": {
-    "id": "THIRD-INDEPENDENT-FAMILY",
-    "goal": "Find a third chemistry family with exact independent environment-dynamics + kinetic data, preferably ground-state barrier crossing or self-exchange.",
-    "status": "active_search",
-    "priorities": [
-      "ground-state isomerization with independently measured solvent dynamics",
-      "metallocene self-exchange with dielectric relaxation",
-      "no-fit reaction model with independent environment measurements"
-    ]
+    "id": "METALLOCENE-BARRIER-CORRECTED",
+    "goal": "Recover unambiguous metallocene barrier-corrected rate versus longitudinal solvent-relaxation table for an independent solvent-dynamics test.",
+    "status": "source_table_reconstruction",
+    "blocker_rule": "Do not calculate until column alignment is unambiguous and dataset-specific test is preregistered."
   },
   "next_actions": [
-    "Audit metallocene self-exchange datasets for exact rate, barrier and longitudinal relaxation tables.",
-    "Audit ground-state Co2(CO)8 2D-IR/Kramers dataset if exact table is available.",
-    "Preregister first eligible third-family test before calculating.",
-    "Update checkpoint immediately after eligibility or result.",
+    "Recover/verify one metallocene couple's exact Table II pairs from the 1989 primary paper.",
+    "If exact parsing is possible, freeze A13 then calculate.",
+    "If not, mark candidate P0-D/ineligible rather than infer columns.",
+    "Continue to another independent dataset after A13 eligibility decision.",
     "Keep manuscript out of public repo."
   ]
 }
