@@ -61,6 +61,8 @@ class DeclaredProjectionRecord:
     mechanical_participation: np.ndarray
     subspace_participation: tuple[tuple[tuple[int, ...], float], ...] = field(default_factory=tuple)
     individual_basis_invariant: bool = True
+    spectral_subspace_projection: tuple[tuple[int, float], ...] = field(default_factory=tuple)
+    spectral_projection_refusals: tuple[tuple[int, str], ...] = field(default_factory=tuple)
     refused: bool = False
     reason: str = ""
 
@@ -189,6 +191,57 @@ def _mechanical_degenerate_subspaces(w2: np.ndarray, Cr: np.ndarray):
     return groups
 
 
+def _spectral_projection_for_vector(d: np.ndarray, M: np.ndarray, spectral_carriers):
+    """Mass-metric projection of a declared vector onto resolved spectral subspaces.
+
+    For a basis X spanning one spectral carrier/subspace, the invariant weight is
+
+        d^H M X (X^H M X)^+ X^H M d / (d^H M d).
+
+    This is a SUBSPACE quantity.  It remains meaningful when no mechanical chi
+    is licensed, including a saddle's unstable reaction subspace.  It is not
+    assumed to partition unity across non-orthogonal or conjugate spectral
+    carriers.
+    """
+    norm2=float(np.real(np.conj(d) @ M @ d))
+    if not np.isfinite(norm2) or norm2 <= 1e-300:
+        return (), tuple((int(sc.group_id), "declared vector has zero/nonfinite mass norm")
+                         for sc in spectral_carriers)
+    vals=[]
+    refusals=[]
+    dc=np.asarray(d,dtype=complex).ravel()
+    Mc=np.asarray(M,dtype=complex)
+    for sc in spectral_carriers:
+        gid=int(sc.group_id)
+        if not sc.resolved or sc.right_basis is None:
+            refusals.append((gid, sc.refusal or "spectral subspace unresolved"))
+            continue
+        X=np.asarray(sc.right_basis,dtype=complex)
+        if X.ndim != 2 or X.shape[0] != M.shape[0] or X.shape[1] == 0:
+            refusals.append((gid, "spectral right basis has incompatible shape"))
+            continue
+        G=X.conj().T @ Mc @ X
+        if not np.all(np.isfinite(G)):
+            refusals.append((gid, "spectral subspace Gram matrix is nonfinite"))
+            continue
+        try:
+            Gp=np.linalg.pinv(G, rcond=1e-12)
+        except np.linalg.LinAlgError:
+            refusals.append((gid, "spectral subspace Gram matrix pseudoinverse failed"))
+            continue
+        b=X.conj().T @ Mc @ dc
+        weight=float(np.real(np.conj(b) @ Gp @ b) / norm2)
+        # Roundoff can produce tiny excursions outside [0,1] for an orthogonal
+        # projection in a positive metric.  Large excursions indicate that the
+        # supplied carrier basis/metric combination is not usable as a projection.
+        if weight < -1e-9 or weight > 1.0 + 1e-7 or not np.isfinite(weight):
+            refusals.append((gid, f"spectral projection weight out of range: {weight}"))
+            continue
+        weight=min(1.0,max(0.0,weight))
+        vals.append((gid,weight))
+    return tuple(vals),tuple(refusals)
+
+
 def build_capital_chi_modal_record(
     M: Any,
     C: Any,
@@ -313,75 +366,85 @@ def build_capital_chi_modal_record(
 
     projections = []
     if declared_vectors:
-        if not mechanical:
-            for name in declared_vectors:
+        carrier_by_idx = {m.modal_index: m for m in mechanical}
+        ordered_idx = sorted(carrier_by_idx)
+        Xmech = (np.column_stack([carrier_by_idx[i].vector for i in ordered_idx])
+                 if ordered_idx else None)
+        for name, vec in declared_vectors.items():
+            d = np.asarray(vec)
+            if np.iscomplexobj(d):
+                imag = np.max(np.abs(d.imag)) if d.size else 0.0
+                if imag > 1e-12 * max(np.max(np.abs(d)), 1.0):
+                    projections.append(DeclaredProjectionRecord(
+                        name=str(name), norm=float("nan"),
+                        mechanical_amplitudes=np.array([], dtype=float),
+                        mechanical_participation=np.array([], dtype=float),
+                        refused=True, reason="declared vector is materially complex",
+                    ))
+                    continue
+                d = d.real
+            d = np.asarray(d, dtype=float).ravel()
+            if d.shape != (n,) or not np.all(np.isfinite(d)):
                 projections.append(DeclaredProjectionRecord(
                     name=str(name), norm=float("nan"),
                     mechanical_amplitudes=np.array([], dtype=float),
                     mechanical_participation=np.array([], dtype=float),
-                    refused=True,
-                    reason="no licensed mechanical carrier basis is available",
+                    refused=True, reason=f"declared vector must be finite shape ({n},)",
                 ))
-        else:
-            carrier_by_idx = {m.modal_index: m for m in mechanical}
-            ordered_idx = sorted(carrier_by_idx)
-            X = np.column_stack([carrier_by_idx[i].vector for i in ordered_idx])
-            for name, vec in declared_vectors.items():
-                d = np.asarray(vec)
-                if np.iscomplexobj(d):
-                    imag = np.max(np.abs(d.imag)) if d.size else 0.0
-                    if imag > 1e-12 * max(np.max(np.abs(d)), 1.0):
-                        projections.append(DeclaredProjectionRecord(
-                            name=str(name), norm=float("nan"),
-                            mechanical_amplitudes=np.array([], dtype=float),
-                            mechanical_participation=np.array([], dtype=float),
-                            refused=True, reason="declared vector is materially complex",
-                        ))
-                        continue
-                    d = d.real
-                d = np.asarray(d, dtype=float).ravel()
-                if d.shape != (n,) or not np.all(np.isfinite(d)):
-                    projections.append(DeclaredProjectionRecord(
-                        name=str(name), norm=float("nan"),
-                        mechanical_amplitudes=np.array([], dtype=float),
-                        mechanical_participation=np.array([], dtype=float),
-                        refused=True, reason=f"declared vector must be finite shape ({n},)",
-                    ))
-                    continue
-                norm2 = float(d @ M @ d)
-                if not np.isfinite(norm2) or norm2 <= 1e-300:
-                    projections.append(DeclaredProjectionRecord(
-                        name=str(name), norm=float("nan"),
-                        mechanical_amplitudes=np.array([], dtype=float),
-                        mechanical_participation=np.array([], dtype=float),
-                        refused=True, reason="declared vector has zero/nonfinite mass norm",
-                    ))
-                    continue
-                amps = X.T @ M @ d
-                part = np.abs(amps) ** 2 / norm2
-                # Sum participation over every unique simultaneous-degeneracy
-                # subspace.  Those sums are invariant even when the individual
-                # basis vectors inside the span are not.
-                pos_by_modal={idx:k for k,idx in enumerate(ordered_idx)}
-                subspaces=[]
-                seen_sub=set()
-                invariant=True
-                for idx in ordered_idx:
-                    members=tuple(carrier_by_idx[idx].subspace_members)
-                    if members in seen_sub:
-                        continue
-                    seen_sub.add(members)
-                    positions=[pos_by_modal[j] for j in members if j in pos_by_modal]
-                    subspaces.append((members, float(np.sum(part[positions]))))
-                    if len(members)>1:
-                        invariant=False
+                continue
+            norm2 = float(d @ M @ d)
+            if not np.isfinite(norm2) or norm2 <= 1e-300:
+                projections.append(DeclaredProjectionRecord(
+                    name=str(name), norm=float("nan"),
+                    mechanical_amplitudes=np.array([], dtype=float),
+                    mechanical_participation=np.array([], dtype=float),
+                    refused=True, reason="declared vector has zero/nonfinite mass norm",
+                ))
+                continue
+
+            spec_proj,spec_ref=_spectral_projection_for_vector(d,M,spectral)
+
+            if not mechanical:
+                # Capital Chi remains available through spectral/reaction-subspace
+                # geometry even where lowercase mechanical chi is correctly refused.
                 projections.append(DeclaredProjectionRecord(
                     name=str(name), norm=float(np.sqrt(norm2)),
-                    mechanical_amplitudes=np.asarray(amps, dtype=float),
-                    mechanical_participation=np.asarray(part, dtype=float),
-                    subspace_participation=tuple(subspaces),
-                    individual_basis_invariant=invariant,
+                    mechanical_amplitudes=np.array([], dtype=float),
+                    mechanical_participation=np.array([], dtype=float),
+                    spectral_subspace_projection=spec_proj,
+                    spectral_projection_refusals=spec_ref,
+                    refused=False,
+                    reason="mechanical chi carrier unavailable; spectral modal projection retained",
                 ))
+                continue
+
+            amps = Xmech.T @ M @ d
+            part = np.abs(amps) ** 2 / norm2
+            # Sum participation over every unique simultaneous-degeneracy
+            # subspace.  Those sums are invariant even when the individual
+            # basis vectors inside the span are not.
+            pos_by_modal={idx:k for k,idx in enumerate(ordered_idx)}
+            subspaces=[]
+            seen_sub=set()
+            invariant=True
+            for idx in ordered_idx:
+                members=tuple(carrier_by_idx[idx].subspace_members)
+                if members in seen_sub:
+                    continue
+                seen_sub.add(members)
+                positions=[pos_by_modal[j] for j in members if j in pos_by_modal]
+                subspaces.append((members, float(np.sum(part[positions]))))
+                if len(members)>1:
+                    invariant=False
+            projections.append(DeclaredProjectionRecord(
+                name=str(name), norm=float(np.sqrt(norm2)),
+                mechanical_amplitudes=np.asarray(amps, dtype=float),
+                mechanical_participation=np.asarray(part, dtype=float),
+                subspace_participation=tuple(subspaces),
+                individual_basis_invariant=invariant,
+                spectral_subspace_projection=spec_proj,
+                spectral_projection_refusals=spec_ref,
+            ))
 
     return CapitalChiModalRecord(
         spectrum_id=sid,
