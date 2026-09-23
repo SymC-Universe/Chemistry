@@ -1,0 +1,5 @@
+molecule,mode,SVP_CH_channel,SVP_CD_channel,sticking_S0,sticking_sigma
+CH3D,nu1,0.44,0.04,0.0022,0.0005
+CH3D,nu4,0.38,0.01,0.0018,0.0002
+CH2D2,nu1,0.57,0.04,0.00202,0.00009
+CH2D2,nu6,0.48,0.02,0.00147,0.00007
