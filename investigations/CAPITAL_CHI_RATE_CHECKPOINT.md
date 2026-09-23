@@ -1,146 +1,112 @@
-# Capital-Chi Rate Investigation Checkpoint
+# Capital-Chi Modal Investigation Checkpoint
 
 **Branch:** `agent/capital-chi-rate-pilot-20260922`  
-**Checkpoint updated:** 2026-09-22 late execution block  
-**Policy:** update after every substantive execution block.  
-**Manuscript:** private and untouched by this investigation. No manuscript promotion has been made.
+**Current conceptual baseline:** modal reset A16 + `CAPITAL_CHI_MODAL_DEFINITION_v0.1_2026-09-22.md`  
+**Manuscript:** private and not stored in this public Chemistry repository.
 
-## Frozen governance
+## Canonical distinction
 
-Committed before the corresponding tests:
-- base preregistration;
-- A1 baseline-overlap firewall;
-- A2 Stage-0 / beta-CD test;
-- A3 intercept-only calibration control;
-- A4 native-baseline identifiability gate;
-- A5 S-DPB matched-solvent test;
-- A6 no-fit non-Markovian ET test;
-- A7 metallocene solvent-relaxation test;
-- A8 DPB solvent-class test;
-- A9 modern matched tS test;
-- A9A temperature-confounding control;
-- A10 ttD related-solute replication;
-- A11 room-temperature cross-solvent test;
-- A12 post-A11 exploratory solvent-architecture decomposition.
+- scalar `chi_i`: scalar coordinate attached to one licensed mode/carrier/subspace.
+- capital `Chi`: modal/vector architecture itself.
+- system/environment/conglomerate variables: separate embedding layer. They may perturb or condition modal Chi but are not automatically capital Chi.
 
-## Completed results
+Canonical modal record:
+[
+Chi=(Lambda,V_R,V_L,A_{s->V},P,K_V,U_V).
+]
 
-### Stage 0 controlled memory benchmark
-Positive mechanistic sanity result: changing memory organization with the local barrier/friction scale held fixed changes crossing kinetics strongly. Model evidence only.
+This instantiates the frozen Chemistry Stability Arc reporting contract:
+`G,s,V,C,R,U`.
 
-### beta-CD P1
-**Negative.** Three frozen independent environment-reorganization features fail to beat leave-one-out family calibration.
+## Evidence status
 
-### old S-DPB matched-solvent P1
-**Negative.** Independently measured rotational reorientation does not outperform bulk viscosity under the frozen non-leaky log-linear comparison.
+### Direct modal mechanisms
 
-### A6 Angulo 2017
-**P0-Q blocked.** Strong no-fit architecture design, but exact supplementary numeric tables are in separate file `draft_si9rev.pdf`, unavailable through current retrieval routes. No figure digitization performed.
+**A17 Duschinsky modal-basis benchmark**
+- same scalar frequency spectrum;
+- mixed-mode displacement K=0;
+- fixed solvent reorganization, temperature and energy gap;
+- only Duschinsky basis matrix J(theta) changes;
+- Franck-Condon distribution and rate proxy change strongly.
+- source literature reports ~4-order inverted-region rate changes for the full model while reorganization peak remains fixed.
 
-### A7 metallocene
-**Numeric result quarantined / provisional P0-Q.** OCR of sparse Table II drops blank cells and can misalign columns. Do not cite the provisional positive calculation until visually aligned source table is recovered. Qualitative source trend remains valid.
+**A18 reactive-normal-mode benchmark**
+- same bare barrier curvature;
+- same bath frequency spectrum;
+- same total scalar coupling norm S=1;
+- only coupling-vector orientation across modes changes;
+- unstable collective eigenvector and Grote-Hynes transmission change.
+- kappa_GH: 0.6248 -> 0.9531 from phi=0 -> 90 deg.
 
-### A9 tS modern matched dynamics
-**P1+ positive within-system.** 34 exact matched conditions across seven solvents.
+### Empirical modal evidence
 
-Leave-one-solvent-out:
-- temperature-only MSE = 0.1953762
-- rotation-only MSE = 0.1503747
-- temperature + measured rotation MSE = 0.1482310
-- Delta MSE(X|T) = +0.0471452
+**A19 deuterated methane / Pt(111)**
+- experiment supplies state-resolved sticking coefficients;
+- independent DFT/SVP calculation supplies reactant-mode projections onto transition-state reaction-coordinate vectors;
+- more strongly projected modes are more reactive within CH3D and CH2D2;
+- bond-selective modal projection matrix distinguishes C-H and C-D channels.
 
-Measured environment-coupling dynamics adds held-out information beyond temperature.
+Supporting gas-phase literature:
+- CH3D + Cl: near-isoenergetic symmetric and antisymmetric C-H stretch preparation gives ~7x difference in H-abstraction enhancement.
 
-### A10 ttD related-solute replication
-**P1+ positive internal replication.** 24 exact matched conditions across six solvents.
+### Prior A9-A15 work
 
-Leave-one-solvent-out:
-- temperature-only MSE = 0.0767073
-- rotation-only MSE = 0.0903695
-- temperature + measured rotation MSE = 0.0151959
-- Delta MSE(X|T) = +0.0615114
+Preserved but **demoted to environment/embedding precursor evidence**. These results do not directly validate capital Chi because they do not contain the required modal/vector carrier structure.
 
-### A11 room-temperature cross-solvent panel
-**Mixed.**
+Do not resume from A9-A15 unless explicitly studying how an external perturbation reorganizes modal Chi.
 
-tS:
-- viscosity MSE = 0.1217117
-- rotation MSE = 0.1310321
-- viscosity + rotation MSE = 0.1922655
-- negative incremental result.
+## Current executable target
 
-ttD:
-- viscosity MSE = 1.8451776
-- rotation MSE = 2.1185364
-- viscosity + rotation MSE = 0.9865314
-- relational architecture improves prediction, but neither single descriptor does.
+Build an **additive Capital-Chi modal reporting adapter** around ChemSA Release 38 without changing the frozen core engine.
 
-### A12 exploratory decomposition
-**Hypothesis generation only. No promotion.**
+The frozen inheritance contract states the engine already preserves:
+- authoritative spectrum;
+- indexed right eigenvectors;
+- left/right response bases;
+- mode geometry;
+- conditioning/refusal state;
+- separate mechanical modal factors.
 
-tS:
-- richer dielectric/size architecture does not beat viscosity alone.
+The reporting gap is persistence/assembly of these into an explicit scalar-to-carrier modal record.
 
-ttD:
-- viscosity + rotation = 0.986531 MSE
-- + dielectric constant = 0.062843 MSE
-- + molar volume = 0.376876 MSE
-- + dielectric + volume = 0.080360 MSE
+## Adapter requirements
 
-A12 nominates a future confirmatory architecture:
-**bulk friction + microscopic environment coupling + dielectric/polar response.**
+The adapter must:
+1. consume an already-built `BalancedSpectrum` and `SystemSummary`;
+2. consume `ModeGeometry` records from the same `spectrum_id`;
+3. emit indexed poles/eigenvalues and right/left modal bases;
+4. preserve mechanical `chi_i` separately from spectral `pole_angle_rho`;
+5. explicitly assign each licensed mechanical `chi_i` to its mass-normalized mechanical modal vector/subspace;
+6. optionally accept declared physical coordinate vectors and report their mass-metric participation/projection;
+7. report degeneracy, conditioning, unresolved/refusal state;
+8. support modal correspondence between two conditions using overlap matrices, with correspondence rule frozen before target inspection;
+9. never scalarize capital Chi by default;
+10. require no modification of the frozen Release 38 core.
 
-## Current inference ceiling
+## Exact next action after interruption
 
-Supported:
-1. whole-system dynamical organization can materially alter kinetics;
-2. directly measured environment-coupling dynamics adds held-out kinetic information beyond temperature in tS and replicates in ttD within one modern experimental platform;
-3. a single dynamical descriptor is not generally sufficient;
-4. ttD room-temperature data nominate a relational architecture involving bulk friction, microscopic coupling, and dielectric response.
+Open this checkpoint, then inspect/continue:
+- `chemsa_v3.py`: `BalancedSpectrum`, `MechanicalModeRecord`, `scalar_reduction_valid`, modal factor construction;
+- `biorthogonal_response.py`: `ModeGeometry`, `all_mode_geometries_from_spectrum`;
+- additive adapter + regression tests on the investigation branch.
 
-Not supported:
-- scalar Capital Chi rate coordinate;
-- general cross-reaction rate law;
-- P2 independent-source predictive validation;
-- manuscript-level claim that Capital Chi predicts rates generally.
+First validation targets:
+- ordinary proportional two-mode system with two distinct chi_i values;
+- degenerate stiffness block requiring modal basis rotation;
+- non-proportional system where mechanical chi must remain refused;
+- A18-style saddle/modal projection record;
+- correspondence under a known orthogonal mode rotation.
 
-## Current active target
+## Promotion gate after adapter
 
-**Independent-source confirmation of the A12 relational hypothesis.**
+Do not alter the manuscript from this investigation yet.
 
-Required evidence:
-- target kinetic observable;
-- independently measured bulk friction/viscosity;
-- independently measured microscopic solute/environment dynamical descriptor;
-- independently tabulated dielectric/polar response;
-- enough matched conditions for source/condition holdout;
-- none derived from target rate.
+The next scientific promotion requires:
+1. adapter QA passes;
+2. one real chemical system exposes the native modal basis needed to construct Chi;
+3. modal Chi adds explanatory/predictive information beyond barrier/native energetics and local scalar chi_i;
+4. no target-driven mode selection.
 
-Priority:
-1. Dahl/Biswas/Maroncelli 2003 DPB nonpolar-solvent data if exact rotation table can be recovered without OCR ambiguity;
-2. independent electron-transfer/solvation-dynamics dataset with reaction and solvent-relaxation observables measured separately;
-3. independent modern/open dataset satisfying the same feature firewall.
+## Privacy rule
 
-## Exact next action
-
-Continue external-source search and extraction. The next confirmatory test must be preregistered before target/predictor calculation. If no dataset supplies the required independent matched variables, stop at P1/P1+ and record that the evidence ceiling is data availability rather than analytical incompleteness.
-
-## Resume rule after interruption
-
-Open this file first. Continue from **Current active target**. Do not rerun completed A9-A12 calculations unless a source/provenance defect is discovered.
-
-
-## Final checkpoint addendum: A14-A15 / current hard stop
-
-- A14 completed and committed: 50-solvent apolar-motor counter-test, modest independent environmental-structure improvement.
-- A15 completed and committed: motor-specific DOSY diffusion slightly outperforms viscosity on the exact matched subset; joint model worsens due overlap.
-- Independent-source search has been pushed through the deep-search shortlist plus open repository sources.
-- A6, A8, and A13 remain exact-data retrieval blocks.
-- A7 remains numeric-provenance blocked.
-- No current accessible dataset supplies the complete preregistered A12 relational feature set in a new independent source with sufficient exact matched rows.
-
-**Current hard stop:** P2 cannot be earned from the evidence presently retrievable without either (a) obtaining one of the blocked supplementary/data files, or (b) adding a new independent matched dataset. Further regression on the existing sources would be post-hoc feature mining and is prohibited.
-
-**Next resumable action:** retrieve exact independent data first, then preregister and execute. Do not alter the feature definition to manufacture a positive result.
-
-**Privacy:** Chemistry repo is public; current manuscript files are absent. Keep manuscript off this repo.
+`SymC-Universe/Chemistry` is public. Do not commit current manuscript .tex/.pdf/submission-ready source here.
