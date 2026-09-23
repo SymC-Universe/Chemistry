@@ -350,3 +350,101 @@ def build_capital_chi_modal_record(
                     continue
                 norm2 = float(d @ M @ d)
                 if not np.isfinite(norm2) or norm2 <= 1e-300:
+                    projections.append(DeclaredProjectionRecord(
+                        name=str(name), norm=float("nan"),
+                        mechanical_amplitudes=np.array([], dtype=float),
+                        mechanical_participation=np.array([], dtype=float),
+                        refused=True, reason="declared vector has zero/nonfinite mass norm",
+                    ))
+                    continue
+                amps = X.T @ M @ d
+                part = np.abs(amps) ** 2 / norm2
+                # Sum participation over every unique simultaneous-degeneracy
+                # subspace.  Those sums are invariant even when the individual
+                # basis vectors inside the span are not.
+                pos_by_modal={idx:k for k,idx in enumerate(ordered_idx)}
+                subspaces=[]
+                seen_sub=set()
+                invariant=True
+                for idx in ordered_idx:
+                    members=tuple(carrier_by_idx[idx].subspace_members)
+                    if members in seen_sub:
+                        continue
+                    seen_sub.add(members)
+                    positions=[pos_by_modal[j] for j in members if j in pos_by_modal]
+                    subspaces.append((members, float(np.sum(part[positions]))))
+                    if len(members)>1:
+                        invariant=False
+                projections.append(DeclaredProjectionRecord(
+                    name=str(name), norm=float(np.sqrt(norm2)),
+                    mechanical_amplitudes=np.asarray(amps, dtype=float),
+                    mechanical_participation=np.asarray(part, dtype=float),
+                    subspace_participation=tuple(subspaces),
+                    individual_basis_invariant=invariant,
+                ))
+
+    return CapitalChiModalRecord(
+        spectrum_id=sid,
+        n_coordinates=n,
+        mass_condition_number=float(spectrum.mass_condition_number),
+        certified_conditioning=bool(spectrum.certified_conditioning),
+        conditioning_reason=str(spectrum.conditioning_reason),
+        spectral_carriers=tuple(spectral),
+        mechanical_carriers=tuple(mechanical),
+        declared_projections=tuple(projections),
+        refusal_state=tuple(refusals),
+    )
+
+
+def modal_correspondence_matrix(
+    record_a: CapitalChiModalRecord,
+    record_b: CapitalChiModalRecord,
+    *,
+    metric: Any,
+) -> np.ndarray:
+    """Return the absolute carrier-overlap matrix for a declared metric.
+
+    The caller MUST declare the cross-condition metric.  This is deliberate:
+    if masses/coordinates change between conditions, there is no universal
+    hidden correspondence metric the adapter may invent.
+
+    Rows follow record_a.mechanical_carriers; columns follow record_b.
+    No automatic matching/permutation is selected here.
+    """
+    W = np.asarray(metric)
+    if np.iscomplexobj(W):
+        if np.max(np.abs(W.imag)) > 1e-12 * max(np.max(np.abs(W)), 1.0):
+            raise ValueError("correspondence metric must be materially real")
+        W = W.real
+    W = np.asarray(W, dtype=float)
+    n = record_a.n_coordinates
+    if record_b.n_coordinates != n or W.shape != (n, n):
+        raise ValueError("records and correspondence metric must share coordinate dimension")
+    if not np.allclose(W, W.T, atol=1e-10 * max(np.linalg.norm(W, 2), 1.0), rtol=0):
+        raise ValueError("correspondence metric must be symmetric")
+    try:
+        np.linalg.cholesky(W)
+    except np.linalg.LinAlgError as exc:
+        raise ValueError("correspondence metric must be positive definite") from exc
+
+    A = record_a.mechanical_carriers
+    B = record_b.mechanical_carriers
+    if not A or not B:
+        raise ValueError("mechanical carrier correspondence requires licensed carrier bases")
+    if any(not m.basis_unique for m in A) or any(not m.basis_unique for m in B):
+        raise ValueError(
+            "individual carrier correspondence is basis-dependent inside a "
+            "simultaneously degenerate mechanical subspace; compare the subspaces "
+            "rather than solver-selected basis vectors"
+        )
+    XA = np.column_stack([m.vector for m in A])
+    XB = np.column_stack([m.vector for m in B])
+    # Renormalize under the declared cross-condition metric.  Each basis was
+    # originally mass-normalized under its own condition, which need not equal W.
+    na = np.sqrt(np.real(np.sum(XA * (W @ XA), axis=0)))
+    nb = np.sqrt(np.real(np.sum(XB * (W @ XB), axis=0)))
+    if np.any(na <= 0) or np.any(nb <= 0):
+        raise ValueError("nonpositive carrier norm under declared correspondence metric")
+    XA = XA / na
+    XB = XB / nb
+    return np.abs(XA.T @ W @ XB)
