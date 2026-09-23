@@ -21,25 +21,21 @@
 
 ## Current active target
 
-**Angulo et al. 2017 PeDMA no-fit non-Markovian electron-transfer test**
+**External matched-solvent dynamics expansion after A6 retrieval block**
 
-Needed for quantitative P1 execution:
-1. exact observed PeDMA characteristic times tau_1/e;
-2. exact GLE-predicted tau_1/e;
-3. exact GSE-predicted tau_1/e;
-4. condition labels for each exact pair;
-5. preferably exact C153 friction/memory parameters for provenance audit.
+### A6 disposition
+Angulo et al. 2017 remains the strongest no-fit architecture candidate, but quantitative execution is **P0-Q blocked** because the separate authoritative supplementary file containing exact tau_1/e and friction tables could not be retrieved through the available routes. The exact journal supplementary filename is `draft_si9rev.pdf`. No plotted values were digitized.
 
-The main article does not contain the supplementary numeric tables. Do not digitize plotted values unless no lawful tabulated source can be obtained.
+Resume A6 immediately if the supplementary bytes become available.
 
 ## Exact next action
 
-Locate the separate supplementary file for DOI 10.1063/1.4990044 from an authoritative/open source, archive its provenance, and extract the exact numeric target/prediction table under Amendment A6.
+Advance to the next prequalified external dataset with exact tabulated measured kinetics plus an independently measured environmental-dynamics descriptor. Priority order:
+1. metallocene self-exchange with longitudinal dielectric relaxation if exact tables can be retrieved;
+2. modern/accessible solvent-series systems with independently measured rotational or dielectric relaxation and rate data;
+3. no-fit model-based systems only as P1 mechanistic support, never as P2 empirical validation.
 
-If exact supplementary numbers remain inaccessible:
-- mark A6 P0-Q blocked;
-- do not estimate graph values;
-- advance to the next prequalified no-fit dataset from the deep-search shortlist, prioritizing metallocene self-exchange or another system with independently measured solvent relaxation and tabulated kinetics.
+Keep A6 retrieval as a resumable blocked lane, not an abandoned lead.
 
 ## Stop conditions
 
