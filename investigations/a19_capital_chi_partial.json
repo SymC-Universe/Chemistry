@@ -1,0 +1,78 @@
+{
+  "schema": "CapitalChiModalDataContract-v0.1",
+  "record_id": "A19_CH3D_CH2D2_Pt111",
+  "maturity": "P0-Q_partial",
+  "source": {
+    "doi": "10.1021/acs.jpca.5b07949",
+    "year": 2015
+  },
+  "system": "CH3D and CH2D2 dissociative chemisorption on Pt(111)",
+  "modal_object": {
+    "type": "mode_to_reaction_coordinate_projection_matrix",
+    "convention": "absolute SVP overlap",
+    "target_subspaces": [
+      "C-H cleavage TS reaction coordinate",
+      "C-D cleavage TS reaction coordinate"
+    ],
+    "rows": [
+      {
+        "molecule": "CH3D",
+        "mode": "nu1",
+        "projection": [
+          0.44,
+          0.04
+        ],
+        "sticking": {
+          "value": 0.0022,
+          "sigma": 0.0005
+        }
+      },
+      {
+        "molecule": "CH3D",
+        "mode": "nu4",
+        "projection": [
+          0.38,
+          0.01
+        ],
+        "sticking": {
+          "value": 0.0018,
+          "sigma": 0.0002
+        }
+      },
+      {
+        "molecule": "CH2D2",
+        "mode": "nu1",
+        "projection": [
+          0.57,
+          0.04
+        ],
+        "sticking": {
+          "value": 0.00202,
+          "sigma": 0.00009
+        }
+      },
+      {
+        "molecule": "CH2D2",
+        "mode": "nu6",
+        "projection": [
+          0.48,
+          0.02
+        ],
+        "sticking": {
+          "value": 0.00147,
+          "sigma": 0.00007
+        }
+      }
+    ]
+  },
+  "lowercase_chi": {
+    "status": "not_available_from_source_record"
+  },
+  "missing": [
+    "native generator/Hessian",
+    "full indexed reactant mode basis",
+    "full transition-state mode basis",
+    "mode-resolved damping/lifetimes"
+  ],
+  "promotion_limit": "partial modal record; source-level empirical/modal evidence"
+}
