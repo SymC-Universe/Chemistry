@@ -15,8 +15,10 @@
 ## Additive adapter
 
 - `investigations/capital_chi_modal.py`
-- tested local SHA-256:
+- final tested SHA-256 (21008 bytes):
   `a566b48151776783ac8f19f6d0ea816520eb16cbd56b49e40ca7f7636b15c201`
+- final adapter test SHA-256 (5099 bytes):
+  `f07e25d8a2abdcb983f7e62406f0510328ea7cb403ed95c30f69b058a9f287df`
 
 The adapter does not patch or import-modify the frozen core. It consumes:
 - authoritative `BalancedSpectrum`;
@@ -31,10 +33,10 @@ It emits modal/vector Capital Chi and preserves lowercase scalar chi separately.
 pytest -q   test_capital_chi_modal.py   test_biorthogonal.py   test_chi_rho_split.py   test_conditioning_gate.py   test_dho_roundtrip.py   test_two_mode_ep_corollary.py
 ```
 
-Final targeted result after saddle/spectral-subspace extension:
+Final targeted result after saddle/spectral-subspace extension, rerun after hash verification:
 
 ```
-115 passed
+115 passed in 2.67 s
 ```
 
 ## Adversarial cases covered
