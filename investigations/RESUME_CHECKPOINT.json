@@ -1,6 +1,6 @@
 {
   "checkpoint_version": 1,
-  "updated_utc": "2026-09-23T02:35:00Z",
+  "updated_utc": "2026-09-23T02:38:00Z",
   "project": "Capital Chi rate-predictor investigation",
   "repo": "SymC-Universe/Chemistry",
   "branch": "agent/capital-chi-rate-pilot-20260922",
@@ -18,19 +18,23 @@
     "beta-CD empirical P1 test completed: negative under strict calibration control",
     "S-DPB matched-solvent empirical P1 test completed: negative under frozen comparison",
     "Angulo 2017 no-fit GLE/GSE test preregistered before SI target extraction",
-    "Deep literature search completed; Angulo 2017 identified as strongest no-fit architecture candidate"
+    "Deep literature search completed; Angulo 2017 identified as strongest no-fit architecture candidate",
+    "A7 DPB multi-solvent candidate audited and rejected before outcome testing because rotational predictor was viscosity-derived, not independently measured."
   ],
   "current_task": {
-    "id": "ANG17-SI",
-    "goal": "Recover exact supplementary numerical data for observed PeDMA tau_1/e and GLE/GSE predictions without graph digitization if possible.",
-    "status": "blocked_on_exact_SI_retrieval",
-    "known_supporting_info_url": "https://aip.scitation.org/doi/suppl/10.1063/1.4990044/suppl_file/draft_si9rev.pdf",
-    "current_evidence": "Main paper confirms GLE generally closer than GSE for slow dynamics and no fitted parameters enter GLE, but exact SI numeric values are unavailable in currently retrieved PDF."
+    "id": "NEXT-EMPIRICAL-DATASET",
+    "goal": "Find a matched empirical kinetic series with independently measured solvent/memory/collective dynamics and exact numeric values.",
+    "status": "active_search",
+    "constraints": [
+      "No target-rate-derived dynamical feature",
+      "No viscosity-derived proxy presented as independent dynamics",
+      "Preregister each dataset-specific test before numeric outcome extraction"
+    ]
   },
   "next_actions": [
-    "Try alternate public mirrors/metadata paths for Angulo SI.",
-    "If exact SI remains inaccessible, freeze ANG17 as P0-Q qualitative rather than digitize graph.",
-    "Advance to next independent candidate from deep search, prioritizing no-fit matched dynamics.",
-    "Update checkpoint after each completed dataset test."
+    "Search open literature for exact matched solvation/reaction datasets from deep-search leads (Rumble 2018, Pugzlys 2001, metallocene self-exchange, Co2(CO)8 2D-IR).",
+    "Preregister the first exact numeric dataset before outcome extraction.",
+    "Run held-out comparison and checkpoint result.",
+    "Do not push manuscript text to public repository."
   ]
 }
