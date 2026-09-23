@@ -1,69 +1,52 @@
-# Capital-Chi rate pilot amendment A12: ground-state Markovian control
+# Capital-Chi rate pilot amendment A12: exploratory solvent-architecture decomposition
 
 **Date:** 2026-09-22  
-**Status:** FROZEN BEFORE REGRESSION CALCULATION
+**Status:** POST-A11 EXPLORATORY; FROZEN BEFORE CALCULATION  
+**Promotion:** hypothesis generation only; cannot upgrade A9/A10/A11 evidentiary level.
 
-## Source reaction
+## Rationale
 
-Anna & Kubarych, *Watching solvent friction impede ultrafast barrier crossings: a direct test of Kramers theory*, J. Chem. Phys. 133, 174506 (2010), DOI 10.1063/1.3492724.
+A11 showed a preregistered mixed result. For tS, adding rotational time to viscosity worsened held-out prediction. For ttD, neither viscosity nor rotational time alone performed well, while the predeclared joint viscosity + rotation model substantially improved held-out prediction.
 
-Reaction: ground-state interconversion of the two principal Co2(CO)8 isomers measured directly by 2D-IR chemical exchange.
+The source itself discusses systematic solvent effects associated with polarity/dielectric response and molecular-size/shape differences. This exploratory step asks whether those independently tabulated solvent properties help explain the A11 heterogeneity.
 
-## Control purpose
+## Frozen source features
 
-This is not a search for a richer Capital-Chi predictor. It is a **regime negative control**.
+From the same room-temperature source table:
 
-The source shows that across the linear alkane series:
-- equilibrium energetics vary negligibly;
-- DFT forward activation energies differ by only ~0.04 kcal/mol from hexane to decane;
-- the observed rate change is attributed primarily to solvent friction;
-- simple Markovian Kramers behavior is reported to describe the viscosity dependence.
+- bulk viscosity: log(eta);
+- measured solute rotational time: log(tau_R);
+- static dielectric constant: log(epsilon);
+- molar volume: log(V_m).
 
-If the Capital-Chi framing is useful as a rate-regime architecture, it must allow simple cases to remain simple rather than demand an extra descriptor everywhere.
+These quantities are source-tabulated and not derived from target tau_iso.
 
-## Frozen five-solvent dataset
+## Frozen models
 
-Use only the linear alkanes, excluding cyclohexane prospectively because its static potential-energy surface differs measurably from the linear series.
+Analyze tS and ttD separately.
 
-Experimental forward rates from Table II:
-- n-hexane: 0.093 ps^-1
-- n-heptane: 0.077 ps^-1
-- n-octane: 0.068 ps^-1
-- n-decane: 0.041 ps^-1
-- n-dodecane: 0.028 ps^-1
+- B0: intercept only
+- B1: log(eta)
+- B2: log(eta) + log(tau_R)
+- P: log(eta) + log(tau_R) + log(epsilon)
+- V: log(eta) + log(tau_R) + log(V_m)
+- PV: log(eta) + log(tau_R) + log(epsilon) + log(V_m)
 
-Experimental reverse rates, retained as a mirrored secondary test:
-- n-hexane: 0.086 ps^-1
-- n-heptane: 0.071 ps^-1
-- n-octane: 0.064 ps^-1
-- n-decane: 0.039 ps^-1
-- n-dodecane: 0.027 ps^-1
+Use leave-one-solvent-out prediction over all complete rows for each model.
 
-Independent reference viscosities at 298.15 K (mPa s = cP):
-- n-hexane: 0.2950
-- n-heptane: 0.3832
-- n-octane: 0.5088
-- n-decane: 0.8493
-- n-dodecane: 1.3580
+## Outputs
 
-## Frozen analyses
+For each solute report:
+- LOO MSE for every frozen model;
+- Delta MSE relative to B1 and B2;
+- coefficient signs only as exploratory diagnostics;
+- condition number of each design matrix to flag unstable small-sample fits.
 
-For forward and reverse rates separately:
+## Restrictions
 
-1. fit
-   [
-   ln k = a + blneta;
-   ]
-2. report Pearson and Spearman correlations;
-3. report fitted slope b;
-4. leave-one-solvent-out log-linear MSE and mean absolute log error.
-
-The qualitative Markovian-control expectation is a strong monotonic inverse relation. The slope is reported, not forced to -1.
-
-## Interpretation rule
-
-A strong viscosity-only result supports classification of this solvent series as a **simple bulk-friction-controlled regime**, not a positive incremental Capital-Chi predictor result.
-
-A weak result would challenge that simple-regime interpretation and trigger inspection for omitted architecture.
-
-No additional predictor will be added after seeing the result.
+- No additional solvent descriptor may be added after seeing A12 outcomes without a new amendment.
+- No nonlinear or interaction terms.
+- No solvent-class dummy variables.
+- No row exclusion based on leverage or residual.
+- The best A12 model is not a new Capital-Chi definition.
+- A12 cannot be cited as confirmatory evidence; it can only nominate variables for a future independent preregistered dataset.
