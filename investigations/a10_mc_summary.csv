@@ -1,0 +1,2 @@
+n_draws,seed,delta_mse_q2_5,delta_mse_median,delta_mse_q97_5,fraction_delta_positive
+100000,20260922,0.194782052881579,0.3772298846976908,0.7418555797747453,0.99999
