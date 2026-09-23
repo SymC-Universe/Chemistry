@@ -1,73 +1,51 @@
-# Capital-Chi rate pilot amendment A15: true external holdout of the A9 solvent-dynamics model
+# Capital-Chi rate pilot amendment A15: motor-specific diffusion reproduction benchmark
 
-**Date:** 2026-09-22
-**Status:** FROZEN BEFORE HOLDOUT PREDICTION CALCULATION
+**Date:** 2026-09-22  
+**Status:** FROZEN BEFORE CALCULATION  
+**Epistemic status:** source-result reproduction, not blinded confirmation.
+
+## Source
+
+Lubbe et al., PCCP 2016, DOI 10.1039/C6CP03571J.
+
+The source reports that the diffusion coefficient of motor 1, measured by DOSY-NMR in selected solvents, correlates more strongly with the thermal helix-inversion rate than viscosity on the same restricted dataset.
 
 ## Purpose
 
-A9 produced robust within-family P1 evidence that independently measured solvent relaxation predicts BPAc+ reaction time better than bulk viscosity across twelve conventional neat solvents.
+Reproduce that statement using predictive rather than correlation-only scoring.
 
-The same source table contains two additional conventional neat-solvent conditions that were not included in the frozen A9 training/validation set:
+This tests a bounded Capital-Chi idea:
 
-| solvent | eta (cP) | tau_solv (ps) | tau_rxn (ps) |
-|---|---:|---:|---:|
-| 1-pentanol | 3.51 | 103 | 183 +/- 18.3 |
-| 1-decanol | 11.0 | 259 | 486 +/- 48.6 |
+> a solute-specific environment-coupling observable can carry kinetic information beyond a bulk solvent property.
 
-These two rows are now reserved as a **true external holdout**.
+## Frozen matched subset
 
-## Frozen training set
+Use every Table-2 solvent for which an exact motor-1 diffusion coefficient D is unambiguously printed and for which Table 1 supplies exact ln(k) and ln(eta).
 
-Use exactly the original twelve A9 conventional-solvent rows and no others.
+No row is added by digitizing Fig. 2g.
 
-Fit once on all 12 A9 rows:
+## Frozen models
 
-### M0 bulk model
-[
-ln	au_{rxn}=a_0+b_0lneta
-]
+Target:
+- Table-1 ln(k).
 
-### M1 environment model
-[
-ln	au_{rxn}=a_1+b_1ln	au_{solv}
-]
+Predictors:
+- M0: intercept only
+- M1: Table-1 ln(eta)
+- M2: ln(D), using source DOSY-NMR motor diffusion
+- M3: ln(eta) + ln(D)
 
-No refitting is permitted after holdout outcomes are evaluated.
+Validation:
+- leave-one-solvent-out across the exact matched subset.
 
-## Frozen holdout calculation
-
-For each of the two external solvents:
-1. generate M0 and M1 predictions from the 12-row fitted coefficients;
-2. calculate signed log error
-   [
-   e=ln(	au_{pred}/	au_{obs});
-   ]
-3. calculate squared log error and absolute log error.
-
-Aggregate across the two holdouts:
-- mean squared log error;
-- mean absolute log error.
-
-Primary contrast:
-[
-Delta MSE_{external}=MSE_{viscosity}-MSE_{solvation}.
-]
-
-Positive values favor the environment-relaxation model.
-
-## Uncertainty sensitivity
-
-Using the reported 10% target uncertainties, propagate only target uncertainty with 100,000 deterministic-seed draws while holding the already-fitted A9 model coefficients fixed.
-
-Report the fraction of draws with:
-[
-Delta MSE_{external}>0.
-]
+Report:
+- LOO MSE;
+- Pearson/Spearman associations;
+- design conditioning.
 
 ## Restrictions
 
-- No A9 training row may be changed.
-- The two holdouts may not be used to refit coefficients.
-- No nonlinear floor, alcohol indicator, or additional feature may be added.
-- This remains validation of the A9 within-family model, not a new reaction-family P2 result.
-- The holdout values were discovered before this amendment, but no model coefficients, predictions, residuals, or comparison metrics were calculated before the amendment was frozen.
+- Because the source already reports the qualitative ranking, A15 cannot be counted as new confirmatory evidence.
+- D is not converted to a fitted reactive friction.
+- No missing D values are estimated.
+- No solvent is excluded based on residual.
