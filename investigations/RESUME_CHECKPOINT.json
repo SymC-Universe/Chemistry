@@ -1,6 +1,6 @@
 {
   "checkpoint_version": 1,
-  "updated_utc": "2026-09-23T02:48:00Z",
+  "updated_utc": "2026-09-23T02:55:00Z",
   "project": "Capital Chi rate-predictor investigation",
   "repo": "SymC-Universe/Chemistry",
   "branch": "agent/capital-chi-rate-pilot-20260922",
@@ -22,19 +22,24 @@
     "A7 DPB multi-solvent candidate audited and rejected before outcome testing because rotational predictor was viscosity-derived, not independently measured.",
     "A8 binary-mixture test completed: negative; viscosity outperformed solvation time.",
     "A9 diverse neat-solvent BPAc+ test completed: positive; solvation time outperformed viscosity.",
-    "A10 robustness completed: 99.999% of 100000 uncertainty draws positive; 12/12 solvent jackknifes positive. A9 promoted to robust P1 within-family evidence."
+    "A10 robustness completed: 99.999% of 100000 uncertainty draws positive; 12/12 solvent jackknifes positive. A9 promoted to robust P1 within-family evidence.",
+    "A11 proton-transfer cross-family test completed: positive supporting P1; solvation relaxation strongly outperformed viscosity in n=5 protic solvents."
   ],
   "current_task": {
-    "id": "CROSS-FAMILY-PROTON-TRANSFER",
-    "goal": "Find and preregister an independent proton-transfer dataset with matched reaction and solvent-relaxation dynamics.",
+    "id": "THIRD-INDEPENDENT-FAMILY",
+    "goal": "Find a third chemistry family with exact independent environment-dynamics + kinetic data, preferably ground-state barrier crossing or self-exchange.",
     "status": "active_search",
-    "reason": "A second reaction family is required before considering cross-family P2 promotion."
+    "priorities": [
+      "ground-state isomerization with independently measured solvent dynamics",
+      "metallocene self-exchange with dielectric relaxation",
+      "no-fit reaction model with independent environment measurements"
+    ]
   },
   "next_actions": [
-    "Locate exact proton-transfer reaction-time and independent solvation-time data.",
-    "Freeze dataset-specific test before calculating associations.",
-    "Execute held-out comparison and robustness if positive.",
-    "If proton-transfer data fail eligibility, move to ground-state isomerization or another deep-search candidate.",
-    "Keep manuscript out of public repository until a private GitHub destination exists."
+    "Audit metallocene self-exchange datasets for exact rate, barrier and longitudinal relaxation tables.",
+    "Audit ground-state Co2(CO)8 2D-IR/Kramers dataset if exact table is available.",
+    "Preregister first eligible third-family test before calculating.",
+    "Update checkpoint immediately after eligibility or result.",
+    "Keep manuscript out of public repo."
   ]
 }
