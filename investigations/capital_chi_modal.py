@@ -265,4 +265,88 @@ def build_capital_chi_modal_record(
             chi_applicable=chi_ok,
             right_basis=None if geom.right_basis is None else np.asarray(geom.right_basis).copy(),
             left_basis=None if geom.left_basis is None else np.asarray(geom.left_basis).copy(),
-            
+            overlap_matrix=None if geom.overlap_matrix is None else np.asarray(geom.overlap_matrix).copy(),
+            overlap_normalized=None if geom.overlap_normalized is None else float(geom.overlap_normalized),
+            condition_number=None if geom.condition_number is None else float(geom.condition_number),
+            resolved=bool(geom.resolved),
+            refusal=geom.refusal,
+        ))
+        if not geom.resolved:
+            refusals.append(f"group {gid}: {geom.refusal or 'unresolved modal geometry'}")
+
+    mechanical = []
+    w2, Xr, Cr, basis_why = _mechanical_modal_basis(M, C, K)
+    if summary.mechanical_modes:
+        if Xr is None:
+            raise ValueError(
+                "SystemSummary contains mechanical modes but the additive adapter "
+                f"cannot reconstruct their carrier basis: {basis_why}"
+            )
+        mm_by_idx = {int(mm.modal_index): mm for mm in summary.mechanical_modes}
+        subspace_by_idx = _mechanical_degenerate_subspaces(w2, Cr)
+        for idx, mm in sorted(mm_by_idx.items()):
+            if idx < 0 or idx >= len(w2) or w2[idx] <= 0:
+                raise ValueError(f"invalid mechanical modal_index {idx}")
+            omega0 = float(np.sqrt(w2[idx]))
+            chi = float(Cr[idx, idx] / (2.0 * omega0))
+            # Scalar-to-carrier consistency is an adapter invariant.
+            denom = max(abs(float(mm.mechanical_chi)), 1.0)
+            residual = abs(chi - float(mm.mechanical_chi)) / denom
+            if residual > assignment_rtol:
+                raise ValueError(
+                    f"mechanical chi/carrier mismatch at modal_index {idx}: "
+                    f"summary={mm.mechanical_chi}, reconstructed={chi}"
+                )
+            mechanical.append(MechanicalCarrierRecord(
+                modal_index=idx,
+                omega0=float(mm.omega0),
+                mechanical_chi=float(mm.mechanical_chi),
+                poles=tuple(complex(x) for x in mm.poles),
+                temporal=str(mm.temporal),
+                vector=np.asarray(Xr[:, idx], dtype=float).copy(),
+                assignment_residual=float(residual),
+                basis_unique=(len(subspace_by_idx.get(idx, (idx,))) == 1),
+                subspace_members=tuple(subspace_by_idx.get(idx, (idx,))),
+            ))
+    elif Xr is None:
+        refusals.append("mechanical scalar-to-carrier assignment refused: " + basis_why)
+
+    projections = []
+    if declared_vectors:
+        if not mechanical:
+            for name in declared_vectors:
+                projections.append(DeclaredProjectionRecord(
+                    name=str(name), norm=float("nan"),
+                    mechanical_amplitudes=np.array([], dtype=float),
+                    mechanical_participation=np.array([], dtype=float),
+                    refused=True,
+                    reason="no licensed mechanical carrier basis is available",
+                ))
+        else:
+            carrier_by_idx = {m.modal_index: m for m in mechanical}
+            ordered_idx = sorted(carrier_by_idx)
+            X = np.column_stack([carrier_by_idx[i].vector for i in ordered_idx])
+            for name, vec in declared_vectors.items():
+                d = np.asarray(vec)
+                if np.iscomplexobj(d):
+                    imag = np.max(np.abs(d.imag)) if d.size else 0.0
+                    if imag > 1e-12 * max(np.max(np.abs(d)), 1.0):
+                        projections.append(DeclaredProjectionRecord(
+                            name=str(name), norm=float("nan"),
+                            mechanical_amplitudes=np.array([], dtype=float),
+                            mechanical_participation=np.array([], dtype=float),
+                            refused=True, reason="declared vector is materially complex",
+                        ))
+                        continue
+                    d = d.real
+                d = np.asarray(d, dtype=float).ravel()
+                if d.shape != (n,) or not np.all(np.isfinite(d)):
+                    projections.append(DeclaredProjectionRecord(
+                        name=str(name), norm=float("nan"),
+                        mechanical_amplitudes=np.array([], dtype=float),
+                        mechanical_participation=np.array([], dtype=float),
+                        refused=True, reason=f"declared vector must be finite shape ({n},)",
+                    ))
+                    continue
+                norm2 = float(d @ M @ d)
+                if not np.isfinite(norm2) or norm2 <= 1e-300:
