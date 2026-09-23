@@ -1,0 +1,236 @@
+{
+  "schema": "HCN_HNC_native_modal_R0_v0.1",
+  "method": "aimnet2_wb97md3",
+  "engine": "aimnet2",
+  "hcn": {
+    "workflow_uuid": "042c5369-54c1-4626-ba3d-8f3709e2e4de",
+    "calculation_uuid": "3ac7fc58-cd70-44d2-a2c0-0a3b1e696395",
+    "energy_hartree": -93.493238,
+    "geometry_angstrom": [
+      [
+        1,
+        0,
+        0,
+        -1.06148369
+      ],
+      [
+        6,
+        0,
+        0,
+        0.00275523
+      ],
+      [
+        7,
+        0,
+        0,
+        1.14672846
+      ]
+    ],
+    "modes": [
+      {
+        "frequency_cm1": 726.513,
+        "reduced_mass": 1.345,
+        "force_constant": 0.418,
+        "displacements": [
+          [
+            -0.802016,
+            -0.571772,
+            0
+          ],
+          [
+            0.13002,
+            0.092694,
+            0
+          ],
+          [
+            -0.053699,
+            -0.038283,
+            0
+          ]
+        ]
+      },
+      {
+        "frequency_cm1": 726.513,
+        "reduced_mass": 1.345,
+        "force_constant": 0.418,
+        "displacements": [
+          [
+            0.571772,
+            -0.802016,
+            0
+          ],
+          [
+            -0.092694,
+            0.13002,
+            0
+          ],
+          [
+            0.038283,
+            -0.053699,
+            0
+          ]
+        ]
+      },
+      {
+        "frequency_cm1": 2242.928,
+        "reduced_mass": 4.943,
+        "force_constant": 14.652,
+        "displacements": [
+          [
+            0,
+            0,
+            -0.819719
+          ],
+          [
+            0,
+            0,
+            -0.404434
+          ],
+          [
+            0,
+            0,
+            0.405578
+          ]
+        ]
+      },
+      {
+        "frequency_cm1": 3371.376,
+        "reduced_mass": 1.2,
+        "force_constant": 8.033,
+        "displacements": [
+          [
+            0,
+            0,
+            0.991362
+          ],
+          [
+            0,
+            0,
+            -0.125947
+          ],
+          [
+            0,
+            0,
+            0.036581
+          ]
+        ]
+      }
+    ]
+  },
+  "hnc": {
+    "workflow_uuid": "cf1a011d-e312-4950-8250-3df1b709febc",
+    "calculation_uuid": "c3c0fed4-4fa1-4b87-983e-35a6d0fff99f",
+    "energy_hartree": -93.471647,
+    "geometry_angstrom": [
+      [
+        1,
+        0,
+        0,
+        -0.99599224
+      ],
+      [
+        6,
+        0,
+        0,
+        1.16415287
+      ],
+      [
+        7,
+        0,
+        0,
+        0.00183939
+      ]
+    ],
+    "modes": [
+      {
+        "frequency_cm1": 416.756,
+        "reduced_mass": 1.291,
+        "force_constant": 0.132,
+        "displacements": [
+          [
+            -0.150256,
+            -0.977167,
+            0
+          ],
+          [
+            -0.010834,
+            -0.070454,
+            0
+          ],
+          [
+            0.020098,
+            0.130704,
+            0
+          ]
+        ]
+      },
+      {
+        "frequency_cm1": 416.756,
+        "reduced_mass": 1.291,
+        "force_constant": 0.132,
+        "displacements": [
+          [
+            0.977167,
+            -0.150256,
+            0
+          ],
+          [
+            0.070454,
+            -0.010834,
+            0
+          ],
+          [
+            -0.130704,
+            0.020098,
+            0
+          ]
+        ]
+      },
+      {
+        "frequency_cm1": 2097.674,
+        "reduced_mass": 6.487,
+        "force_constant": 16.819,
+        "displacements": [
+          [
+            0,
+            0,
+            0.729862
+          ],
+          [
+            0,
+            0,
+            -0.544142
+          ],
+          [
+            0,
+            0,
+            0.413776
+          ]
+        ]
+      },
+      {
+        "frequency_cm1": 3832.722,
+        "reduced_mass": 1.134,
+        "force_constant": 9.815,
+        "displacements": [
+          [
+            0,
+            0,
+            0.995071
+          ],
+          [
+            0,
+            0,
+            0.027576
+          ],
+          [
+            0,
+            0,
+            -0.095249
+          ]
+        ]
+      }
+    ]
+  },
+  "endpoint_gate": "PASS: all reported vibrational frequencies positive; optimized endpoint modal vectors available."
+}
