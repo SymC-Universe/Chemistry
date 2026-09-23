@@ -38,3 +38,23 @@ commit: `4b25cefc501c40c4b9f085bf5a36a6c798730256`
 ## Stop rule
 
 Do not promote a full native Capital-Chi record until exact modal vectors/subspaces and TS connectivity are available.
+
+
+## R1 TS search draft
+
+- workflow UUID: `c2653b1c-5fc8-49ca-8f24-9b465bdb01bf`
+- name: `HCN_HNC_R1_TS_same_method`
+- workflow type: `double_ended_ts_search`
+- method: `aimnet2_wb97md3`
+- engine: `aimnet2`
+- optimized R0 endpoints used directly
+- optimize_inputs: false
+- optimize_ts: true
+- max credits: 6
+- status at this checkpoint: draft
+- hardware class: A100_40GB
+
+### R1 acceptance gate
+
+Do not promote the returned structure merely because the search terminates.
+The candidate must pass a same-method frequency calculation with exactly one physically relevant imaginary mode, followed by endpoint connectivity validation if IRC is available.
