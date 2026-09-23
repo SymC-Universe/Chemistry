@@ -14,7 +14,7 @@ For an identified stable second-order damped mode,
 
 is a legitimate mechanical damping ratio when `Omega_0` is the licensed undamped natural frequency of that second-order factor and the damping convention for `Gamma` is explicit. In that restricted setting, `chi < 1`, `chi = 1`, and `chi > 1` describe underdamped, repeated-root/critical, and overdamped modal morphology.
 
-ChemSA does **not** treat this scalar as a universal reaction-rate coordinate or a system-wide stability number. For a general first-order or coupled generator, the engine withholds mechanical `chi` unless the required scalar or proportionally damped modal reduction is independently licensed.
+ChemSA treats this scalar only as a licensed local modal coordinate. For a general first-order or coupled generator, the engine withholds mechanical `chi` unless the required scalar or proportionally damped modal reduction is independently licensed.
 
 The classifier instead preserves the relevant spectral and modal structure, including multiplicity, defectiveness at tolerance, conditioning, provenance, and response geometry.
 
@@ -99,7 +99,7 @@ Current deployment capability and current execution state are tracked separately
 The current program does not claim that:
 
 - one scalar describes every chemical stability problem;
-- `chi = 1` is a universal reaction-rate optimum;
+- `chi = 1` determines a reaction-rate optimum;
 - `chi = 1` is a barrier-top critical point;
 - a linewidth by itself is a mechanical damping coefficient;
 - a repeated eigenvalue by itself establishes an exceptional point;
