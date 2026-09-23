@@ -1,6 +1,6 @@
 {
   "checkpoint_version": 1,
-  "updated_utc": "2026-09-23T03:02:00Z",
+  "updated_utc": "2026-09-23T03:10:00Z",
   "project": "Capital Chi rate-predictor investigation",
   "repo": "SymC-Universe/Chemistry",
   "branch": "agent/capital-chi-rate-pilot-20260922",
@@ -24,19 +24,27 @@
     "A9 diverse neat-solvent BPAc+ test completed: positive; solvation time outperformed viscosity.",
     "A10 robustness completed: 99.999% of 100000 uncertainty draws positive; 12/12 solvent jackknifes positive. A9 promoted to robust P1 within-family evidence.",
     "A11 proton-transfer cross-family test completed: positive supporting P1; solvation relaxation strongly outperformed viscosity in n=5 protic solvents.",
-    "A12 Co2(CO)8 ground-state control completed: simple viscosity-only model predicts both directions strongly; passed negative-control/simple-regime test."
+    "A12 Co2(CO)8 ground-state control completed: simple viscosity-only model predicts both directions strongly; passed negative-control/simple-regime test.",
+    "Pugzlys 2001 candidate marked exact-data blocked; no graph inference.",
+    "A13 exploratory predictor-decoupling metric computed: A8 D=0.028 negative kinetics; A9 D=0.515 positive; A11 D=0.493 positive. Pattern is post-result and nonconfirmatory."
   ],
   "current_task": {
-    "id": "METALLOCENE-BARRIER-CORRECTED",
-    "goal": "Recover unambiguous metallocene barrier-corrected rate versus longitudinal solvent-relaxation table for an independent solvent-dynamics test.",
-    "status": "source_table_reconstruction",
-    "blocker_rule": "Do not calculate until column alignment is unambiguous and dataset-specific test is preregistered."
+    "id": "A13-PROSPECTIVE-REPLICATION",
+    "goal": "Find a new exact dataset, compute predictor-only decoupling before kinetic comparison, then test the frozen environment-vs-bulk rate prediction.",
+    "status": "active_search",
+    "required_sequence": [
+      "extract predictors",
+      "freeze source/data contract",
+      "compute D before target model",
+      "record D/checkpoint",
+      "only then compute rate comparison"
+    ]
   },
   "next_actions": [
-    "Recover/verify one metallocene couple's exact Table II pairs from the 1989 primary paper.",
-    "If exact parsing is possible, freeze A13 then calculate.",
-    "If not, mark candidate P0-D/ineligible rather than infer columns.",
-    "Continue to another independent dataset after A13 eligibility decision.",
+    "Search accessible theses/full texts for a new solvent-controlled reaction dataset with exact viscosity, independent environment dynamics, and reaction times.",
+    "Prefer a new molecule/reaction family rather than another BPAc+ series.",
+    "Follow A13 sequence so the decoupling gate is genuinely prospective for the new dataset.",
+    "If extraction fails, checkpoint and advance.",
     "Keep manuscript out of public repo."
   ]
 }
