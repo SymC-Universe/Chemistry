@@ -1,0 +1,12 @@
+solvent,tauL_inv_rel_to_ACN,kprime_ex_rel_to_ACN
+acetonitrile,1.0,1.0
+propionitrile,1.0,0.9
+acetone,0.9,0.6
+D2O,0.5,1.2
+nitromethane,1.1,1.1
+DMF,0.2,0.25
+DMSO,0.12,0.2
+benzonitrile,0.05,0.15
+nitrobenzene,0.05,0.06
+TMU,0.043,0.11
+HMPA,0.028,0.04
