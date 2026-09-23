@@ -1,87 +1,67 @@
-# Capital-Chi rate pilot amendment A7: barrier-corrected metallocene solvent-dynamics test
+# Capital-Chi rate pilot amendment A7: DPB multi-solvent-class environment test
 
 **Date:** 2026-09-22  
-**Status:** FROZEN BEFORE NUMERICAL REGRESSION/CORRELATION CALCULATION
+**Status:** FROZEN BEFORE NUMERIC TABLE EXTRACTION
 
-## Source
+## Source system
 
-McManis, Nielson, Gochev, and Weaver, *Solvent Dynamical Effects in Electron Transfer: Evaluation of Electronic Matrix Coupling Elements for Metallocene Self-Exchange Reactions*, J. Am. Chem. Soc. 1989, 111, 5533-5541, DOI 10.1021/ja00197a004.
+Dahl, Biswas, and Maroncelli, *The Photophysics and Dynamics of Diphenylbutadiene in Alkane and Perfluoroalkane Solvents*, J. Phys. Chem. B (2003), DOI 10.1021/jp0300703.
 
-A public article copy exposes Tables I-III.
-
-## Why this source is useful
-
-Table II reports, solvent by solvent:
-
-1. the inverse longitudinal solvent relaxation time relative to acetonitrile,
-   [
-   x_i = 	au_{L,i}^{-1}/	au_{L,ACN}^{-1},
-   ]
-   derived from independent solvent dielectric properties;
-
-2. the experimental self-exchange rate after correction for solvent-dependent free-energy barrier variation, reported relative to acetonitrile,
-   [
-   y_i = k'_{ex,i}/k'_{ex,ACN}.
-   ]
-
-The barrier correction uses independently measured optical electron-transfer/barrier information. Therefore the remaining solvent dependence is a direct test of dynamical organization after an energetic baseline is removed.
-
-The paper later uses the rate-vs-solvent-dynamics behavior to infer electronic matrix coupling. **Those inferred electronic coupling values are forbidden as predictors here.**
+The paper reports measured photophysical/nonradiative dynamics and rotational reorientation of trans,trans-diphenylbutadiene (DPB) across nonpolar solvent classes.
 
 ## Capital-Chi interpretation
 
-The longitudinal solvent relaxation coordinate is treated as an independently measured environment/conglomeration dynamical feature. It is not mechanical scalar chi.
+This test asks whether independently measured microscopic environment coupling plus coarse environment class contains rate information not captured by bulk viscosity alone.
 
-This test asks whether a dynamical environment variable explains kinetic variation remaining after an independent barrier correction.
+No fitted reactive-friction scale factor from the source may be used as a predictor.
 
-## Frozen sample rule
+## Frozen target
 
-Use every Table II solvent/couple pair for which both the relative inverse longitudinal relaxation value and the barrier-corrected relative self-exchange rate are explicitly reported.
+Use the source's measured nonradiative decay/isomerization rate (k_{nr}) (or the exact equivalent rate variable reported in its table) for each solvent condition with a complete predictor set.
 
-Primary analysis is performed:
-- separately for each redox couple with at least 4 complete solvent pairs;
-- and as a pooled descriptive analysis with redox-couple identity retained as a grouping variable.
+## Frozen predictors
 
-No couple or solvent is removed because it weakens the relationship.
+### M0 bulk control
+- solvent viscosity (eta)
 
-Values shown in parentheses by the source for relaxation ratios are retained but flagged as source-qualified/non-Debye or approximate; a secondary sensitivity analysis may exclude those flagged values, but the primary table retains them.
+### M1 microscopic dynamics
+- measured DPB rotational reorientation time (	au_R)
 
-## Frozen comparisons
+### M2 architecture
+- measured (	au_R)
+- solvent-class indicator fixed from chemical identity before outcome inspection:
+  - alkane
+  - perfluoroalkane
 
-For each eligible redox couple:
+If a third class is present only through literature backfill rather than the same experimental series, it will not enter the primary model.
 
-### Barrier-only null
-After barrier correction and normalization to acetonitrile:
+## Frozen transformations and validation
+
+Use natural-log transforms for positive continuous variables and target.
+
+For each model:
+1. leave-one-solvent-out linear prediction of (ln k_{nr});
+2. LOO mean squared error;
+3. LOO mean absolute log error;
+4. Pearson and Spearman descriptive correlations for single continuous predictors.
+
+Primary contrasts:
 [
-hat y_{barrier}=1.
+Delta MSE_{micro|bulk}=MSE(M0)-MSE(M1)
+]
+[
+Delta MSE_{arch|bulk}=MSE(M0)-MSE(M2)
+]
+[
+Delta MSE_{arch|micro}=MSE(M1)-MSE(M2)
 ]
 
-### Dynamical architecture model
-Fit in log space using leave-one-solvent-out cross-validation:
-[
-ln y = a+bln x.
-]
+Positive values favor the richer predictor.
 
-Report:
-- number of complete solvent conditions;
-- Pearson correlation of (ln x,ln y);
-- Spearman rank correlation;
-- leave-one-out MSE of (ln y) for the barrier-only null;
-- leave-one-out MSE of the dynamical model;
-- (Delta MSE = MSE_{barrier-only}-MSE_{dynamics}).
+## Restrictions
 
-Positive Delta MSE supports incremental kinetic information in solvent dynamics after barrier correction.
-
-## Additional control
-
-Because each redox couple has its own electronic coupling regime, no common slope is assumed. The pooled analysis is descriptive only unless a hierarchical model can be justified without target-driven tuning.
-
-## Promotion limit
-
-This is a historical reanalysis whose table values were visible before numerical calculation. It is therefore capped at **P1 empirical support** even if strongly positive.
-
-A positive result supports the narrower statement:
-
-> Independently characterized solvent dynamical organization can explain kinetic variation remaining after independent energetic-barrier correction in a matched reaction family.
-
-It does not establish a scalar Capital-Chi coordinate or a generic cross-reaction rate law.
+- No source-fitted conversion from rotational friction to reactive friction may be used.
+- No class-specific multiplier may be fit outside the ordinary regression coefficients learned within each training fold.
+- No additional solvent descriptor may be added after outcome inspection without a dated amendment.
+- If sample size is too small for a stable two-class LOO regression, M2 is reported as exploratory only.
+- This remains P1 within-family evidence at most.
