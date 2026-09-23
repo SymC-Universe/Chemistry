@@ -1,69 +1,55 @@
-# Capital-Chi rate pilot amendment A13: predictor-decoupling gate
+# Capital-Chi rate pilot amendment A13: independent memory-kernel mechanistic replication
 
-**Date:** 2026-09-22
-**Status:** EXPLORATORY POST-RESULT HYPOTHESIS, FROZEN BEFORE CALCULATION
+**Date:** 2026-09-22  
+**Status:** FROZEN BEFORE NUMERIC EXTRACTION
 
-## Motivation
+## Source
 
-Completed datasets show three distinct outcomes:
+Dalton, Kiefer, and Netz, *The role of memory-dependent friction and solvent viscosity in isomerization kinetics in viscogenic media*, Nature Communications (2024), DOI 10.1038/s41467-024-48016-7.
 
-- A8: binary-mixture BPAc+ series, environment relaxation does not outperform viscosity.
-- A9: diverse neat-solvent BPAc+ series, environment relaxation strongly outperforms viscosity.
-- A11: protic-solvent proton-transfer series, environment relaxation strongly outperforms viscosity.
-- A12: simple ground-state Markovian barrier crossing is already captured by bulk viscosity and does not require a richer environment coordinate.
+## Purpose
 
-This pattern suggests a prospective architecture gate:
+A13 is an **independent-source mechanistic replication**, not empirical P2 validation.
 
-> A richer environment-relaxation descriptor should not be expected to add kinetic information when it is nearly redundant with the bulk proxy. Its potential incremental value begins when microscopic/environmental dynamics decouple from bulk viscosity.
+The source directly extracts time-dependent friction memory kernels from molecular dynamics for several isomerizing molecules under different viscogenic conditions and reports corresponding isomerization kinetics.
 
-This hypothesis is explicitly generated after A8-A12 and is **not confirmatory evidence** from those datasets.
+## Frozen question
 
-## Predictor-only decoupling metric
+Does a descriptor of **frequency/time-dependent friction architecture** explain kinetic variation that bulk solvent viscosity alone does not?
 
-For any dataset with paired positive bulk viscosity eta and independent environment timescale tau_env, define:
+## Frozen variables
 
-1. log variables:
-   [
-   u_i=lneta_i,qquad v_i=ln	au_{env,i}.
-   ]
+For every source condition with exact tabulated or deposited values:
+- target: log isomerization time or log rate;
+- control: log bulk viscosity;
+- microscopic descriptor: independently extracted integrated/zero-frequency friction if source-tabulated;
+- memory descriptor: a source-defined memory timescale or equivalent normalized memory measure if source-tabulated.
 
-2. Fit the predictor-only relation:
-   [
-   v=a+bu.
-   ]
+Do not invent a new memory scalar from curves if the source does not tabulate one exactly.
 
-3. Define:
-   [
-   D_{env|bulk}=1-R^2(vsim u).
-   ]
+## Frozen models
 
-This metric uses no reaction-rate target.
+Within each molecule/media series where sufficient exact points exist:
+- M0 intercept only;
+- M1 viscosity only;
+- M2 source microscopic friction only;
+- M3 viscosity + microscopic friction;
+- M4 viscosity + microscopic friction + source memory descriptor, only if the descriptor is exact and independently extracted.
 
-Interpretation:
-- D near 0: environment timescale is largely redundant with viscosity.
-- larger D: environment dynamics contain structure not captured by viscosity.
+Use leave-one-condition-out prediction. If multiple media classes exist, also report leave-one-medium-class-out only when sample size permits.
 
-Also record a scale-sensitive predictor-only leave-one-out RMSE:
-[
-E_{env|bulk}=mathrm{RMSE}_{LOO}(v-hat v(u)).
-]
+## Restrictions
 
-## Retrospective descriptive check
+- No values digitized from plots if deposited/tabulated values are not available.
+- No friction quantity inferred from the target isomerization rate.
+- No source-fit kinetic correction is reused as a predictor.
+- No model promoted from A13 beyond mechanistic/P1 support.
+- A13 cannot satisfy the independent empirical P2 gate because the target kinetics come from simulation.
 
-Compute D and E for A8, A9, and A11 only. Compare them descriptively with the already-frozen kinetic improvement:
+## Interpretation target
 
-[
-Delta MSE_{kin}=MSE_{viscosity}-MSE_{environment}.
-]
+A positive A13 result would support the mechanistic component of the emerging relational architecture:
 
-With only three datasets, no inferential correlation or threshold is claimed.
+> bulk environment + microscopic friction + memory organization can carry kinetic information not reducible to bulk viscosity.
 
-## Prospective rule for future datasets
-
-For every future dataset:
-1. compute predictor-only D and E **before** fitting reaction kinetics;
-2. record whether the environment descriptor is redundant or decoupled;
-3. then run the preregistered kinetic comparison;
-4. do not adjust the decoupling metric based on the rate outcome.
-
-No universal threshold is defined from A8-A11. A threshold, if ever used, must be fixed from a larger predictor-only corpus or external physical theory.
+A null result remains a cross-source counterexample.
