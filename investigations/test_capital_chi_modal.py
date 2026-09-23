@@ -51,7 +51,9 @@ def test_nonproportional_system_refuses_mechanical_scalar_assignment():
     r=_record(M,C,K, {"reaction":np.array([1.0,1.0])})
     assert len(r.mechanical_carriers)==0
     assert any("mechanical scalar-to-carrier assignment refused" in x for x in r.refusal_state)
-    assert r.declared_projections[0].refused
+    assert r.declared_projections[0].refused is False
+    assert r.declared_projections[0].mechanical_participation.size == 0
+    assert len(r.declared_projections[0].spectral_subspace_projection) > 0
 
 
 def test_correspondence_requires_declared_metric_and_recovers_known_rotation():
@@ -102,3 +104,28 @@ def test_exact_simultaneous_degeneracy_is_reported_as_subspace_not_unique_vector
         assert "basis-dependent" in str(e)
     else:
         raise AssertionError("ambiguous individual carrier correspondence was not refused")
+
+
+def test_spectral_projection_survives_when_mechanical_chi_is_refused():
+    M=np.eye(2)
+    K=np.diag([1.0,4.0])
+    C=np.array([[0.4,0.2],[0.2,0.8]])  # non-proportional: no mechanical chi basis
+    r=_record(M,C,K, {"q1":np.array([1.0,0.0])})
+    p=r.declared_projections[0]
+    assert p.refused is False
+    assert p.mechanical_participation.size == 0
+    assert len(p.spectral_subspace_projection) > 0
+
+
+def test_saddle_reaction_coordinate_projects_onto_unstable_spectral_mode():
+    M=np.eye(2)
+    C=np.zeros((2,2))
+    K=np.diag([-1.0,4.0])
+    r=_record(M,C,K, {"reaction":np.array([1.0,0.0])})
+    p=r.declared_projections[0]
+    # Find the positive real pole, whose right eigenvector is the unstable q coordinate.
+    pos_groups=[sc.group_id for sc in r.spectral_carriers
+                if abs(sc.eigenvalue.imag) < 1e-10 and sc.eigenvalue.real > 0]
+    assert len(pos_groups)==1
+    proj=dict(p.spectral_subspace_projection)
+    assert np.isclose(proj[pos_groups[0]],1.0,atol=1e-10)
