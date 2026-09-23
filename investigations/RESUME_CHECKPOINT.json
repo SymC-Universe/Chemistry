@@ -1,0 +1,36 @@
+{
+  "checkpoint_version": 1,
+  "updated_utc": "2026-09-23T02:35:00Z",
+  "project": "Capital Chi rate-predictor investigation",
+  "repo": "SymC-Universe/Chemistry",
+  "branch": "agent/capital-chi-rate-pilot-20260922",
+  "manuscript_privacy": {
+    "required": "private",
+    "current_repo_visibility": "public",
+    "action": "Do not push manuscript source or manuscript text to this public repo. Keep investigation artifacts only until a private GitHub destination is available.",
+    "blocker": "Current GitHub connector exposes no repository-visibility or private-repository creation action, and no installed private repo is available."
+  },
+  "completed": [
+    "Frozen preregistration",
+    "Frozen amendments A1-A6",
+    "Stage-0 non-Markovian benchmark completed",
+    "26-family Barrier Atlas eligibility audit completed",
+    "beta-CD empirical P1 test completed: negative under strict calibration control",
+    "S-DPB matched-solvent empirical P1 test completed: negative under frozen comparison",
+    "Angulo 2017 no-fit GLE/GSE test preregistered before SI target extraction",
+    "Deep literature search completed; Angulo 2017 identified as strongest no-fit architecture candidate"
+  ],
+  "current_task": {
+    "id": "ANG17-SI",
+    "goal": "Recover exact supplementary numerical data for observed PeDMA tau_1/e and GLE/GSE predictions without graph digitization if possible.",
+    "status": "blocked_on_exact_SI_retrieval",
+    "known_supporting_info_url": "https://aip.scitation.org/doi/suppl/10.1063/1.4990044/suppl_file/draft_si9rev.pdf",
+    "current_evidence": "Main paper confirms GLE generally closer than GSE for slow dynamics and no fitted parameters enter GLE, but exact SI numeric values are unavailable in currently retrieved PDF."
+  },
+  "next_actions": [
+    "Try alternate public mirrors/metadata paths for Angulo SI.",
+    "If exact SI remains inaccessible, freeze ANG17 as P0-Q qualitative rather than digitize graph.",
+    "Advance to next independent candidate from deep search, prioritizing no-fit matched dynamics.",
+    "Update checkpoint after each completed dataset test."
+  ]
+}
