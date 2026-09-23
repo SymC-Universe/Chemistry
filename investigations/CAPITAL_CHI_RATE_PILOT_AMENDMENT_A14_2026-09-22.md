@@ -1,79 +1,58 @@
-# Capital-Chi rate pilot amendment A14: prospective A13 gate replication in neat ionic liquids
+# Capital-Chi rate pilot amendment A14: 50-solvent apolar-motor counter-test
 
-**Date:** 2026-09-22
-**Status:** FROZEN BEFORE PREDICTOR-DECOUPLING CALCULATION AND BEFORE KINETIC COMPARISON
+**Date:** 2026-09-22  
+**Status:** FROZEN BEFORE CALCULATION
 
-## Source system
+## Source
 
-BPAc+ intramolecular electron transfer in neat ionic liquids from Li et al. 2011, tabulated with viscosity, independent solvation time, and reaction time in Christopher A. Rumble's 2017 Penn State dissertation, Table 6.2.
+Lubbe et al., *Solvent effects on the thermal isomerization of a rotary molecular motor*, PCCP 2016, DOI 10.1039/C6CP03571J.
 
-The eight frozen conditions are:
+The version-of-record repository PDF reports exact room-temperature ln(rate), ln(viscosity), molecular weight, and source-defined solvent group for 50 solvents/mixtures.
 
-| condition | T C | eta (mPa s) | tau_solv (ps) | tau_rxn (ps) |
-|---|---:|---:|---:|---:|
-| [Im21][Tf2N] | 25 | 35 | 140 | 320 +/- 70 |
-| [Im41][PF6] | 25 | 196 | 1000 | 1600 +/- 400 |
-| [Im41][PF6] | 70 | 29 | 140 | 240 +/- 70 |
-| [N3111][Tf2N] | 25 | 82 | 370 | 1000 +/- 200 |
-| [N3111][Tf2N] | 65 | 20 | 70 | 200 +/- 70 |
-| [Nip311][Tf2N] | 25 | 113 | 510 | 1100 +/- 200 |
-| [Nip311][Tf2N] | 65 | 23 | 90 | 220 +/- 50 |
-| [P14666][Tf2N] | 45 | 125 | 2500 | 1600 +/- 200 |
+## Purpose
 
-The solvation times and BPAc+ reaction times are distinct measured observables reported by the source lineage. No target-rate-derived environment feature is introduced.
+A14 is an independent empirical **counter-test** of relational environment modeling.
 
-## Stage A14-P: predictor-only gate
+The molecular motor is deliberately apolar and changes little in polarization during thermal helix inversion. Therefore the dielectric/polar architecture nominated post hoc by A12 for ttD should not be assumed to help this system.
 
-Before using tau_rxn:
+## Frozen target and predictors
 
-1. compute
-   [
-   D_{env|bulk}=1-R^2(ln	au_{solv}simlneta)
-   ]
-2. compute predictor-only leave-one-condition-out RMSE
-   [
-   E_{env|bulk}.
-   ]
-3. checkpoint both values in GitHub.
-4. record the qualitative A13 prospective expectation:
-   - near-redundant predictor geometry: little/no incremental kinetic gain expected;
-   - materially decoupled predictor geometry: environment relaxation has room to add kinetic information.
+Target:
+- source Table-1 ln(k) at 20 C.
 
-No numeric threshold is imposed.
+Primary control:
+- source Table-1 ln(eta).
 
-## Stage A14-K: kinetic test, permitted only after A14-P is checkpointed
+Additional independently tabulated structural/environment descriptor:
+- ln(molecular weight).
 
-Frozen target:
+Source-defined solvent group is retained only for diagnostics and group holdout, not as a fitted dummy variable in the primary model.
+
+## Frozen models
+
+- M0: intercept only
+- M1: ln(k) ~ ln(eta)
+- M2: ln(k) ~ ln(eta) + ln(MW)
+
+Validation:
+1. leave-one-solvent-out across all complete Table-1 rows;
+2. leave-one-source-defined-solvent-group-out if group membership can be reconstructed unambiguously from the article.
+
+Primary incremental statistic:
 [
-y=ln	au_{rxn}.
+Delta MSE_{MW|eta}=MSE(M1)-MSE(M2).
 ]
 
-M0:
-[
-ln	au_{rxn}=a+blneta.
-]
+## Interpretation
 
-M1:
-[
-ln	au_{rxn}=a+bln	au_{solv}.
-]
+Positive Delta MSE means molecular-size/environment information adds to viscosity in this apolar motor.
 
-Use leave-one-condition-out linear prediction and report:
-- Pearson;
-- Spearman;
-- LOO MSE;
-- LOO mean absolute log error;
-- Delta MSE = MSE(viscosity) - MSE(solvation).
-
-## Source-structure robustness
-
-Because three ionic-liquid identities contribute paired temperatures, report a secondary **leave-one-liquid-identity-out** prediction comparison if mathematically estimable. [P14666][Tf2N] and [Im21][Tf2N] are singleton identities; each is held out as one condition when its identity is omitted.
-
-The identity-holdout result is required to distinguish temperature interpolation from solvent-identity transfer.
+Null/negative Delta MSE is an important counterexample showing that adding more environmental architecture is not automatically beneficial.
 
 ## Restrictions
 
-- No rate calculation before A14-P checkpoint.
-- No composition/class features added after outcome inspection.
-- No nonlinear model added in primary analysis.
-- Same BPAc+ molecule means this is a prospective A13 gate replication, not an independent reaction-family P2 test.
+- No solvent polarity/dielectric predictor is added unless exact values are independently extracted and preregistered before calculation.
+- No group-specific intercepts or slopes.
+- No row exclusions.
+- Source-derived activation parameters are not predictors because many are calculated from the same kinetics.
+- A14 remains P1 cross-source evidence, not P2 Capital-Chi validation.
