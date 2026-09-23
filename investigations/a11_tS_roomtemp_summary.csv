@@ -1,0 +1,2 @@
+n,pearson_rotation,spearman_rotation,pearson_viscosity,mse_intercept,mse_viscosity,mse_rotation,mse_viscosity_rotation,delta_mse_R_given_eta,delta_mse_rotation_vs_eta
+12,-0.5981400869489928,-0.4903685278368424,-0.6216093104521383,0.16266064440593403,0.12171168150835147,0.131032142515659,0.19226545238856815,-0.07055377088021668,-0.009320461007307532
