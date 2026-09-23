@@ -1,86 +1,70 @@
-# Capital-Chi rate pilot amendment A11: solvent-controlled proton-transfer cross-family test
+# Capital-Chi rate pilot amendment A11: room-temperature cross-solvent panel
 
 **Date:** 2026-09-22  
-**Status:** FROZEN BEFORE ASSOCIATION/PREDICTION CALCULATION
+**Status:** FROZEN BEFORE TABLE-1 NUMERIC EXTRACTION
 
-## Source reaction
+## Source
 
-Pérez-Lustres et al., *Ultrafast Proton Transfer to Solvent: Molecularity and Intermediates from Solvation- and Diffusion-Controlled Regimes*, JACS 129 (2007) 5408-5418, DOI 10.1021/ja0664990.
+Dobryakov et al., JACS 2024, DOI 10.1021/jacs.4c09134.
 
-The reaction target is excited-state proton transfer from 6-hydroxyquinolinium (6HQc) to protic solvent.
+## Motivation
 
-## Frozen conditions
+A9/A10 vary temperature and solvent. Table 1 provides a broad room-temperature solvent panel, allowing a test in which temperature is effectively fixed and solvent/environment organization is the dominant perturbation.
 
-Only the five genuinely protic solvents are admitted:
+## Frozen primary solutes
 
-| solvent | mean solvation time <tau_solv> (ps) | mean 6HQc PT time <tau_PT> (ps) | solvation probe/source in Table 2 |
-|---|---:|---:|---|
-| water | 0.42 | 1.14 | MQz/NM6HQ-family solvation response |
-| methanol | 4.0 | 7.0 | MQz/NM6HQ-family solvation response |
-| ethanol | 11 | 10 | MQz/NM6HQ-family solvation response |
-| 1-propanol | 26 | 18 | Coumarin 153 |
-| 1-butanol | 40 | 26 | Coumarin 153 |
-
-Acetonitrile is excluded **before analysis** because the source states that excited-state proton transfer is strongly suppressed there; its spectral relaxation cannot be treated as the same PT target.
-
-## Predictor independence
-
-The source constructs C(t) from an independently measured solvent relaxation observable and compares it with the distinct 6HQc proton-transfer response S(t). For propanol and butanol, C(t) is measured with Coumarin 153. For the faster protic solvents the source uses the separately characterized quinolinium solvation reporter. No C(t) parameter is fit to the 6HQc PT time for this comparison.
-
-Because the solvation probe provenance is mixed, this dataset is capped at P1 and cannot by itself establish P2.
-
-## Frozen bulk-viscosity control
-
-Use independent room-temperature liquid viscosities (cP) fixed before the comparison:
-
-- water: 0.89
-- methanol: 0.55
-- ethanol: 1.08
-- 1-propanol: 1.94
-- 1-butanol: 2.57
-
-These values are used only as a coarse bulk-friction control. The exact solvent-relaxation values come from the reaction source itself.
+Analyze tS and ttD separately. Do not pool them.
 
 ## Frozen target and predictors
 
 Target:
 [
-y=lnlangle	au_{PT}angle.
+y=-ln	au_{iso}.
 ]
 
-M0 bulk proxy:
+Primary Capital-Chi environment feature:
 [
-x_0=lneta.
+x_R=ln	au_R.
 ]
 
-M1 Capital-Chi environment descriptor:
+Control:
 [
-x_1=lnlangle	au_{solv}angle.
+x_eta=lneta
 ]
+using the source room-temperature viscosity.
 
 ## Frozen analyses
 
-With n=5:
+For each solute independently, using every Table-1 solvent with complete exact (	au_R), (	au_{iso}), and viscosity:
 
-1. Pearson correlation;
-2. Spearman rank correlation;
-3. leave-one-solvent-out linear prediction in log space;
-4. LOO MSE;
-5. LOO mean absolute log error.
+- Pearson and Spearman association;
+- leave-one-solvent-out linear prediction for:
+  - intercept only;
+  - viscosity only;
+  - rotational time only;
+  - viscosity + rotational time.
 
-Primary contrast:
+Primary incremental quantities:
 [
-Delta MSE_{solv|visc}=MSE_{lneta}-MSE_{ln	au_{solv}}.
+Delta MSE_{R|eta}=MSE(eta)-MSE(eta+	au_R)
+]
+and
+[
+MSE(eta)-MSE(	au_R).
 ]
 
-Positive values favor the independently measured environment-relaxation descriptor.
+## Predeclared subgroup diagnostics
 
-## Robustness restriction
+Report errors by the source's own solvent classes without using them to exclude rows:
+- n-alkanes;
+- iso/cyclic/perfluoro class;
+- polar solvents.
 
-Because n=5 is small, no post-hoc outlier deletion, nonlinear fit, class indicator, or feature addition is permitted. The result is reported exactly as obtained.
+No class-specific fit coefficients are introduced in the primary model.
 
-## Promotion ceiling
+## Restrictions
 
-- Positive: independent cross-chemistry **supporting P1** only.
-- Null/negative: retained as a cross-family null.
-- Never sufficient for P2 by itself.
+- No row is omitted because it is an outlier.
+- Temperature differences of 20 C for tS versus 21 C for ttD are intrinsic to the source and solutes are analyzed separately.
+- No nonlinear terms or solvent-specific intercepts are added after inspection.
+- This test is cross-solvent P1 evidence only.
