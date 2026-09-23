@@ -110,3 +110,38 @@ The next scientific promotion requires:
 ## Privacy rule
 
 `SymC-Universe/Chemistry` is public. Do not commit current manuscript .tex/.pdf/submission-ready source here.
+
+
+## 2026-09-23 modal execution closure
+
+The modal correction is now implemented and empirically/theoretically exercised.
+
+Completed after the modal reset:
+- A17 Duschinsky modal-basis mechanism;
+- A18 reactive collective-mode transmission mechanism;
+- A19 Pt(111) empirical partial modal record;
+- A20 CH3OH/Cu(111) multichannel projection matrix;
+- A21 CH3D+Cl path-dependent modal evidence;
+- modal data contract v0.1;
+- additive path-aware modal adapter, 117 targeted tests passed;
+- first prospective native molecular modal-output record for HCN<->HNC;
+- same-method HCN/HNC minima, first-order saddle, independent frequency validation, and IRC endpoint closure;
+- reproducible mass-metric endpoint-to-TS carrier/subspace correspondence committed.
+
+Current consolidated status:
+`investigations/CAPITAL_CHI_MODAL_STATUS_2026-09-23.md`
+commit `8d5273c6a2b35e4e9a47c72aab31b83ee7150a98`.
+
+### Exact resume target
+
+Do NOT resume the old environment-variable Capital-Chi regressions.
+
+Resume only from the independent kinetic-validation gate:
+
+1. choose a reaction/system with independent kinetics and multiple states/conditions;
+2. freeze its modal construction before inspecting target variation;
+3. obtain/generate the native modal record;
+4. compare native barrier/scalar baseline versus modal Chi increment under holdout;
+5. include lowercase chi_i only if its damping/lifetime reduction is independently licensed.
+
+No further feature mining on A17-A21 or HCN/HNC is allowed to manufacture P2.
