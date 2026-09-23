@@ -1,0 +1,86 @@
+{
+  "schema": "HCN_HNC_R2_TS_validation_v0.1",
+  "workflow_uuid": "1d723abc-d91a-4a36-9be5-0fb93dabcf4e",
+  "calculation_uuid": "6de598e6-50e5-48af-bb57-5745ecc59a3b",
+  "method": "aimnet2_wb97md3",
+  "engine": "aimnet2",
+  "credits_charged": 0.06,
+  "energy_hartree": -93.410584,
+  "symmetry": "Cs",
+  "frequencies_cm1": [
+    -2006.267,
+    2268.267,
+    3420.307
+  ],
+  "imaginary_count": 1,
+  "modes": [
+    {
+      "frequency_cm1": -2006.267,
+      "reduced_mass": 1.186,
+      "force_constant": -2.813,
+      "displacements": [
+        [
+          -0.431971,
+          -0.677774,
+          -0.582133
+        ],
+        [
+          0.047106,
+          0.073906,
+          -0.038864
+        ],
+        [
+          -0.009278,
+          -0.014554,
+          0.075201
+        ]
+      ]
+    },
+    {
+      "frequency_cm1": 2268.267,
+      "reduced_mass": 10.547,
+      "force_constant": 31.971,
+      "displacements": [
+        [
+          0.051813,
+          0.081279,
+          -0.431777
+        ],
+        [
+          -0.304329,
+          -0.477498,
+          -0.367583
+        ],
+        [
+          0.257067,
+          0.403345,
+          0.346077
+        ]
+      ]
+    },
+    {
+      "frequency_cm1": 3420.307,
+      "reduced_mass": 1.065,
+      "force_constant": 7.339,
+      "displacements": [
+        [
+          0.305698,
+          0.479604,
+          -0.8195
+        ],
+        [
+          -0.004022,
+          -0.006309,
+          0.060406
+        ],
+        [
+          -0.018555,
+          -0.029112,
+          0.007216
+        ]
+      ]
+    }
+  ],
+  "rowan_message_context": "Generic frequency task expected a minimum and therefore flags one imaginary frequency. Under the preregistered TS validation gate, exactly one imaginary frequency is the required PASS condition.",
+  "disposition": "PASS_R2_FIRST_ORDER_SADDLE; IRC connectivity required before full path promotion"
+}
