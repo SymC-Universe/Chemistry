@@ -1,0 +1,7 @@
+mode,carrier_identity,excitation_label,energy_cm1,projection_TS1_OH,projection_TS2_CH,projection_TS3_CO,preferred_channel,mean_efficacy
+nu1,OH_stretch,1nu1,3670,0.869,0.033,0.013,OH,1.922
+nu2,CH_as_stretch,1nu2,2979,0.003,0.178,0.023,CH,0.912
+nu9,CH_as_stretch,1nu9,2935,0.003,0.515,0.087,CH,0.890
+nu3,CH_s_stretch,1nu3,2887,0.005,0.508,0.104,CH,1.026
+nu8,CO_stretch,1nu8,,0.026,0.015,0.745,CO,4.748
+nu8,CO_stretch,3nu8,2970,0.026,0.015,0.745,CO,3.692
